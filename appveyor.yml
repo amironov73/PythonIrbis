@@ -1,0 +1,12 @@
+version: 1.0.{build}
+image: Visual Studio 2017
+
+clone_folder: c:\projects\pythonirbis
+
+test_script:
+- cmd: >-
+    cd c:\projects\javairbis
+
+    call build.cmd
+
+build: off

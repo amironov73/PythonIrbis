@@ -5,7 +5,7 @@ clone_folder: c:\projects\pythonirbis
 
 test_script:
 - cmd: >-
-    cd c:\projects\javairbis
+    cd c:\projects\pythonirbis
 
     call build.cmd
 

@@ -1,9 +1,12 @@
 import socket
 import random
 
+from pyirbis import *
 from pyirbis.MarcRecord import MarcRecord
 from pyirbis.FileSpecification import FileSpecification
 from pyirbis.ClientQuery import ClientQuery
+from pyirbis.ServerResponse import ServerResponse
+from pyirbis.SearchParameters import SearchParameters
 
 
 class IrbisConnection:
@@ -33,10 +36,11 @@ class IrbisConnection:
 
         self.queryId = 0
         self.clientId = random.randint(100000, 900000)
-        query = ClientQuery(self,'A')
+        query = ClientQuery(self, REGISTER_CLIENT)
         query.ansi(self.username)
         query.ansi(self.password)
-        self.execute(query)
+        response = self.execute(query)
+        response.check_return_code()
         self.connected = True
         return ''
 
@@ -57,22 +61,40 @@ class IrbisConnection:
         """
         if not self.connected:
             return
-        query = ClientQuery(self, 'B')
+        query = ClientQuery(self, UNREGISTER_CLIENT)
         query.ansi(self.username)
         self.execute(query)
         self.connected = False
         return self
 
-    def execute(self, query: ClientQuery):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    def execute(self, query: ClientQuery) -> ServerResponse:
+        sock = socket.socket()
         sock.connect((self.host, self.port))
         packet = query.encode()
         sock.send(packet)
-        answer = sock.recv(32*1000)
-        sock.close()
+        return ServerResponse(sock)
+
+    def execute_ansi(self, commands: []) -> ServerResponse:
+        query = ClientQuery(self, commands[0])
+        for x in commands[1:]:
+            query.ansi(x)
+        return self.execute(query)
+
+    def execute_forget(self, query: ClientQuery) -> None:
+        response = self.execute(query)
+        response.nop()
 
     def format_record(self, script: str, mfn):
         pass
+
+    def get_max_mfn(self, database='') -> int:
+        if not database:
+            database = self.database
+        query = ClientQuery(self, GET_MAX_MFN)
+        query.ansi(database)
+        response = self.execute(query)
+        response.check_return_code()
+        return response.return_code
 
     def get_server_stat(self):
         pass
@@ -90,7 +112,7 @@ class IrbisConnection:
         pass
 
     def nop(self):
-        pass
+        self.execute_ansi(NOP)
 
     def read_binary_file(self, specification: FileSpecification):
         pass
@@ -116,8 +138,28 @@ class IrbisConnection:
     def restart_server(self):
         pass
 
-    def search(self, parameters):
-        pass
+    def search(self, parameters: SearchParameters) -> []:
+        database = parameters.database
+        if not database:
+            database = self.database
+        query = ClientQuery(self, SEARCH)
+        query.ansi(database)
+        query.utf(parameters.expression)
+        query.add(parameters.number)
+        query.add(parameters.first_record)
+        query.ansi(parameters.format)
+        query.add(parameters.min_mfn)
+        query.add(parameters.max_mfn)
+        query.ansi(parameters.sequential)
+        response = self.execute(query)
+        response.check_return_code()
+        expected = response.number()
+        result = []
+        for i in range(expected):
+            line = response.ansi()
+            mfn = int(line)
+            result.append(mfn)
+        return result
 
     def truncate_database(self, database: str):
         pass
@@ -131,8 +173,11 @@ class IrbisConnection:
     def update_ini_file(self, lines):
         pass
 
-    def write_record(self, record: MarcRecord, lock = False, actualize = True, dont_parse = False):
+    def write_record(self, record: MarcRecord, lock=False, actualize=True, dont_parse=False):
         pass
 
     def write_text_file(self, specification: FileSpecification):
         pass
+
+
+__all__ = [IrbisConnection]

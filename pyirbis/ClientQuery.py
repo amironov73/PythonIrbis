@@ -46,8 +46,7 @@ class ClientQuery:
         :param encoding: Кодировка
         :return: Себя
         """
-        for c in text.encode(encoding):
-            self._memory.append(c)
+        self._memory.extend(text.encode(encoding))
         self.new_line()
         return self
 

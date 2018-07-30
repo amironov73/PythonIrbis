@@ -1,0 +1,3 @@
+class ServerResponse:
+    pass
+

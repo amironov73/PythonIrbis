@@ -1,5 +1,6 @@
 import unittest
-from irbis import *
+
+from pyirbis.All import *
 
 
 class TestSubField(unittest.TestCase):
@@ -128,6 +129,34 @@ class TestFileSpecification(unittest.TestCase):
     def test_str_2(self):
         spec = FileSpecification(6, 'IBIS', 'file.ext')
         self.assertEqual(str(spec), '6.IBIS.file.ext')
+
+
+class TestIrbisFormat(unittest.TestCase):
+
+    def test_comments_1(self):
+        self.assertEqual("", IrbisFormat.remove_comments(""))
+        self.assertEqual(" ", IrbisFormat.remove_comments(" "))
+        self.assertEqual("v100,/,v200", IrbisFormat.remove_comments("v100,/,v200"))
+        self.assertEqual("\tv100\r\n", IrbisFormat.remove_comments("\tv100\r\n"))
+        self.assertEqual("v100\r\nv200",
+                         IrbisFormat.remove_comments("v100/* Comment\r\nv200"))
+        self.assertEqual("v100, '/* Not comment', v200",
+                         IrbisFormat.remove_comments("v100, '/* Not comment', v200"))
+        self.assertEqual("v100, |/* Not comment|, v200",
+                         IrbisFormat.remove_comments("v100, |/* Not comment|, v200"))
+        self.assertEqual("v100, '/* Not comment', v200, \r\nv300",
+                         IrbisFormat.remove_comments("v100, '/* Not comment', v200, /*comment\r\nv300"))
+
+    def test_prepare_1(self):
+        self.assertEqual("", IrbisFormat.prepare(""))
+        self.assertEqual(" ", IrbisFormat.prepare(" "))
+        self.assertEqual("", IrbisFormat.prepare("\r\n"))
+        self.assertEqual("v100,/,v200", IrbisFormat.prepare("v100,/,v200"))
+        self.assertEqual("v100", IrbisFormat.prepare("\tv100\r\n"))
+        self.assertEqual("v100v200",
+                         IrbisFormat.prepare("v100/*comment\r\nv200"))
+        self.assertEqual("v100",
+                         IrbisFormat.prepare("v100/*comment"))
 
 
 class TestIrbisConnection(unittest.TestCase):

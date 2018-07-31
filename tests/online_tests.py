@@ -1,5 +1,6 @@
 import unittest
 from pyirbis.IrbisConnection import IrbisConnection
+from pyirbis.TermParameters import TermParameters
 from pyirbis.SearchParameters import SearchParameters
 
 
@@ -19,12 +20,24 @@ class TestConnect(unittest.TestCase):
         print('Max MFN:', max_mfn)
         connection.nop()
         print('Nop')
+
+        parameters = TermParameters('К=БЕТОН')
+        terms = connection.read_terms(parameters)
+        for term in terms:
+            print(term)
+
         parameters = SearchParameters()
         parameters.expression = "K=бетон"
         found = connection.search(parameters)
         print(found)
+
+        for mfn in found:
+            line = connection.format_record("@sbrief", mfn)
+            print(line)
+
         connection.disconnect()
         print('Disconnected')
+
 
 if __name__ == '__main__':
     unittest.main()

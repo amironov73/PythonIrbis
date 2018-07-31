@@ -7,6 +7,9 @@ from pyirbis.FileSpecification import FileSpecification
 from pyirbis.ClientQuery import ClientQuery
 from pyirbis.ServerResponse import ServerResponse
 from pyirbis.SearchParameters import SearchParameters
+from pyirbis.TermInfo import TermInfo
+from pyirbis.TermParameters import TermParameters
+from pyirbis.Utility import iif, READ_TERMS_CODES
 
 
 class IrbisConnection:
@@ -22,8 +25,12 @@ class IrbisConnection:
         self.queryId = 0
         self.connected = False
 
-    def actualize_record(self, mfn: int):
-        pass
+    def actualize_record(self, mfn: int, database: str = '') -> None:
+        database = iif(database, self.database)
+        query = ClientQuery(self, ACTUALIZE_RECORD)
+        query.ansi(database).add(mfn)
+        with self.execute(query) as response:
+            response.check_return_code()
 
     def connect(self):
         """
@@ -39,33 +46,42 @@ class IrbisConnection:
         query = ClientQuery(self, REGISTER_CLIENT)
         query.ansi(self.username)
         query.ansi(self.password)
-        response = self.execute(query)
-        response.check_return_code()
+        with self.execute(query) as response:
+            response.check_return_code()
         self.connected = True
         return ''
 
-    def create_database(self, database: str, description: str, reader_access: bool):
-        pass
+    def create_database(self, database: str, description: str = '', reader_access: bool = True) -> None:
+        database = iif(database, self.database)
+        query = ClientQuery(self, CREATE_DATABASE)
+        query.ansi(database).ansi(description).add(int(reader_access))
+        with self.execute(query) as response:
+            response.check_return_code()
 
-    def create_dictionary(self, database: str):
-        pass
+    def create_dictionary(self, database: str = '') -> None:
+        database = iif(database, self.database)
+        query = ClientQuery(self, CREATE_DICTIONARY)
+        query.ansi(database)
+        with self.execute(query) as response:
+            response.check_return_code()
 
-    def delete_database(self, database: str):
-        pass
+    def delete_database(self, database: str = '') -> None:
+        database = iif(database, self.database)
+        query = ClientQuery(self, DELETE_DATABASE)
+        query.ansi(database)
+        with self.execute(query) as response:
+            response.check_return_code()
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         """
         Отключение от сервера.
-
-        :return: Себя
         """
         if not self.connected:
             return
         query = ClientQuery(self, UNREGISTER_CLIENT)
         query.ansi(self.username)
-        self.execute(query)
+        self.execute_forget(query)
         self.connected = False
-        return self
 
     def execute(self, query: ClientQuery) -> ServerResponse:
         sock = socket.socket()
@@ -81,20 +97,32 @@ class IrbisConnection:
         return self.execute(query)
 
     def execute_forget(self, query: ClientQuery) -> None:
-        response = self.execute(query)
-        response.nop()
+        with self.execute(query):
+            pass
 
-    def format_record(self, script: str, mfn):
-        pass
+    def format_record(self, script: str, mfn) -> str:
+        """
+        Форматирование записи с указанным MFN.
+
+        :param script: Текст формата
+        :param mfn: MFN записи
+        :return: Результат расформатирования
+        """
+        query = ClientQuery(self, FORMAT_RECORD)
+        query.ansi(self.database).ansi(script).add(1).add(mfn)
+        with self.execute(query) as response:
+            response.check_return_code()
+            result = response.utf_remaining_text()
+        return result
 
     def get_max_mfn(self, database='') -> int:
-        if not database:
-            database = self.database
+        database = iif(database, self.database)
         query = ClientQuery(self, GET_MAX_MFN)
         query.ansi(database)
-        response = self.execute(query)
-        response.check_return_code()
-        return response.return_code
+        with self.execute(query) as response:
+            response.check_return_code()
+            result = response.return_code
+        return result
 
     def get_server_stat(self):
         pass
@@ -105,14 +133,21 @@ class IrbisConnection:
     def get_user_list(self):
         pass
 
-    def list_files(self, specification: FileSpecification):
-        pass
+    def list_files(self, specification: FileSpecification) -> [str]:
+        query = ClientQuery(self, LIST_FILES)
+        query.ansi(str(specification))
+        result = []
+        with self.execute(query) as response:
+            lines = response.ansi_remaining_lines()
+            result.extend(lines)
+        return result
 
     def list_processes(self):
         pass
 
-    def nop(self):
-        self.execute_ansi(NOP)
+    def nop(self) -> None:
+        with self.execute_ansi(NOP):
+            pass
 
     def read_binary_file(self, specification: FileSpecification):
         pass
@@ -123,20 +158,37 @@ class IrbisConnection:
     def read_record(self, mfn: int):
         pass
 
-    def read_terms(self, parameters):
-        pass
+    def read_terms(self, parameters: TermParameters) -> []:
+        database = iif(parameters.database, self.database)
+        command = READ_TERMS_REVERSE if parameters.reverse else READ_TERMS
+        query = ClientQuery(self, command)
+        query.ansi(database).utf(parameters.start)
+        query.add(parameters.number).ansi(parameters.format)
+        with self.execute(query) as response:
+            response.check_return_code(READ_TERMS_CODES)
+            result = TermInfo.parse(response)
+            return result
 
-    def read_text_file(self, specification: FileSpecification):
-        pass
+    def read_text_file(self, specification: FileSpecification) -> str:
+        query = ClientQuery(self, READ_DOCUMENT)
+        query.ansi(str(specification))
+        with self.execute(query) as response:
+            result = response.ansi_remaining_text()
+        return result
 
-    def reload_dictionary(self, database: str):
-        pass
+    def reload_dictionary(self, database: str = '') -> None:
+        database = iif(database, self.database)
+        with self.execute_ansi([RELOAD_DICTIONARY, database]):
+            pass
 
-    def reload_master_file(self, database: str):
-        pass
+    def reload_master_file(self, database: str = '') -> None:
+        database = iif(database, self.database)
+        with self.execute_ansi([RELOAD_MASTER_FILE, database]):
+            pass
 
-    def restart_server(self):
-        pass
+    def restart_server(self) -> None:
+        with self.execute_ansi([RESTART_SERVER]):
+            pass
 
     def search(self, parameters: SearchParameters) -> []:
         database = parameters.database
@@ -161,14 +213,24 @@ class IrbisConnection:
             result.append(mfn)
         return result
 
-    def truncate_database(self, database: str):
-        pass
+    def truncate_database(self, database: str = '') -> None:
+        database = iif(database, self.database)
+        with self.execute_ansi([EMPTY_DATABASE, database]):
+            pass
 
-    def unlock_database(self, database: str):
-        pass
+    def unlock_database(self, database: str = '') -> None:
+        database = iif(database, self.database)
+        with self.execute_ansi([UNLOCK_DATABASE, database]):
+            pass
 
-    def unlock_records(self, records):
-        pass
+    def unlock_records(self, records: [int], database: str = '') -> None:
+        database = iif(database, self.database)
+        query = ClientQuery(self, UNLOCK_RECORDS)
+        query.ansi(database)
+        for mfn in records:
+            query.add(mfn)
+        with self.execute(query) as response:
+            response.check_return_code()
 
     def update_ini_file(self, lines):
         pass

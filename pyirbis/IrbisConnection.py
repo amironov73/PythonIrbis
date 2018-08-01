@@ -2,14 +2,13 @@ import socket
 import random
 
 from pyirbis import *
-from pyirbis.MarcRecord import MarcRecord
 from pyirbis.FileSpecification import FileSpecification
 from pyirbis.ClientQuery import ClientQuery
 from pyirbis.ServerResponse import ServerResponse
 from pyirbis.SearchParameters import SearchParameters
 from pyirbis.TermInfo import TermInfo
 from pyirbis.TermParameters import TermParameters
-from pyirbis.Utility import iif, READ_TERMS_CODES
+from pyirbis.Utility import throw_value_error, READ_RECORD_CODES, READ_TERMS_CODES
 
 
 class IrbisConnection:
@@ -26,7 +25,7 @@ class IrbisConnection:
         self.connected = False
 
     def actualize_record(self, mfn: int, database: str = '') -> None:
-        database = iif(database, self.database)
+        database = database or self.database or throw_value_error()
         query = ClientQuery(self, ACTUALIZE_RECORD)
         query.ansi(database).add(mfn)
         with self.execute(query) as response:
@@ -52,21 +51,21 @@ class IrbisConnection:
         return ''
 
     def create_database(self, database: str, description: str = '', reader_access: bool = True) -> None:
-        database = iif(database, self.database)
+        database = database or self.database or throw_value_error()
         query = ClientQuery(self, CREATE_DATABASE)
         query.ansi(database).ansi(description).add(int(reader_access))
         with self.execute(query) as response:
             response.check_return_code()
 
     def create_dictionary(self, database: str = '') -> None:
-        database = iif(database, self.database)
+        database = database or self.database or throw_value_error()
         query = ClientQuery(self, CREATE_DICTIONARY)
         query.ansi(database)
         with self.execute(query) as response:
             response.check_return_code()
 
     def delete_database(self, database: str = '') -> None:
-        database = iif(database, self.database)
+        database = database or self.database or throw_value_error()
         query = ClientQuery(self, DELETE_DATABASE)
         query.ansi(database)
         with self.execute(query) as response:
@@ -100,7 +99,7 @@ class IrbisConnection:
         with self.execute(query):
             pass
 
-    def format_record(self, script: str, mfn) -> str:
+    def format_record(self, script: str, mfn: int) -> str:
         """
         Форматирование записи с указанным MFN.
 
@@ -108,6 +107,8 @@ class IrbisConnection:
         :param mfn: MFN записи
         :return: Результат расформатирования
         """
+        script = script or throw_value_error()
+        mfn = mfn or throw_value_error()
         query = ClientQuery(self, FORMAT_RECORD)
         query.ansi(self.database).ansi(script).add(1).add(mfn)
         with self.execute(query) as response:
@@ -116,7 +117,7 @@ class IrbisConnection:
         return result
 
     def get_max_mfn(self, database='') -> int:
-        database = iif(database, self.database)
+        database = database or self.database or throw_value_error()
         query = ClientQuery(self, GET_MAX_MFN)
         query.ansi(database)
         with self.execute(query) as response:
@@ -146,7 +147,7 @@ class IrbisConnection:
         pass
 
     def nop(self) -> None:
-        with self.execute_ansi(NOP):
+        with self.execute_ansi([NOP]):
             pass
 
     def read_binary_file(self, specification: FileSpecification):
@@ -155,11 +156,24 @@ class IrbisConnection:
     def read_postings(self, parameters):
         pass
 
-    def read_record(self, mfn: int):
-        pass
+    def read_record(self, mfn: int, version: int = 0) -> MarcRecord:
+        mfn = mfn or throw_value_error()
+        query = ClientQuery(self, READ_RECORD)
+        query.ansi(self.database).add(mfn)
+        if version:
+            query.add(version)
+        result = MarcRecord()
+        with self.execute(query) as response:
+            response.check_return_code(READ_RECORD_CODES)
+            text = response.utf_remaining_lines()
+            result.database = self.database
+            result.parse(text)
+        if version:
+            self.unlock_records([mfn])
+        return result
 
     def read_terms(self, parameters: TermParameters) -> []:
-        database = iif(parameters.database, self.database)
+        database = parameters.database or self.database or throw_value_error()
         command = READ_TERMS_REVERSE if parameters.reverse else READ_TERMS
         query = ClientQuery(self, command)
         query.ansi(database).utf(parameters.start)
@@ -177,12 +191,12 @@ class IrbisConnection:
         return result
 
     def reload_dictionary(self, database: str = '') -> None:
-        database = iif(database, self.database)
+        database = database or self.database or throw_value_error()
         with self.execute_ansi([RELOAD_DICTIONARY, database]):
             pass
 
     def reload_master_file(self, database: str = '') -> None:
-        database = iif(database, self.database)
+        database = database or self.database or throw_value_error()
         with self.execute_ansi([RELOAD_MASTER_FILE, database]):
             pass
 
@@ -214,17 +228,17 @@ class IrbisConnection:
         return result
 
     def truncate_database(self, database: str = '') -> None:
-        database = iif(database, self.database)
+        database = database or self.database or throw_value_error()
         with self.execute_ansi([EMPTY_DATABASE, database]):
             pass
 
     def unlock_database(self, database: str = '') -> None:
-        database = iif(database, self.database)
+        database = database or self.database or throw_value_error()
         with self.execute_ansi([UNLOCK_DATABASE, database]):
             pass
 
     def unlock_records(self, records: [int], database: str = '') -> None:
-        database = iif(database, self.database)
+        database = database or self.database or throw_value_error()
         query = ClientQuery(self, UNLOCK_RECORDS)
         query.ansi(database)
         for mfn in records:
@@ -232,13 +246,13 @@ class IrbisConnection:
         with self.execute(query) as response:
             response.check_return_code()
 
-    def update_ini_file(self, lines):
+    def update_ini_file(self, lines: [str]) -> None:
         pass
 
-    def write_record(self, record: MarcRecord, lock=False, actualize=True, dont_parse=False):
+    def write_record(self, record: MarcRecord, lock: bool = False, actualize: bool = True, dont_parse=False):
         pass
 
-    def write_text_file(self, specification: FileSpecification):
+    def write_text_file(self, specification: FileSpecification) -> None:
         pass
 
 

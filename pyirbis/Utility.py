@@ -15,3 +15,11 @@ def iif(*args):
         if a:
             return a
     return None
+
+def throw_value_error() -> None:
+    """
+    Выдаёт исключение.
+
+    :return: None
+    """
+    raise ValueError

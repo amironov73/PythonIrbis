@@ -16,24 +16,31 @@ class TestConnect(unittest.TestCase):
         connection.workstation = 'C'
         connection.connect()
         print('Connected')
-        max_mfn = connection.get_max_mfn()
-        print('Max MFN:', max_mfn)
-        connection.nop()
-        print('Nop')
 
-        parameters = TermParameters('К=БЕТОН')
-        terms = connection.read_terms(parameters)
-        for term in terms:
-            print(term)
+        #max_mfn = connection.get_max_mfn()
+        #print('Max MFN:', max_mfn)
 
-        parameters = SearchParameters()
-        parameters.expression = "K=бетон"
-        found = connection.search(parameters)
-        print(found)
+        #connection.nop()
+        #print('Nop')
 
-        for mfn in found:
-            line = connection.format_record("@sbrief", mfn)
-            print(line)
+        record = connection.read_record(1)
+        print(record)
+        print()
+        print(record.fm(200, 'a'))
+
+        # parameters = TermParameters('K=БЕТОН')
+        # terms = connection.read_terms(parameters)
+        # for term in terms:
+        #     print(term)
+        #
+        # parameters = SearchParameters()
+        # parameters.expression = "K=бетон"
+        # found = connection.search(parameters)
+        # print(found)
+
+        # for mfn in found:
+        #     line = connection.format_record("@sbrief", mfn)
+        #     print(line)
 
         connection.disconnect()
         print('Disconnected')

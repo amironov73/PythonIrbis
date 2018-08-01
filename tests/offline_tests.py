@@ -1,6 +1,7 @@
 import unittest
 
-from pyirbis.All import *
+from pyirbis import *
+from pyirbis.infrastructure import *
 
 
 class TestSubField(unittest.TestCase):

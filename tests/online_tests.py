@@ -1,7 +1,6 @@
 import unittest
-from pyirbis.IrbisConnection import IrbisConnection
-from pyirbis.TermParameters import TermParameters
-from pyirbis.SearchParameters import SearchParameters
+
+from pyirbis import *
 
 
 class TestConnect(unittest.TestCase):
@@ -17,26 +16,36 @@ class TestConnect(unittest.TestCase):
         connection.connect()
         print('Connected')
 
-        #max_mfn = connection.get_max_mfn()
-        #print('Max MFN:', max_mfn)
+        version = connection.get_server_version()
+        print(version)
 
-        #connection.nop()
-        #print('Nop')
+        processes = connection.list_processes()
+        for process in processes:
+            print(process)
+            print()
 
-        record = connection.read_record(1)
-        print(record)
-        print()
-        print(record.fm(200, 'a'))
+        # max_mfn = connection.get_max_mfn()
+        # print('Max MFN:', max_mfn)
+
+        # connection.nop()
+        # print('Nop')
+
+        # record = connection.read_record(1)
+        # print(record)
+        # print()
+        # print(record.fm(200, 'a'))
+
+        terms = connection.read_terms('K=БЕТОН')
+        for term in terms:
+            print(term)
 
         # parameters = TermParameters('K=БЕТОН')
         # terms = connection.read_terms(parameters)
         # for term in terms:
         #     print(term)
-        #
-        # parameters = SearchParameters()
-        # parameters.expression = "K=бетон"
-        # found = connection.search(parameters)
-        # print(found)
+
+        found = connection.search('K=бетон')
+        print(found)
 
         # for mfn in found:
         #     line = connection.format_record("@sbrief", mfn)

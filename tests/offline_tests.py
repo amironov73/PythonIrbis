@@ -58,6 +58,18 @@ class TestRecordField(unittest.TestCase):
         self.assertEqual(field.subfields[0].code, 'a')
         self.assertEqual(field.subfields[0].value, 'Some text')
 
+    def test_all_1(self):
+        field = RecordField()
+        field.add('a', 'A1').add('a', 'A2').add('b', 'B1')
+        self.assertEqual(2, len(field.all('A')))
+        self.assertEqual(1, len(field.all('B')))
+
+    def test_all_values_1(self):
+        field = RecordField()
+        field.add('a', 'A1').add('a', 'A2').add('b', 'B1')
+        self.assertEqual(2, len(field.all_values('A')))
+        self.assertEqual(1, len(field.all_values('B')))
+
     def test_clone_1(self):
         original = RecordField(100, 'Some value')
         original.add('a', 'Some text')
@@ -73,7 +85,10 @@ class TestRecordField(unittest.TestCase):
         self.assertEqual(len(field.subfields), 0)
 
     def test_str_1(self):
-        pass
+        field = RecordField(100, 'Some value')
+        field.add('a', 'Some text')
+        field.add('b', 'Other text')
+        self.assertEqual('100#Some value^aSome text^bOther text', str(field))
 
 
 class TestMarcRecord(unittest.TestCase):
@@ -90,6 +105,15 @@ class TestMarcRecord(unittest.TestCase):
         record = MarcRecord()
         record.add(100, 'Some value')
         self.assertEqual(len(record.fields), 1)
+
+    def test_add_2(self):
+        record = MarcRecord()
+        record.add(100, '', SubField('a', 'SubA'), SubField('b', 'SubB'))
+        self.assertEqual(len(record.fields), 1)
+        self.assertEqual(len(record.fields[0].subfields), 2)
+
+    def test_all_1(self):
+        pass
 
     def test_clear_1(self):
         record = MarcRecord()
@@ -108,8 +132,30 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(original.version, clone.version)
         self.assertEqual(len(original.fields), len(clone.fields))
 
+    def test_fm_1(self):
+        record = MarcRecord()
+        record.add(100, 'Field 100')
+        record.add(200, 'Field 200')
+        self.assertEqual('Field 100', record.fm(100))
+        self.assertEqual('Field 200', record.fm(200))
+        self.assertIsNone(record.fm(300))
+
+    def test_fm_2(self):
+        record = MarcRecord()
+        record.add(100, '', SubField('a', '100A'), SubField('b', '100B'))
+        record.add(200, '', SubField('b', '200B'), SubField('c', '200C'))
+        self.assertEqual('100A', record.fm(100, 'a'))
+        self.assertEqual('100B', record.fm(100, 'b'))
+        self.assertIsNone(record.fm(100, 'c'))
+        self.assertIsNone(record.fm(200, 'a'))
+        self.assertEqual('200B', record.fm(200, 'b'))
+        self.assertEqual('200C', record.fm(200, 'c'))
+
     def test_str_1(self):
-        pass
+        record = MarcRecord()
+        record.add(100, 'Field 100')
+        record.add(200, 'Field 200', SubField('a', 'Subfield A'))
+        self.assertEqual('100#Field 100\n200#Field 200^aSubfield A', str(record))
 
 
 class TestFileSpecification(unittest.TestCase):

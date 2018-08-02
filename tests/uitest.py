@@ -31,11 +31,15 @@ class Window(wx.Frame):
         connection.database = 'ISTU'
         connection.workstation = 'C'
         connection.connect()
+
         expression = "K=" + keyword
         found = connection.search(expression)
+        self.listbox.Clear()
         for mfn in found:
             line = connection.format_record("@sbrief", mfn)
             self.listbox.Append(line)
+
+        connection.disconnect()
 
 
 app = wx.App()

@@ -1,10 +1,16 @@
+import re
 import socket
+from typing import Union, Optional
 
 # Encodings
 
 ANSI = 'cp1251'
 UTF = 'utf-8'
 OEM = 'cp866'
+
+# Stop marker
+
+STOP_MARKER = '*****'
 
 # Record status
 
@@ -178,6 +184,16 @@ def throw_value_error() -> None:
     raise ValueError
 
 
+def irbis_to_dos(text: str) -> str:
+    return text.replace(IRBIS_DELIMITER, '\n')
+
+
+def irbis_to_lines(text: str) -> [str]:
+    return text.split(IRBIS_DELIMITER)
+
+###############################################################################
+
+
 class ClientQuery:
     """
     Клиентский запрос.
@@ -264,12 +280,16 @@ class FileSpecification:
     В случае чтения ресурса по пути 0 и 1 имя базы данных не задается.
     """
 
-    def __init__(self, path, database, filename):
+    def __init__(self, path: int, database: Optional[str], filename: str):
         self.binary = False
         self.path = path
         self.database = database
         self.filename = filename
         self.content = ''
+
+    @staticmethod
+    def system(filename: str):
+        return FileSpecification(SYSTEM, None, filename)
 
     def __str__(self):
         result = self.filename
@@ -616,3 +636,261 @@ class IrbisProcessInfo:
                   self.command_number, self.process_id, self.state]
         return '\n'.join(buffer)
 
+
+###############################################################################
+
+# Меню
+
+class MenuEntry:
+    """
+    Пара строк в меню.
+    """
+
+    __slots__ = 'code', 'comment'
+
+    def __init__(self, code: str = '', comment: str = ''):
+        self.code = code
+        self.comment = comment
+
+    def __str__(self):
+        if self.comment:
+            return self.code + ' - ' + self.comment
+        return self.code
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class MenuFile:
+    """
+    Файл меню.
+    """
+
+    __slots__ = 'entries'
+
+    def __init__(self):
+        self.entries: [MenuEntry] = []
+
+    def add(self, code: str, comment: str = ''):
+        entry = MenuEntry(code, comment)
+        self.entries.append(entry)
+        return self
+
+    def get_entry(self, code: str) -> Optional[MenuEntry]:
+        code = code.lower()
+        for entry in self.entries:
+            if entry.code.lower() == code:
+                return entry
+
+        code = code.strip()
+        for entry in self.entries:
+            if entry.code.lower() == code:
+                return entry
+
+        code = MenuFile.trim_code(code)
+        for entry in self.entries:
+            if entry.code.lower() == code:
+                return entry
+
+        return None
+
+    def get_value(self, code: str, default_value: Optional[str]=None) -> Optional[str]:
+        entry = self.get_entry(code)
+        result = entry and entry.comment or default_value
+        return result
+
+    def parse(self, response: ServerResponse) -> None:
+        text = response.ansi()
+        lines = irbis_to_lines(text)
+        i = 0
+        while i + 1 < len(lines):
+            code = lines[i]
+            comment = lines[i + 1]
+            if code.startswith(STOP_MARKER):
+                break
+            self.add(code, comment)
+            i += 2
+
+    @staticmethod
+    def trim_code(code: str) -> str:
+        result = code.strip(' -=:')
+        return result
+
+    def __str__(self):
+        result = []
+        for entry in self.entries:
+            result.append(entry.code)
+            result.append(entry.comment)
+        result.append(STOP_MARKER)
+        return '\n'.join(result)
+
+
+###############################################################################
+
+# Оптимизация форматов
+
+WILDCARD = '+'
+
+
+class OptLine:
+    """
+    Строка в OPT-файле.
+    """
+
+    __slots__ = 'pattern', 'worksheet'
+
+    def __init__(self):
+        self.pattern: str = ''
+        self.worksheet: str = ''
+
+    def parse(self, text: str) -> None:
+        parts = re.split('\s+', text.strip())
+        self.pattern = parts[0]
+        self.worksheet = parts[1]
+
+
+class OptFile:
+    """
+    OPT-файл.
+    """
+
+    __slots__ = 'lines', 'length', 'tag'
+
+    def __init__(self):
+        self.lines: [OptLine] = []
+        self.length: int = 5
+        self.tag: int = 920
+
+    def parse(self, text: [str]):
+        self.tag = int(text[0])
+        self.length = int(text[1])
+        for line in text[2:]:
+            if not line:
+                continue
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith('*'):
+                continue
+            one = OptLine()
+            one.parse(line)
+            self.lines.append(one)
+
+    @staticmethod
+    def same_char(pattern: str, testable: str) -> bool:
+        if pattern == WILDCARD:
+            return True
+        return pattern.lower() == testable.lower()
+
+    def same_text(self, pattern: str, testable: str) -> bool:
+        if not pattern:
+            return False
+        if not testable:
+            return pattern[0] == WILDCARD
+        pattern_index = 0
+        testable_index = 0
+
+        while True:
+            pattern_char = pattern[pattern_index]
+            testable_char = testable[testable_index]
+            pattern_index += 1
+            testable_index += 1
+            pattern_next = pattern_index < len(pattern)
+            testable_next = testable_index < len(testable)
+
+            if pattern_next and not testable_next:
+                if pattern_char == WILDCARD:
+                    while pattern_index < len(pattern):
+                        pattern_char = pattern[pattern_index]
+                        pattern_index += 1
+                        if pattern_char != WILDCARD:
+                            return False
+                    return True
+
+            if pattern_next != testable_next:
+                return False
+            if not pattern_next:
+                return True
+            if not self.same_char(pattern_char, testable_char):
+                return False
+
+    def resolve_worksheet(self, tag: str) -> Optional[str]:
+        for line in self.lines:
+            if self.same_text(line.pattern, tag):
+                return line.worksheet
+        return None
+
+    def __str__(self):
+        result = [str(self.tag), str(self.length)]
+        for line in self.lines:
+            result.append(line.pattern.ljust(6) + line.worksheet)
+        result.append(STOP_MARKER)
+        return '\n'.join(result)
+
+
+###############################################################################
+
+# PAR-файл
+
+class ParFile:
+    """
+    PAR-файл.
+    """
+
+    __slots__ = ('xrf', 'mst', 'cnt', 'n01', 'n02', 'l01', 'l02', 'ifp',
+                 'any', 'pft', 'ext')
+
+    def __init__(self, mst: str = ''):
+        self.xrf: str = mst
+        self.mst: str = mst
+        self.cnt: str = mst
+        self.n01: str = mst
+        self.n02: str = mst
+        self.l01: str = mst
+        self.l02: str = mst
+        self.ifp: str = mst
+        self.any: str = mst
+        self.pft: str = mst
+        self.ext: str = mst
+
+    @staticmethod
+    def make_dict(text: [str]) -> dict:
+        result = dict()
+        for line in text:
+            if not line:
+                continue
+            parts = line.split('=', 2)
+            if len(parts) < 2:
+                continue
+            key = parts[0].strip()
+            value = parts[1].strip()
+            result[key] = value
+        return result
+
+    def parse(self, text: [str]) -> None:
+        d = ParFile.make_dict(text)
+        self.xrf = d['1']
+        self.mst = d['2']
+        self.cnt = d['3']
+        self.n01 = d['4']
+        self.n02 = d['5']
+        self.l01 = d['6']
+        self.l02 = d['7']
+        self.ifp = d['8']
+        self.any = d['9']
+        self.pft = d['10']
+        self.ext = d['11']
+
+    def __str__(self):
+        result = ['1=' + self.xrf,
+                  '2=' + self.mst,
+                  '3=' + self.cnt,
+                  '4=' + self.n01,
+                  '5=' + self.n02,
+                  '6=' + self.l01,
+                  '7=' + self.l02,
+                  '8=' + self.ifp,
+                  '9=' + self.any,
+                  '10=' + self.pft,
+                  '11=' + self.ext]
+        return '\n'.join(result)

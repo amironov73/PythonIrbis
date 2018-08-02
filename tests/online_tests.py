@@ -19,10 +19,28 @@ class TestConnect(unittest.TestCase):
         version = connection.get_server_version()
         print(version)
 
-        processes = connection.list_processes()
-        for process in processes:
-            print(process)
-            print()
+        # processes = connection.list_processes()
+        # for process in processes:
+        #     print(process)
+        #     print()
+
+        par = connection.read_par('istu.par')
+        print()
+        print(par)
+        print()
+
+        # opt = connection.read_opt('WS31.OPT')
+        # print()
+        # print(opt)
+        # print()
+        # resolved = opt.resolve_worksheet('HELLO')
+        # print(resolved)
+        # print()
+
+        # menu = connection.read_menu('stamp.mnu')
+        # print()
+        # print(menu)
+        # print()
 
         # max_mfn = connection.get_max_mfn()
         # print('Max MFN:', max_mfn)
@@ -35,17 +53,17 @@ class TestConnect(unittest.TestCase):
         # print()
         # print(record.fm(200, 'a'))
 
-        terms = connection.read_terms('K=БЕТОН')
-        for term in terms:
-            print(term)
+        # terms = connection.read_terms('K=БЕТОН')
+        # for term in terms:
+        #     print(term)
 
         # parameters = TermParameters('K=БЕТОН')
         # terms = connection.read_terms(parameters)
         # for term in terms:
         #     print(term)
 
-        found = connection.search('K=бетон')
-        print(found)
+        # found = connection.search('K=бетон')
+        # print(found)
 
         # for mfn in found:
         #     line = connection.format_record("@sbrief", mfn)

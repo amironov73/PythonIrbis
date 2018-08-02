@@ -420,6 +420,38 @@ class IrbisConnection:
     def read_binary_file(self, specification: FileSpecification):
         pass
 
+    def read_menu(self, specification: Union[FileSpecification, str]) -> MenuFile:
+        if isinstance(specification, str):
+            specification = FileSpecification(MASTER_FILE, self.database, specification)
+
+        query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
+        with self.execute(query) as response:
+            result = MenuFile()
+            result.parse(response)
+            return result
+
+    def read_opt(self, specification: Union[FileSpecification, str]) -> OptFile:
+        if isinstance(specification, str):
+            specification = FileSpecification(MASTER_FILE, self.database, specification)
+
+        query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
+        with self.execute(query) as response:
+            result = OptFile()
+            text = irbis_to_lines(response.ansi_remaining_text())
+            result.parse(text)
+            return result
+
+    def read_par(self, specification: Union[FileSpecification, str]) -> ParFile:
+        if isinstance(specification, str):
+            specification = FileSpecification(DATA, None, specification)
+
+        query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
+        with self.execute(query) as response:
+            result = ParFile()
+            text = irbis_to_lines(response.ansi_remaining_text())
+            result.parse(text)
+            return result
+
     def read_postings(self, parameters) -> [TermPosting]:
         pass
 

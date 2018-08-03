@@ -1,6 +1,6 @@
 import re
 import socket
-from typing import Union, Optional
+from typing import Optional
 
 # Encodings
 
@@ -191,6 +191,10 @@ def irbis_to_dos(text: str) -> str:
 def irbis_to_lines(text: str) -> [str]:
     return text.split(IRBIS_DELIMITER)
 
+
+def short_irbis_to_lines(text: str) -> [str]:
+    return text.split(SHORT_DELIMITER)
+
 ###############################################################################
 
 
@@ -239,7 +243,8 @@ class ClientQuery:
         :param encoding: Кодировка
         :return: Себя
         """
-        self._memory.extend(text.encode(encoding))
+        if text is not None:
+            self._memory.extend(text.encode(encoding))
         self.new_line()
         return self
 
@@ -621,7 +626,7 @@ class UserInfo:
         return ' '.join(x for x in buffer if x)
 
 
-class IrbisProcessInfo:
+class ServerProcess:
     """
     Информация о запущенном на сервере процессе.
     """
@@ -638,7 +643,7 @@ class IrbisProcessInfo:
         if not process_count or not lines_per_process:
             return result
         for i in range(process_count):
-            process = IrbisProcessInfo()
+            process = ServerProcess()
             process.number = response.ansi()
             process.ip = response.ansi()
             process.name = response.ansi()
@@ -974,6 +979,8 @@ class ServerStat:
         self.total_command_count = response.number()
         self.client_count = response.number()
         lines_per_client = response.number()
+        if not lines_per_client:
+            return
 
         for i in range(self.client_count):
             client = ClientInfo()
@@ -1035,4 +1042,28 @@ class DatabaseInfo:
         if not self.description:
             return self.name or '(none)'
         return self.name + ' - ' + self.description
+
+###############################################################################
+
+# Определение таблицы, данные для команды TableCommand
+
+
+class TableDefinition:
+    """
+    Определение таблицы, данные для команды TableCommand
+    """
+
+    __slots__ = ('database', 'table', 'headers', 'mode', 'search',
+                 'min_mfn', 'max_mfn', 'sequential', 'mfn_list')
+
+    def __init__(self):
+        self.database: str = None
+        self.table: str = None
+        self.headers: [str] = []
+        self.mode: str = None
+        self.search: str = None
+        self.min_mfn: int = 0
+        self.max_mfn: int = 0
+        self.sequential: str = None
+        self.mfn_list: [int] = []
 

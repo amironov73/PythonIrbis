@@ -8,7 +8,7 @@ root.geometry('400x300')
 label1 = Label(text='Ключевое слово', justify=LEFT)
 label1.place(x=10, y=5)
 
-keyword=StringVar()
+keyword = StringVar()
 input1 = Entry(textvariable=keyword)
 input1.place(x=10, y=25, width=280)
 

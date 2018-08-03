@@ -19,15 +19,36 @@ class TestConnect(unittest.TestCase):
         version = connection.get_server_version()
         print(version)
 
-        # processes = connection.list_processes()
-        # for process in processes:
-        #     print(process)
-        #     print()
+        processes = connection.list_processes()
+        print()
+        print(len(processes))
+        for process in processes:
+            print(process)
+            print()
+        print()
 
-        par = connection.read_par('istu.par')
+        users = connection.get_user_list()
         print()
-        print(par)
+        for user in users:
+            print(user)
         print()
+
+        # stat = connection.get_server_stat()
+        # print()
+        # print(stat)
+        # for x in stat.running_clients:
+        #     print(x)
+        # print()
+
+        # info = connection.get_database_info()
+        # print()
+        # print(info, info.max_mfn)
+        # print()
+
+        # par = connection.read_par('istu.par')
+        # print()
+        # print(par)
+        # print()
 
         # opt = connection.read_opt('WS31.OPT')
         # print()

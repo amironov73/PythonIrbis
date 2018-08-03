@@ -272,14 +272,14 @@ class IrbisConnection:
         self.connected = True
         return ''
 
-    def create_database(self, database: str, description: str = '', reader_access: bool = True) -> None:
+    def create_database(self, database: Optional[str] = None, description: str = '', reader_access: bool = True) -> None:
         database = database or self.database or throw_value_error()
         query = ClientQuery(self, CREATE_DATABASE)
         query.ansi(database).ansi(description).add(int(reader_access))
         with self.execute(query) as response:
             response.check_return_code()
 
-    def create_dictionary(self, database: str = '') -> None:
+    def create_dictionary(self, database: Optional[str] = None) -> None:
         database = database or self.database or throw_value_error()
         query = ClientQuery(self, CREATE_DICTIONARY)
         query.ansi(database)
@@ -336,7 +336,17 @@ class IrbisConnection:
         with self.execute(query) as response:
             response.check_return_code()
             result = response.utf_remaining_text()
-        return result
+            return result
+
+    def get_database_info(self, database: Optional[str] = None) -> DatabaseInfo:
+        database = database or self.database or throw_value_error()
+        query = ClientQuery(self, RECORD_LIST).ansi(database)
+        with self.execute(query) as response:
+            response.check_return_code()
+            result = DatabaseInfo()
+            result.parse(response)
+            result.name = database
+            return result
 
     def get_max_mfn(self, database='') -> int:
         database = database or self.database or throw_value_error()
@@ -347,8 +357,13 @@ class IrbisConnection:
             result = response.return_code
             return result
 
-    def get_server_stat(self):
-        pass
+    def get_server_stat(self) -> ServerStat:
+        query = ClientQuery(self, GET_SERVER_STAT)
+        with self.execute(query) as response:
+            response.check_return_code()
+            result = ServerStat()
+            result.parse(response)
+            return result
 
     def get_server_version(self) -> IrbisVersion:
         query = ClientQuery(self, SERVER_INFO)
@@ -359,8 +374,12 @@ class IrbisConnection:
             result.parse(lines)
             return result
 
-    def get_user_list(self):
-        pass
+    def get_user_list(self) -> [UserInfo]:
+        query = ClientQuery(self, GET_USER_LIST)
+        with self.execute(query) as response:
+            response.check_return_code()
+            result = UserInfo.parse(response)
+            return result
 
     def list_files(self, specification: FileSpecification) -> [str]:
         query = ClientQuery(self, LIST_FILES)

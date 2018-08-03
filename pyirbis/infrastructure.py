@@ -574,26 +574,51 @@ class ServerResponse:
 
 
 class UserInfo:
+    """
+    Информация о зарегистрированном пользователе системы
+    """
+
+    __slots__ = ('number', 'name', 'password', 'cataloger',
+                 'reader', 'circulation', 'acquisitions',
+                 'provision', 'administrator')
 
     def __init__(self):
-        self.number = ''
-        self.name = ''
-        self.password = ''
-        self.cataloger = ''
-        self.reader = ''
-        self.circulation = ''
-        self.acquisitions = ''
-        self.provision = ''
-        self.administrator = ''
+        self.number: str = ''
+        self.name: str = ''
+        self.password: str = ''
+        self.cataloger: str = ''
+        self.reader: str = ''
+        self.circulation: str = ''
+        self.acquisitions: str = ''
+        self.provision: str = ''
+        self.administrator: str = ''
 
-    def parse(self, response: ServerResponse):
-        pass
+    @staticmethod
+    def parse(response: ServerResponse) -> []:
+        result = []
+        user_count = response.number()
+        lines_per_user = response.number()
+        if not user_count or not lines_per_user:
+            return result
+        for i in range(user_count):
+            user = UserInfo()
+            user.number = response.ansi()
+            user.name = response.ansi()
+            user.password = response.ansi()
+            user.cataloger = response.ansi()
+            user.reader = response.ansi()
+            user.circulation = response.ansi()
+            user.acquisitions = response.ansi()
+            user.provision = response.ansi()
+            user.administrator = response.ansi()
+            result.append(user)
+        return result
 
     def __str__(self):
         buffer = [self.number, self.name, self.password, self.cataloger,
                   self.reader, self.circulation, self.acquisitions,
                   self.provision, self.administrator]
-        return '\n'.join(buffer)
+        return ' '.join(x for x in buffer if x)
 
 
 class IrbisProcessInfo:
@@ -610,23 +635,20 @@ class IrbisProcessInfo:
         result = []
         process_count = response.number()
         lines_per_process = response.number()
-        if process_count == 0 or lines_per_process == 0:
+        if not process_count or not lines_per_process:
             return result
         for i in range(process_count):
-            lines = response.ansi_n(lines_per_process + 1)
-            if not lines:
-                break
             process = IrbisProcessInfo()
-            process.number = lines[0]
-            process.ip = lines[1]
-            process.name = lines[2]
-            process.client_id = lines[3]
-            process.workstation = lines[4]
-            process.started = lines[5]
-            process.last_command = lines[6]
-            process.command_number = lines[7]
-            process.process_id = lines[8]
-            process.state = lines[9]
+            process.number = response.ansi()
+            process.ip = response.ansi()
+            process.name = response.ansi()
+            process.client_id = response.ansi()
+            process.workstation = response.ansi()
+            process.started = response.ansi()
+            process.last_command = response.ansi()
+            process.command_number = response.ansi()
+            process.process_id = response.ansi()
+            process.state = response.ansi()
             result.append(process)
         return result
 
@@ -634,7 +656,7 @@ class IrbisProcessInfo:
         buffer = [self.number, self.ip, self.name, self.client_id,
                   self.workstation, self.started, self.last_command,
                   self.command_number, self.process_id, self.state]
-        return '\n'.join(buffer)
+        return '\n'.join(x for x in buffer if x)
 
 
 ###############################################################################
@@ -894,3 +916,123 @@ class ParFile:
                   '10=' + self.pft,
                   '11=' + self.ext]
         return '\n'.join(result)
+
+
+###############################################################################
+
+# Информация о клиенте
+
+class ClientInfo:
+    """
+    Информация о клиенте, подключенном к серверу ИРБИС
+    (не обязательно о текущем)
+    """
+
+    __slots__ = ('number', 'ip', 'port', 'name', 'client_id',
+                 'workstation', 'registered', 'acknowledged',
+                 'last_command', 'command_number')
+
+    def __init__(self):
+        self.number: str = ''
+        self.ip: str = ''
+        self.port: str = ''
+        self.name: str = ''
+        self.client_id: str = ''
+        self.workstation: str = ''
+        self.registered: str = ''
+        self.acknowledged: str = ''
+        self.last_command: str = ''
+        self.command_number: str = ''
+
+    def __str__(self):
+        return ' '.join([self.number, self.ip, self.port, self.name,
+                         self.client_id, self.workstation,
+                         self.registered, self.acknowledged,
+                         self.last_command, self.command_number])
+
+    def __repr__(self):
+        return self.__str__()
+
+###############################################################################
+
+# Статистика работы ИРБИС-сервера
+
+
+class ServerStat:
+    """
+    Статистика работы ИРБИС-сервера
+    """
+
+    __slots__ = 'running_clients', 'client_count', 'total_command_count'
+
+    def __init__(self):
+        self.running_clients: [ClientInfo] = []
+        self.client_count: int = 0
+        self.total_command_count: int = 0
+
+    def parse(self, response: ServerResponse) -> None:
+        self.total_command_count = response.number()
+        self.client_count = response.number()
+        lines_per_client = response.number()
+
+        for i in range(self.client_count):
+            client = ClientInfo()
+            client.number = response.ansi()
+            client.ip = response.ansi()
+            client.port = response.ansi()
+            client.name = response.ansi()
+            client.client_id = response.ansi()
+            client.workstation = response.ansi()
+            client.registered = response.ansi()
+            client.acknowledged = response.ansi()
+            client.last_command = response.ansi()
+            client.command_number = response.ansi()
+            self.running_clients.append(client)
+
+    def __str__(self):
+        return str(self.client_count) + ', ' + str(self.total_command_count)
+
+###############################################################################
+
+# Информация о базе данных ИРБИС
+
+
+class DatabaseInfo:
+    """
+    Информация о базе данных ИРБИС.
+    """
+
+    __slots__ = ('name', 'description', 'max_mfn', 'logically_deleted',
+                 'physically_deleted', 'nonactualized', 'locked_records',
+                 'database_locked', 'read_only')
+
+    def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
+        self.name: str = name
+        self.description: str = description
+        self.max_mfn: int = 0
+        self.logically_deleted: [int] = []
+        self.physically_deleted: [int] = []
+        self.nonactualized: [int] = []
+        self.locked_records: [int] = []
+        self.database_locked: bool = False
+        self.read_only: bool = False
+
+    @staticmethod
+    def _parse(line: str) -> [int]:
+        if not line:
+            return []
+        return [int(x) for x in line.split(SHORT_DELIMITER) if x]
+
+    def parse(self, response: ServerResponse) -> None:
+        self.logically_deleted = self._parse(response.ansi())
+        self.physically_deleted = self._parse(response.ansi())
+        self.nonactualized = self._parse(response.ansi())
+        self.locked_records = self._parse(response.ansi())
+        self.max_mfn = int(response.ansi())
+        self.database_locked = bool(int(response.ansi()))
+
+    def __str__(self):
+        if not self.description:
+            return self.name or '(none)'
+        return self.name + ' - ' + self.description
+

@@ -3,12 +3,12 @@ class PostingParameters:
     Параметры для команды ReadPostings.
     """
 
-    __slots__ = 'database', 'first', 'format', 'number', 'terms'
+    __slots__ = 'database', 'first', 'fmt', 'number', 'terms'
 
-    def __init__(self, term: str = ''):
-        self.database: str = ''
+    def __init__(self, term: str = None, fmt: str = None):
+        self.database: str = None
         self.first: int = 1
-        self.format: str = ''
+        self.fmt: str = fmt
         self.number: int = 0
         self.terms: [str] = []
         if term:
@@ -93,7 +93,7 @@ class TermParameters:
 
     __slots__ = 'database', 'number', 'reverse', 'start', 'format'
 
-    def __init__(self, start: str = '', number: int = 10):
+    def __init__(self, start: str = None, number: int = 10):
         self.database: str = ''
         self.number: int = number
         self.reverse: bool = False
@@ -111,8 +111,28 @@ class TermPosting:
 
     __slots__ = 'mfn', 'tag', 'occurrence', 'count', 'text'
 
+    def __init__(self):
+        self.mfn: int = 0
+        self.tag: int = 0
+        self.occurrence: int = 0
+        self.count: int = 0
+        self.text: str = None
+
+    def parse(self, text: str) -> None:
+        parts = text.split('#', 5)
+        if len(parts) < 4:
+            return
+        self.mfn = int(parts[0])
+        self.tag = int(parts[1])
+        self.occurrence = int(parts[2])
+        self.count = int(parts[3])
+        if len(parts) > 4:
+            self.text = parts[4]
+
     def __str__(self):
-        return ' '.join([self.mfn, self.tag, self.occurrence, self.count, self.text])
+        return ' '.join([str(self.mfn), str(self.tag),
+                         str(self.occurrence), str(self.count),
+                         self.text])
 
     def __repr__(self):
-        return ' '.join([self.mfn, self.tag, self.occurrence, self.count, self.text])
+        return self.__str__()

@@ -7,31 +7,39 @@ class TestConnect(unittest.TestCase):
 
     def test_connection(self):
         connection = IrbisConnection()
-        connection.host = '127.0.0.1'
-        connection.port = 6666
-        connection.username = '1'
-        connection.password = '1'
-        connection.database = 'ISTU'
-        connection.workstation = 'C'
+        connection.parse_connection_string('host=127.0.0.1;port=6666;user=1;password=1;db=ISTU;arm=A;')
+        # connection.host = '127.0.0.1'
+        # connection.port = 6666
+        # connection.username = '1'
+        # connection.password = '1'
+        # connection.database = 'ISTU'
+        # connection.workstation = 'C'
         connection.connect()
         print('Connected')
 
         version = connection.get_server_version()
         print(version)
 
-        processes = connection.list_processes()
-        print()
-        print(len(processes))
-        for process in processes:
-            print(process)
-            print()
-        print()
+        # definition = TableDefinition()
+        # definition.search = "К=молоко"
+        # text = connection.print_table(definition)
+        # print()
+        # print(text)
+        # print()
 
-        users = connection.get_user_list()
-        print()
-        for user in users:
-            print(user)
-        print()
+        # processes = connection.list_processes()
+        # print()
+        # print(len(processes))
+        # for process in processes:
+        #     print(process)
+        #     print()
+        # print()
+        #
+        # users = connection.get_user_list()
+        # print()
+        # for user in users:
+        #     print(user)
+        # print()
 
         # stat = connection.get_server_stat()
         # print()
@@ -77,6 +85,9 @@ class TestConnect(unittest.TestCase):
         # terms = connection.read_terms('K=БЕТОН')
         # for term in terms:
         #     print(term)
+        #     postings = connection.read_postings(term.text, 'v200^a')
+        #     for posting in postings:
+        #         print('\t', posting)
 
         # parameters = TermParameters('K=БЕТОН')
         # terms = connection.read_terms(parameters)
@@ -89,6 +100,24 @@ class TestConnect(unittest.TestCase):
         # for mfn in found:
         #     line = connection.format_record("@sbrief", mfn)
         #     print(line)
+
+        # record = MarcRecord()
+        # record.add(200, SubField('a', 'Сгенерированная запись'))
+        # record.add(300, 'Комментарий')
+        # record.add(700, SubField('a', 'Пайтон'), SubField('b', 'М.'),
+        #            SubField('g', 'Монти'))
+        # record.add(910, SubField('a', '0'), SubField('b', '1'),
+        #            SubField('c', '?'), SubField('d', 'ФКХ'))
+        # print()
+        # print(record)
+        # connection.write_record(record)
+        # print()
+        # print(record)
+        # print()
+
+        specification = FileSpecification(MASTER_FILE, 'IBIS', 'no_such_file.txt')
+        specification.content = 'No such file'
+        connection.write_text_file(specification)
 
         connection.disconnect()
         print('Disconnected')

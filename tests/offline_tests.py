@@ -9,12 +9,12 @@ class TestSubField(unittest.TestCase):
     def test_init_1(self):
         sf = SubField()
         self.assertEqual(sf.code, '\0')
-        self.assertEqual(sf.value, '')
+        self.assertIsNone(sf.value)
 
     def test_init_2(self):
         sf = SubField('a')
         self.assertEqual(sf.code, 'a')
-        self.assertEqual(sf.value, '')
+        self.assertIsNone(sf.value)
 
     def test_init_3(self):
         sf = SubField('a', 'Some text')
@@ -37,13 +37,13 @@ class TestRecordField(unittest.TestCase):
     def test_init_1(self):
         field = RecordField()
         self.assertEqual(field.tag, 0)
-        self.assertEqual(field.value, '')
+        self.assertIsNone(field.value)
         self.assertEqual(len(field.subfields), 0)
 
     def test_init_2(self):
         field = RecordField(100)
         self.assertEqual(field.tag, 100)
-        self.assertEqual(field.value, '')
+        self.assertIsNone(field.value)
         self.assertEqual(len(field.subfields), 0)
 
     def test_init_3(self):
@@ -96,7 +96,7 @@ class TestMarcRecord(unittest.TestCase):
 
     def test_init_1(self):
         record = MarcRecord()
-        self.assertEqual(record.database, '')
+        self.assertIsNone(record.database)
         self.assertEqual(record.mfn, 0)
         self.assertEqual(record.version, 0)
         self.assertEqual(record.status, 0)

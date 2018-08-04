@@ -126,10 +126,15 @@ class TestConnect(unittest.TestCase):
         # print(table.trim('___Удаление лишних символов!!!'))
         # print()
 
-        table = connection.read_uppercase_table()
+        # table = connection.read_uppercase_table()
+        # print()
+        # print(table.upper('Не слышны в саду даже шорохи!'))
+        # print(table.upper('Quick brown fox jumps over the lazy dog?'))
+        # print()
+
+        tree = connection.read_tree_file('ii.tre')
         print()
-        print(table.upper('Не слышны в саду даже шорохи!'))
-        print(table.upper('Quick brown fox jumps over the lazy dog?'))
+        print(tree)
         print()
 
         connection.disconnect()

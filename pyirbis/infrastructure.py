@@ -1455,3 +1455,109 @@ class UpperCaseTable:
             else:
                 result.append(c)
         return ''.join(result)
+
+###############################################################################
+
+# Tree
+
+
+class TreeNode:
+    """
+    TRE-file line.
+    """
+
+    __slots__ = 'children', 'value', 'level'
+
+    def __init__(self, value: Optional[str] = None, level: int = 0):
+        self.children = []
+        self.value = value
+        self.level = level
+
+    def add(self, name: str):
+        result = TreeNode(name)
+        self.children.append(result)
+        return result
+
+    def write(self) -> [str]:
+        result = [TreeFile.INDENT * self.level + self.value]
+        for child in self.children:
+            inner = child.write()
+            result.extend(inner)
+        return result
+
+    def __str__(self):
+        return self.value
+
+    def __repr__(self):
+        return self.value
+
+
+class TreeFile:
+    """
+    TRE-file.
+    """
+
+    INDENT = '\u0009'
+
+    __slots__ = 'roots'
+
+    def __init__(self):
+        self.roots = []
+
+    @staticmethod
+    def _count_indent(text: str) -> int:
+        result = 0
+        for c in text:
+            if c == TreeFile.INDENT:
+                result += 1
+            else:
+                break
+        return result
+
+    @staticmethod
+    def _arrange_level(nodes: [TreeNode], level: int) -> None:
+        count = len(nodes)
+        index = 0
+        while index < count:
+            index = TreeFile._arrange_nodes(nodes, level, index, count)
+
+    @staticmethod
+    def _arrange_nodes(nodes: [TreeNode], level: int, index: int, count: int) -> int:
+        nxt = index + 1
+        level2 = level + 1
+        parent = nodes[index]
+        while nxt < count:
+            child = nodes[nxt]
+            if child.level <= level:
+                break
+            if child.level == level2:
+                parent.children.append(child)
+            nxt += 1
+        return nxt
+
+    def add(self, name: str) -> TreeNode:
+        result = TreeNode(name)
+        self.roots.append(result)
+        return result
+
+    def parse(self, text: [str]):
+        nodes = []
+        for line in text:
+            level = TreeFile._count_indent(line)
+            line = line[level:]
+            node = TreeNode(line, level)
+            nodes.append(node)
+
+        max_level = max(node.level for node in nodes)
+        for level in range(max_level):
+            TreeFile._arrange_level(nodes, level)
+
+        for node in nodes:
+            if node.level == 0:
+                self.roots.append(node)
+
+    def __str__(self):
+        result = []
+        for node in self.roots:
+            result.extend(node.write())
+        return '\n'.join(result)

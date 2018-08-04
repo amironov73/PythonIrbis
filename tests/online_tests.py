@@ -115,9 +115,16 @@ class TestConnect(unittest.TestCase):
         # print(record)
         # print()
 
-        specification = FileSpecification(MASTER_FILE, 'IBIS', 'no_such_file.txt')
-        specification.content = 'No such file'
-        connection.write_text_file(specification)
+        # specification = FileSpecification(MASTER_FILE, 'IBIS', 'no_such_file.txt')
+        # specification.content = 'No such file'
+        # connection.write_text_file(specification)
+
+        table = connection.read_alphabet_table()
+        print()
+        print(table.split_words('Не слышны в саду даже шорохи!'))
+        print(table.split_words('Quick brown fox jumps over the lazy dog?'))
+        print(table.trim('___Удаление лишних символов!!!'))
+        print()
 
         connection.disconnect()
         print('Disconnected')

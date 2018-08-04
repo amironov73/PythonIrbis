@@ -604,6 +604,18 @@ class IrbisConnection:
         self.database = database
         return result
 
+    def read_alphabet_table(self, specification: Optional[FileSpecification] = None) -> AlphabetTable:
+        if specification is None:
+            specification = FileSpecification(SYSTEM, None, AlphabetTable.FILENAME)
+
+        query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
+        with self.execute(query) as response:
+            result = AlphabetTable()
+            result.parse(response)
+            if not result.characters:
+                result = AlphabetTable.get_default()
+            return result
+
     def read_binary_file(self, specification: FileSpecification):
         """
         Чтение двоичного файла с сервера.

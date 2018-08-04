@@ -1067,3 +1067,86 @@ class TableDefinition:
         self.sequential: str = None
         self.mfn_list: [int] = []
 
+###############################################################################
+
+# Alphabet character table
+
+class AlphabetTable:
+    """
+    Alphabet character table
+    """
+
+    FILENAME = 'isisacw.tab'
+
+    __slots__ = 'characters'
+
+    def __init__(self):
+        self.characters = []
+
+    @staticmethod
+    def get_default():
+        result = AlphabetTable()
+        result.characters = [
+            '\u0026', '\u0040', '\u0041', '\u0042', '\u0043', '\u0044', '\u0045',
+            '\u0046', '\u0047', '\u0048', '\u0049', '\u004A', '\u004B', '\u004C',
+            '\u004D', '\u004E', '\u004F', '\u0050', '\u0051', '\u0052', '\u0053',
+            '\u0054', '\u0055', '\u0056', '\u0057', '\u0058', '\u0059', '\u005A',
+            '\u0061', '\u0062', '\u0063', '\u0064', '\u0065', '\u0066', '\u0067',
+            '\u0068', '\u0069', '\u006A', '\u006B', '\u006C', '\u006D', '\u006E',
+            '\u006F', '\u0070', '\u0071', '\u0072', '\u0073', '\u0074', '\u0075',
+            '\u0076', '\u0077', '\u0078', '\u0079', '\u007A', '\u0098', '\u00A0',
+            '\u00A4', '\u00A6', '\u00A7', '\u00A9', '\u00AB', '\u00AC', '\u00AD',
+            '\u00AE', '\u00B0', '\u00B1', '\u00B5', '\u00B6', '\u00B7', '\u00BB',
+            '\u0401', '\u0402', '\u0403', '\u0404', '\u0405', '\u0406', '\u0407',
+            '\u0408', '\u0409', '\u040A', '\u040B', '\u040C', '\u040E', '\u040F',
+            '\u0410', '\u0411', '\u0412', '\u0413', '\u0414', '\u0415', '\u0416',
+            '\u0417', '\u0418', '\u0419', '\u041A', '\u041B', '\u041C', '\u041D',
+            '\u041E', '\u041F', '\u0420', '\u0421', '\u0422', '\u0423', '\u0424',
+            '\u0425', '\u0426', '\u0427', '\u0428', '\u0429', '\u042A', '\u042B',
+            '\u042C', '\u042D', '\u042E', '\u042F', '\u0430', '\u0431', '\u0432',
+            '\u0433', '\u0434', '\u0435', '\u0436', '\u0437', '\u0438', '\u0439',
+            '\u043A', '\u043B', '\u043C', '\u043D', '\u043E', '\u043F', '\u0440',
+            '\u0441', '\u0442', '\u0443', '\u0444', '\u0445', '\u0446', '\u0447',
+            '\u0448', '\u0449', '\u044A', '\u044B', '\u044C', '\u044D', '\u044E',
+            '\u044F', '\u0451', '\u0452', '\u0453', '\u0454', '\u0455', '\u0456',
+            '\u0457', '\u0458', '\u0459', '\u045A', '\u045B', '\u045C', '\u045E',
+            '\u045F', '\u0490', '\u0491', '\u2013', '\u2014', '\u2018', '\u2019',
+            '\u201A', '\u201C', '\u201D', '\u201E', '\u2020', '\u2021', '\u2022',
+            '\u2026', '\u2030', '\u2039', '\u203A', '\u20AC', '\u2116', '\u2122'
+        ]
+        return result
+
+    def is_alpha(self, c) -> bool:
+        return c is self.characters
+
+    def parse(self, response: ServerResponse) -> None:
+        text = response.ansi_remaining_text()
+        text = irbis_to_lines(text)
+        b = bytearray()
+        for line in text:
+            parts = line.strip().split(' ')
+            b.extend(int(x) for x in parts if x)
+        b.remove(0x98)  # Этот символ не мапится
+        self.characters = list(b.decode(ANSI))
+
+    def split_words(self, text: str) -> [str]:
+        result = []
+        accumulator = []
+        for c in text:
+            if c in self.characters:
+                accumulator.append(c)
+            else:
+                if accumulator:
+                    result.append(''.join(accumulator))
+                    accumulator.clear()
+        if accumulator:
+            result.append(''.join(accumulator))
+        return result
+
+    def trim(self, text: str) -> str:
+        result = text
+        while result and result[0] not in self.characters:
+            result = result[1:]
+        while result and result[-1] not in self.characters:
+            result = result[:-1]
+        return result

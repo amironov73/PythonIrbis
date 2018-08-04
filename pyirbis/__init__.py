@@ -761,6 +761,18 @@ class IrbisConnection:
             result = response.ansi_remaining_text()
         return result
 
+    def read_uppercase_table(self, specification: Optional[FileSpecification] = None) -> UpperCaseTable:
+        if specification is None:
+            specification = FileSpecification(SYSTEM, None, UpperCaseTable.FILENAME)
+
+        query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
+        with self.execute(query) as response:
+            result = UpperCaseTable()
+            result.parse(response)
+            if not result.mapping:
+                result = UpperCaseTable.get_default()
+            return result
+
     def reload_dictionary(self, database: str = '') -> None:
         """
         Пересоздание словаря.

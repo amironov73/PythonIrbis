@@ -119,11 +119,17 @@ class TestConnect(unittest.TestCase):
         # specification.content = 'No such file'
         # connection.write_text_file(specification)
 
-        table = connection.read_alphabet_table()
+        # table = connection.read_alphabet_table()
+        # print()
+        # print(table.split_words('Не слышны в саду даже шорохи!'))
+        # print(table.split_words('Quick brown fox jumps over the lazy dog?'))
+        # print(table.trim('___Удаление лишних символов!!!'))
+        # print()
+
+        table = connection.read_uppercase_table()
         print()
-        print(table.split_words('Не слышны в саду даже шорохи!'))
-        print(table.split_words('Quick brown fox jumps over the lazy dog?'))
-        print(table.trim('___Удаление лишних символов!!!'))
+        print(table.upper('Не слышны в саду даже шорохи!'))
+        print(table.upper('Quick brown fox jumps over the lazy dog?'))
         print()
 
         connection.disconnect()

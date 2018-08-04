@@ -759,7 +759,20 @@ class IrbisConnection:
         query.ansi(str(specification))
         with self.execute(query) as response:
             result = response.ansi_remaining_text()
-        return result
+            return result
+
+    def read_tree_file(self, specification: Union[FileSpecification, str]) -> TreeFile:
+        if isinstance(specification, str):
+            specification = FileSpecification(MASTER_FILE, self.database, specification)
+
+        query = ClientQuery(self, READ_DOCUMENT)
+        query.ansi(str(specification))
+        with self.execute(query) as response:
+            text = response.ansi_remaining_text()
+            text = [line for line in irbis_to_lines(text) if line]
+            result = TreeFile()
+            result.parse(text)
+            return result
 
     def read_uppercase_table(self, specification: Optional[FileSpecification] = None) -> UpperCaseTable:
         if specification is None:

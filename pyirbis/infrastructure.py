@@ -1071,6 +1071,7 @@ class TableDefinition:
 
 # Alphabet character table
 
+
 class AlphabetTable:
     """
     Alphabet character table
@@ -1125,7 +1126,7 @@ class AlphabetTable:
         b = bytearray()
         for line in text:
             parts = line.strip().split(' ')
-            b.extend(int(x) for x in parts if x)
+            b.extend(int(x) for x in parts if x and x.isdigit())
         b.remove(0x98)  # Этот символ не мапится
         self.characters = list(b.decode(ANSI))
 
@@ -1150,3 +1151,307 @@ class AlphabetTable:
         while result and result[-1] not in self.characters:
             result = result[:-1]
         return result
+
+###############################################################################
+
+# Upper-case character table
+
+
+class UpperCaseTable:
+    """
+    Upper-case character table.
+    """
+
+    FILENAME = 'isisucw.tab'
+
+    __slots__ = 'mapping'
+
+    def __init__(self):
+        self.mapping = dict()
+
+    @staticmethod
+    def get_default():
+        result = UpperCaseTable()
+        result.mapping = {
+            chr(0x0000): chr(0x0000),
+            chr(0x0001): chr(0x0001),
+            chr(0x0002): chr(0x0002),
+            chr(0x0003): chr(0x0003),
+            chr(0x0004): chr(0x0004),
+            chr(0x0005): chr(0x0005),
+            chr(0x0006): chr(0x0006),
+            chr(0x0007): chr(0x0007),
+            chr(0x0008): chr(0x0008),
+            chr(0x0009): chr(0x0009),
+            chr(0x000A): chr(0x000A),
+            chr(0x000B): chr(0x000B),
+            chr(0x000C): chr(0x000C),
+            chr(0x000D): chr(0x000D),
+            chr(0x000E): chr(0x000E),
+            chr(0x000F): chr(0x000F),
+            chr(0x0010): chr(0x0010),
+            chr(0x0011): chr(0x0011),
+            chr(0x0012): chr(0x0012),
+            chr(0x0013): chr(0x0013),
+            chr(0x0014): chr(0x0014),
+            chr(0x0015): chr(0x0015),
+            chr(0x0016): chr(0x0016),
+            chr(0x0017): chr(0x0017),
+            chr(0x0018): chr(0x0018),
+            chr(0x0019): chr(0x0019),
+            chr(0x001A): chr(0x001A),
+            chr(0x001B): chr(0x001B),
+            chr(0x001C): chr(0x001C),
+            chr(0x001D): chr(0x001C),
+            chr(0x001E): chr(0x001E),
+            chr(0x001F): chr(0x001F),
+            chr(0x0020): chr(0x0020),
+            chr(0x0021): chr(0x0021),
+            chr(0x0022): chr(0x0022),
+            chr(0x0023): chr(0x0023),
+            chr(0x0024): chr(0x0024),
+            chr(0x0025): chr(0x0025),
+            chr(0x0026): chr(0x0026),
+            chr(0x0027): chr(0x0027),
+            chr(0x0028): chr(0x0028),
+            chr(0x0029): chr(0x0029),
+            chr(0x002A): chr(0x002A),
+            chr(0x002B): chr(0x002B),
+            chr(0x002C): chr(0x002C),
+            chr(0x002D): chr(0x002D),
+            chr(0x002E): chr(0x002E),
+            chr(0x002F): chr(0x002F),
+            chr(0x0030): chr(0x0030),
+            chr(0x0031): chr(0x0031),
+            chr(0x0032): chr(0x0032),
+            chr(0x0033): chr(0x0033),
+            chr(0x0034): chr(0x0034),
+            chr(0x0035): chr(0x0035),
+            chr(0x0036): chr(0x0036),
+            chr(0x0037): chr(0x0037),
+            chr(0x0038): chr(0x0038),
+            chr(0x0039): chr(0x0039),
+            chr(0x003A): chr(0x003A),
+            chr(0x003B): chr(0x003B),
+            chr(0x003C): chr(0x003C),
+            chr(0x003D): chr(0x003D),
+            chr(0x003E): chr(0x003E),
+            chr(0x003F): chr(0x003F),
+            chr(0x0040): chr(0x0040),
+            chr(0x0041): chr(0x0041),
+            chr(0x0042): chr(0x0042),
+            chr(0x0043): chr(0x0043),
+            chr(0x0044): chr(0x0044),
+            chr(0x0045): chr(0x0045),
+            chr(0x0046): chr(0x0046),
+            chr(0x0047): chr(0x0047),
+            chr(0x0048): chr(0x0048),
+            chr(0x0049): chr(0x0049),
+            chr(0x004A): chr(0x004A),
+            chr(0x004B): chr(0x004B),
+            chr(0x004C): chr(0x004C),
+            chr(0x004D): chr(0x004D),
+            chr(0x004E): chr(0x004E),
+            chr(0x004F): chr(0x004F),
+            chr(0x0050): chr(0x0050),
+            chr(0x0051): chr(0x0051),
+            chr(0x0052): chr(0x0052),
+            chr(0x0053): chr(0x0053),
+            chr(0x0054): chr(0x0054),
+            chr(0x0055): chr(0x0055),
+            chr(0x0056): chr(0x0056),
+            chr(0x0057): chr(0x0057),
+            chr(0x0058): chr(0x0058),
+            chr(0x0059): chr(0x0059),
+            chr(0x005A): chr(0x005A),
+            chr(0x005B): chr(0x005B),
+            chr(0x005C): chr(0x005C),
+            chr(0x005D): chr(0x005D),
+            chr(0x005E): chr(0x005E),
+            chr(0x005F): chr(0x005F),
+            chr(0x0060): chr(0x0060),
+            chr(0x0061): chr(0x0041),
+            chr(0x0062): chr(0x0042),
+            chr(0x0063): chr(0x0043),
+            chr(0x0064): chr(0x0044),
+            chr(0x0065): chr(0x0045),
+            chr(0x0066): chr(0x0046),
+            chr(0x0067): chr(0x0047),
+            chr(0x0068): chr(0x0048),
+            chr(0x0069): chr(0x0049),
+            chr(0x006A): chr(0x004A),
+            chr(0x006B): chr(0x004B),
+            chr(0x006C): chr(0x004C),
+            chr(0x006D): chr(0x004D),
+            chr(0x006E): chr(0x004E),
+            chr(0x006F): chr(0x004F),
+            chr(0x0070): chr(0x0050),
+            chr(0x0071): chr(0x0051),
+            chr(0x0072): chr(0x0052),
+            chr(0x0073): chr(0x0053),
+            chr(0x0074): chr(0x0054),
+            chr(0x0075): chr(0x0055),
+            chr(0x0076): chr(0x0056),
+            chr(0x0077): chr(0x0057),
+            chr(0x0078): chr(0x0058),
+            chr(0x0079): chr(0x0059),
+            chr(0x007A): chr(0x005A),
+            chr(0x007B): chr(0x007B),
+            chr(0x007C): chr(0x007C),
+            chr(0x007D): chr(0x007D),
+            chr(0x007E): chr(0x007E),
+            chr(0x007F): chr(0x007F),
+            chr(0x0402): chr(0x0402),
+            chr(0x0403): chr(0x0403),
+            chr(0x201A): chr(0x201A),
+            chr(0x0453): chr(0x0453),
+            chr(0x201E): chr(0x201E),
+            chr(0x2026): chr(0x2026),
+            chr(0x2020): chr(0x2020),
+            chr(0x2021): chr(0x2021),
+            chr(0x20AC): chr(0x20AC),
+            chr(0x2030): chr(0x2030),
+            chr(0x0409): chr(0x0409),
+            chr(0x2039): chr(0x2039),
+            chr(0x040A): chr(0x040A),
+            chr(0x040C): chr(0x040C),
+            chr(0x040B): chr(0x040B),
+            chr(0x040F): chr(0x040F),
+            chr(0x0452): chr(0x0452),
+            chr(0x2018): chr(0x2018),
+            chr(0x2019): chr(0x2019),
+            chr(0x201C): chr(0x201C),
+            chr(0x201D): chr(0x201D),
+            chr(0x2022): chr(0x2022),
+            chr(0x2013): chr(0x2013),
+            chr(0x2014): chr(0x2014),
+            chr(0x0098): chr(0x0098),
+            chr(0x2122): chr(0x2122),
+            chr(0x0459): chr(0x0459),
+            chr(0x203A): chr(0x203A),
+            chr(0x045A): chr(0x045A),
+            chr(0x045C): chr(0x045C),
+            chr(0x045B): chr(0x045B),
+            chr(0x045F): chr(0x045F),
+            chr(0x00A0): chr(0x00A0),
+            chr(0x040E): chr(0x040E),
+            chr(0x045E): chr(0x040E),
+            chr(0x0408): chr(0x0408),
+            chr(0x00A4): chr(0x00A4),
+            chr(0x0490): chr(0x0490),
+            chr(0x00A6): chr(0x00A6),
+            chr(0x00A7): chr(0x00A7),
+            chr(0x0401): chr(0x0401),
+            chr(0x00A9): chr(0x00A9),
+            chr(0x0404): chr(0x0404),
+            chr(0x00AB): chr(0x00AB),
+            chr(0x00AC): chr(0x00AC),
+            chr(0x00AD): chr(0x00AD),
+            chr(0x00AE): chr(0x00AE),
+            chr(0x0407): chr(0x0407),
+            chr(0x00B0): chr(0x00B0),
+            chr(0x00B1): chr(0x00B1),
+            chr(0x0406): chr(0x0406),
+            chr(0x0456): chr(0x0406),
+            chr(0x0491): chr(0x0490),
+            chr(0x00B5): chr(0x00B5),
+            chr(0x00B6): chr(0x00B6),
+            chr(0x00B7): chr(0x00B7),
+            chr(0x0451): chr(0x0401),
+            chr(0x2116): chr(0x2116),
+            chr(0x0454): chr(0x0404),
+            chr(0x00BB): chr(0x00BB),
+            chr(0x0458): chr(0x0408),
+            chr(0x0405): chr(0x0405),
+            chr(0x0455): chr(0x0405),
+            chr(0x0457): chr(0x0407),
+            chr(0x0410): chr(0x0410),
+            chr(0x0411): chr(0x0411),
+            chr(0x0412): chr(0x0412),
+            chr(0x0413): chr(0x0413),
+            chr(0x0414): chr(0x0414),
+            chr(0x0415): chr(0x0415),
+            chr(0x0416): chr(0x0416),
+            chr(0x0417): chr(0x0417),
+            chr(0x0418): chr(0x0418),
+            chr(0x0419): chr(0x0419),
+            chr(0x041A): chr(0x041A),
+            chr(0x041B): chr(0x041B),
+            chr(0x041C): chr(0x041C),
+            chr(0x041D): chr(0x041D),
+            chr(0x041E): chr(0x041E),
+            chr(0x041F): chr(0x041F),
+            chr(0x0420): chr(0x0420),
+            chr(0x0421): chr(0x0421),
+            chr(0x0422): chr(0x0422),
+            chr(0x0423): chr(0x0423),
+            chr(0x0424): chr(0x0424),
+            chr(0x0425): chr(0x0425),
+            chr(0x0426): chr(0x0426),
+            chr(0x0427): chr(0x0427),
+            chr(0x0428): chr(0x0428),
+            chr(0x0429): chr(0x0429),
+            chr(0x042A): chr(0x042A),
+            chr(0x042B): chr(0x042B),
+            chr(0x042C): chr(0x042C),
+            chr(0x042D): chr(0x042D),
+            chr(0x042E): chr(0x042E),
+            chr(0x042F): chr(0x042F),
+            chr(0x0430): chr(0x0410),
+            chr(0x0431): chr(0x0411),
+            chr(0x0432): chr(0x0412),
+            chr(0x0433): chr(0x0413),
+            chr(0x0434): chr(0x0414),
+            chr(0x0435): chr(0x0415),
+            chr(0x0436): chr(0x0416),
+            chr(0x0437): chr(0x0417),
+            chr(0x0438): chr(0x0418),
+            chr(0x0439): chr(0x0419),
+            chr(0x043A): chr(0x041A),
+            chr(0x043B): chr(0x041B),
+            chr(0x043C): chr(0x041C),
+            chr(0x043D): chr(0x041D),
+            chr(0x043E): chr(0x041E),
+            chr(0x043F): chr(0x041F),
+            chr(0x0440): chr(0x0420),
+            chr(0x0441): chr(0x0421),
+            chr(0x0442): chr(0x0422),
+            chr(0x0443): chr(0x0423),
+            chr(0x0444): chr(0x0424),
+            chr(0x0445): chr(0x0425),
+            chr(0x0446): chr(0x0426),
+            chr(0x0447): chr(0x0427),
+            chr(0x0448): chr(0x0428),
+            chr(0x0449): chr(0x0429),
+            chr(0x044A): chr(0x042A),
+            chr(0x044B): chr(0x042B),
+            chr(0x044C): chr(0x042C),
+            chr(0x044D): chr(0x042D),
+            chr(0x044E): chr(0x042E),
+            chr(0x044F): chr(0x042F)
+        }
+        return result
+
+    def parse(self, response: ServerResponse) -> None:
+        text = response.ansi_remaining_text()
+        text = irbis_to_lines(text)
+        first = bytearray()
+        for line in text:
+            parts = line.strip().split(' ')
+            first.extend(int(x) for x in parts if x and x.isdigit())
+        first = first.replace(b'\x98', b'\x20')  # Этот символ не мапится
+        first = list(first.decode(ANSI))
+        second = bytearray(x for x in range(256))
+        second = second.replace(b'\x98', b'\x20')  # Этот символ не мапится
+        second = list(second.decode(ANSI))
+        for f, s in zip(first, second):
+            self.mapping[s] = f
+
+    def upper(self, text: str) -> str:
+        result = []
+        for c in text:
+            if c in self.mapping:
+                result.append(self.mapping[c])
+            else:
+                result.append(c)
+        return ''.join(result)

@@ -6,6 +6,7 @@ SET COVERAGE="C:\Python36-x64\Scripts\coverage.exe"
 
 %PYTHON% --version
 %PIP% --version
+%PYTHON% -m pip install --upgrade pip
 
 if not exist %COVERAGE% (%PIP% install coverage)
 %COVERAGE% --version
@@ -14,3 +15,4 @@ SET PYTHONPATH=%~dp0
 
 %COVERAGE% run tests\offline_tests.py
 %COVERAGE% report
+%COVERAGE% html

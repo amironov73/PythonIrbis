@@ -1,5 +1,5 @@
 import random
-from typing import Tuple, Union
+from typing import Tuple
 
 from pyirbis.infrastructure import *
 from pyirbis.search import *
@@ -15,9 +15,11 @@ class SubField:
     Подполе с кодом и значением.
     """
 
+    DEFAULT_CODE = '\0'
+
     __slots__ = 'code', 'value'
 
-    def __init__(self, code: str = '\0', value: str = None):
+    def __init__(self, code: Optional[str] = DEFAULT_CODE, value: Optional[str] = None):
         self.code: str = code.lower()
         self.value: str = value
 
@@ -29,10 +31,15 @@ class SubField:
         return SubField(self.code, self.value)
 
     def __str__(self):
+        if self.code == self.DEFAULT_CODE:
+            return ''
         return '^' + self.code + (self.value or '')
 
     def __repr__(self):
         return self.__str__()
+
+    def __bool__(self):
+        return self.code != self.DEFAULT_CODE and bool(self.value)
 
 
 class RecordField:
@@ -40,12 +47,19 @@ class RecordField:
     Поле с тегом, значением (до первого разделителя) и подполями.
     """
 
+    DEFAULT_TAG = 0
+
     __slots__ = 'tag', 'value', 'subfields'
 
-    def __init__(self, tag: int = 0, value: str = None):
-        self.tag: int = tag
-        self.value: value = value
+    def __init__(self, tag: Optional[int] = DEFAULT_TAG, value: Union[SubField, str] = None, *subfields: [SubField]):
+        self.tag: int = tag or self.DEFAULT_TAG
+        self.value: value = None
+        if isinstance(value, str):
+            self.value = value
         self.subfields: [SubField] = []
+        if isinstance(value, SubField):
+            self.subfields.append(value)
+        self.subfields.extend(subfields)
 
     def add(self, code: str, value: str = ''):
         self.subfields.append(SubField(code, value))
@@ -64,6 +78,7 @@ class RecordField:
         self.subfields = [sf.clone() for sf in other.subfields]
 
     def clear(self):
+        self.value = None
         self.subfields = []
         return self
 
@@ -98,31 +113,77 @@ class RecordField:
         return None
 
     def parse(self, line: str) -> None:
-        parts = line.split('#', 2)
-        self.tag = int(parts[0])
-        if '^' not in parts[1]:
-            self.value = parts[1]
-        else:
-            if parts[1][0] != '^':
-                parts = parts[1].split('^', 2)
-                self.value = parts[0]
-                parts = parts[1].split('^')
+        if '#' not in line:
+            if '^' not in line:
+                self.value = line
             else:
-                parts = parts[1].split('^')
-            for x in parts:
-                if x:
-                    sub = SubField(x[:1], x[1:])
-                    self.subfields.append(sub)
+                if line[0] != '^':
+                    parts = line.split('^', 2)
+                    self.value = parts[0]
+                    parts = parts[1].split('^')
+                else:
+                    parts = line.split('^')
+                for x in parts:
+                    if x:
+                        sub = SubField(x[:1], x[1:])
+                        self.subfields.append(sub)
+        else:
+            parts = line.split('#', 2)
+            self.tag = int(parts[0])
+            if '^' not in parts[1]:
+                self.value = parts[1]
+            else:
+                if parts[1][0] != '^':
+                    parts = parts[1].split('^', 2)
+                    self.value = parts[0]
+                    parts = parts[1].split('^')
+                else:
+                    parts = parts[1].split('^')
+                for x in parts:
+                    if x:
+                        sub = SubField(x[:1], x[1:])
+                        self.subfields.append(sub)
 
-    def to_text(self) -> str:
+    def __str__(self):
+        if not self.tag:
+            return ''
         buffer = [str(self.tag), '#', self.value or ''] + [str(sf) for sf in self.subfields]
         return ''.join(buffer)
 
-    def __str__(self):
-        return self.to_text()
-
     def __repr__(self):
-        return self.to_text()
+        return self.__str__()
+
+    def __iter__(self):
+        yield from self.subfields
+
+    def __getitem__(self, item: Union[str, int]):
+        if isinstance(item, int):
+            return self.subfields[item]
+        return self.first(item)
+
+    def __setitem__(self, key: Union[str, int], value: Optional[str]):
+        if isinstance(key, int):
+            if value:
+                self.subfields[key].value = value
+            else:
+                self.subfields.pop(key)
+        else:
+            found = self.first(key)
+            if value:
+                if found:
+                    found.value = value
+                else:
+                    found = SubField(key, value)
+                    self.subfields.append(found)
+            else:
+                if found:
+                    self.subfields.remove(found)
+
+    def __len__(self):
+        return len(self.subfields)
+
+    def __bool__(self):
+        return bool(self.tag) and bool(self.value) or bool(self.subfields)
 
 
 class MarcRecord:
@@ -164,8 +225,7 @@ class MarcRecord:
         result.mfn = self.mfn
         result.status = self.status
         result.version = self.version
-        for f in self.fields:
-            result.fields.append(f.clone())
+        result.fields = [field.clone() for field in self.fields]
         return result
 
     def encode(self) -> [str]:
@@ -234,21 +294,53 @@ class MarcRecord:
             field.parse(line)
             self.fields.append(field)
 
-    def to_text(self) -> str:
+    def __str__(self):
         result = [str(field) for field in self.fields]
         return '\n'.join(result)
 
-    def __str__(self):
-        return self.to_text()
-
     def __repr__(self):
-        return self.to_text()
+        return self.__str__()
 
     def __iter__(self):
-        yield from self.fieldsi
+        yield from self.fields
 
     def __getitem__(self, item: int):
         return self.fm(item)
+
+    def __setitem__(self, key: int, value: Union[RecordField, SubField, str, None]):
+        if value is None:
+            found = self.all(key)
+            for field in found:
+                self.fields.remove(field)
+            return
+
+        found = self.first(key)
+        if isinstance(value, str):
+            if found is None:
+                found = RecordField(key, value)
+                self.fields.append(found)
+            else:
+                found.clear()
+                found.parse(value)
+
+        if isinstance(value, RecordField):
+            if found is None:
+                found = RecordField(key)
+                self.fields.append(found)
+            found.assign_from(value)
+
+        if isinstance(value, SubField):
+            if found is None:
+                found = RecordField(key)
+                self.fields.append(found)
+            found.clear()
+            found.subfields.append(value)
+
+    def __len__(self):
+        return len(self.fields)
+
+    def __bool__(self):
+        return bool(len(self.fields))
 
 ###############################################################################
 
@@ -283,14 +375,14 @@ class IrbisConnection:
         with self.execute(query) as response:
             response.check_return_code()
 
-    def connect(self):
+    def connect(self) -> Optional[IniFile]:
         """
         Подключение к серверу ИРБИС64.
 
         :return: INI-файл
         """
         if self.connected:
-            return
+            return None
 
         self.queryId = 0
         self.clientId = random.randint(100000, 900000)
@@ -299,8 +391,14 @@ class IrbisConnection:
         query.ansi(self.password)
         with self.execute(query) as response:
             response.check_return_code()
-        self.connected = True
-        return ''
+            result = IniFile()
+            text = irbis_to_lines(response.ansi_remaining_text())
+            text = text[0]
+            text = text.splitlines()
+            text = text[1:]
+            result.parse(text)
+            self.connected = True
+            return result
 
     def create_database(self, database: Optional[str] = None,
                         description: Optional[str] = None,

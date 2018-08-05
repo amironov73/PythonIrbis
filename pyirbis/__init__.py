@@ -244,10 +244,16 @@ class MarcRecord:
     def __repr__(self):
         return self.to_text()
 
+    def __iter__(self):
+        yield from self.fieldsi
+
+    def __getitem__(self, item: int):
+        return self.fm(item)
 
 ###############################################################################
 
 # Подключение к серверу
+
 
 class IrbisConnection:
 
@@ -625,6 +631,17 @@ class IrbisConnection:
         """
         pass
 
+    def read_ini(self, specification: Union[FileSpecification, str]) -> IniFile:
+        if isinstance(specification, str):
+            specification = FileSpecification(MASTER_FILE, self.database, specification)
+
+        query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
+        with self.execute(query) as response:
+            result = IniFile()
+            text = irbis_to_lines(response.ansi_remaining_text())
+            result.parse(text)
+            return result
+
     def read_menu(self, specification: Union[FileSpecification, str]) -> MenuFile:
         if isinstance(specification, str):
             specification = FileSpecification(MASTER_FILE, self.database, specification)
@@ -632,7 +649,8 @@ class IrbisConnection:
         query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
         with self.execute(query) as response:
             result = MenuFile()
-            result.parse(response)
+            text = irbis_to_lines(response.ansi_remaining_text())
+            result.parse(text)
             return result
 
     def read_opt(self, specification: Union[FileSpecification, str]) -> OptFile:
@@ -957,4 +975,11 @@ class IrbisConnection:
         query.ansi(str(specification))
         with self.execute(query) as response:
             response.check_return_code()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.disconnect()
+        return exc_type is None
 

@@ -66,10 +66,12 @@ class TestConnect(unittest.TestCase):
         # print(resolved)
         # print()
 
-        # menu = connection.read_menu('stamp.mnu')
-        # print()
-        # print(menu)
-        # print()
+        menu = connection.read_menu('stamp.mnu')
+        print()
+        print(menu['1'])
+        for item in menu:
+            print(item)
+        print()
 
         # max_mfn = connection.get_max_mfn()
         # print('Max MFN:', max_mfn)
@@ -132,9 +134,16 @@ class TestConnect(unittest.TestCase):
         # print(table.upper('Quick brown fox jumps over the lazy dog?'))
         # print()
 
-        tree = connection.read_tree_file('ii.tre')
+        # tree = connection.read_tree_file('ii.tre')
+        # print()
+        # print(tree)
+        # print()
+
+        ini = connection.read_ini('istu.ini')
         print()
-        print(tree)
+        for section in ini:
+            print(section.name)
+        print('ItemNumb=', ini['SEARCH']['ItemNumb'], sep='')
         print()
 
         connection.disconnect()

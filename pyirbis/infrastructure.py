@@ -1,6 +1,6 @@
 import re
 import socket
-from typing import Optional
+from typing import Optional, Union
 
 # Encodings
 
@@ -1557,6 +1557,8 @@ class IniLine:
 
     @staticmethod
     def same_key(first: str, second: str) -> bool:
+        if not first or not second:
+            return False
         return first.upper() == second.upper()
 
     def __str__(self):
@@ -1614,8 +1616,16 @@ class IniSection:
     def __iter__(self):
         yield from self.lines
 
-    def __getitem__(self, item: str):
+    def __getitem__(self, item: Union[str, int]):
+        if isinstance(item, int):
+            return self.lines[item]
         return self.get_value(item)
+
+    def __len__(self):
+        return len(self.lines)
+
+    def __bool__(self):
+        return bool(len(self.lines))
 
 
 class IniFile:
@@ -1669,9 +1679,11 @@ class IniFile:
             else:
                 parts = line.split('=', 2)
                 key = parts[0]
-                value = parts[1]
+                value = None
+                if len(parts) > 1:
+                    value = parts[1]
                 item = IniLine(key, value)
-                if not section:
+                if section is None:
                     section = IniSection()
                     self.sections.append(section)
                 section.lines.append(item)
@@ -1688,5 +1700,13 @@ class IniFile:
     def __iter__(self):
         yield from self.sections
 
-    def __getitem__(self, item: str):
+    def __getitem__(self, item: Union[str, int]):
+        if isinstance(item, int):
+            return self.sections[item]
         return self.find(item)
+
+    def __len__(self):
+        return len(self.sections)
+
+    def __bool__(self):
+        return bool(len(self.sections))

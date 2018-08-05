@@ -14,8 +14,11 @@ class TestConnect(unittest.TestCase):
         # connection.password = '1'
         # connection.database = 'ISTU'
         # connection.workstation = 'C'
-        connection.connect()
+        ini = connection.connect()
         print('Connected')
+        print()
+        print(ini['MAIN'][10])
+        print()
 
         version = connection.get_server_version()
         print(version)

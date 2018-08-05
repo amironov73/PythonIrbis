@@ -10,3 +10,7 @@ test_script:
     call build.cmd
 
 build: off
+
+artifacts:
+- path: htmlcov
+  name: Coverage

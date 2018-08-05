@@ -545,37 +545,7 @@ class ServerResponse:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # Пока не знаю, что делать
-        return self
-
-
-# class ProtocolText:
-#     """
-#     Кодирование записи в протокольное представление.
-#     """
-#
-#     DELIMITER = '\x1F\x1E'
-#
-#     def __init__(self):
-#         self._buffer = []
-#
-#     def subfield(self, subfield: SubField):
-#         self._buffer.append('^' + subfield.code + subfield.value)
-#
-#     def field(self, field: RecordField):
-#         self._buffer.append(str(field.tag) + '#' + field.value)
-#         for sf in field.subfields:
-#             self.subfield(sf)
-#
-#     def record(self, record: MarcRecord):
-#         self._buffer.append(str(record.mfn) + '#' + str(record.status) + self.DELIMITER)
-#         self._buffer.append('0#' + str(record.version) + self.DELIMITER)
-#         for field in record.fields:
-#             self.field(field)
-#             self.DELIMITER
-#
-#     def __str__(self):
-#         return ''.join(self._buffer)
+        return exc_type is None
 
 
 class UserInfo:
@@ -726,9 +696,7 @@ class MenuFile:
         result = entry and entry.comment or default_value
         return result
 
-    def parse(self, response: ServerResponse) -> None:
-        text = response.ansi()
-        lines = irbis_to_lines(text)
+    def parse(self, lines: [str]) -> None:
         i = 0
         while i + 1 < len(lines):
             code = lines[i]
@@ -750,6 +718,15 @@ class MenuFile:
             result.append(entry.comment)
         result.append(STOP_MARKER)
         return '\n'.join(result)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __iter__(self):
+        yield from self.entries
+
+    def __getitem__(self, item: str):
+        return self.get_value(item)
 
 
 ###############################################################################
@@ -1561,3 +1538,155 @@ class TreeFile:
         for node in self.roots:
             result.extend(node.write())
         return '\n'.join(result)
+
+###############################################################################
+
+# INI-file
+
+
+class IniLine:
+    """
+    Строка INI-файла
+    """
+
+    __slots__ = 'key', 'value'
+
+    def __init__(self, key: Optional[str] = None, value: Optional[str] = None):
+        self.key = key
+        self.value = value
+
+    @staticmethod
+    def same_key(first: str, second: str) -> bool:
+        return first.upper() == second.upper()
+
+    def __str__(self):
+        return str(self.key) + '=' + str(self.value)
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class IniSection:
+    """
+    Секция INI-файла.
+    """
+
+    __slots__ = 'name', 'lines'
+
+    def __init__(self, name: Optional[str] = None):
+        self.name: str = name
+        self.lines = []
+
+    def find(self, key: str) -> Optional[IniLine]:
+        for line in self.lines:
+            if IniLine.same_key(line.key, key):
+                return line
+        return None
+
+    def get_value(self, key: str, default: Optional[str] = None) -> Optional[str]:
+        found = self.find(key)
+        return found.value if found else default
+
+    def set_value(self, key: str, value: str) -> None:
+        found = self.find(key)
+        if found:
+            found.value = value
+        else:
+            found = IniLine(key, value)
+            self.lines.append(found)
+
+    def remove(self, key: str) -> None:
+        found = self.find(key)
+        if found:
+            self.lines.remove(found)
+
+    def __str__(self):
+        result = []
+        if self.name:
+            result.append('[' + self.name + ']')
+        for line in self.lines:
+            result.append(str(line))
+        return '\n'.join(result)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __iter__(self):
+        yield from self.lines
+
+    def __getitem__(self, item: str):
+        return self.get_value(item)
+
+
+class IniFile:
+    """
+    INI-файл.
+    """
+
+    __slots__ = 'sections'
+
+    def __init__(self):
+        self.sections = []
+
+    def find(self, name: str) -> Optional[IniSection]:
+        for section in self.sections:
+            if not name and not section.name:
+                return section
+            if IniLine.same_key(section.name, name):
+                return section
+        return None
+
+    def get_or_create(self, name: str) -> IniSection:
+        result = self.find(name)
+        if not result:
+            result = IniSection(name)
+            self.sections.append(result)
+        return result
+
+    def get_value(self, name: str, key: str, default: Optional[str] = None) -> Optional[str]:
+        section = self.find(name)
+        if section:
+            return section.get_value(key, default)
+        return default
+
+    def set_value(self, name: str, key: str, value: str) -> None:
+        section = self.get_or_create(name)
+        if not section:
+            section = IniSection(name)
+            self.sections.append(section)
+        section.set_value(key, value)
+
+    def parse(self, text: [str]) -> None:
+        section = None
+        for line in text:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith('['):
+                line = line[1:-1]
+                section = IniSection(line)
+                self.sections.append(section)
+            else:
+                parts = line.split('=', 2)
+                key = parts[0]
+                value = parts[1]
+                item = IniLine(key, value)
+                if not section:
+                    section = IniSection()
+                    self.sections.append(section)
+                section.lines.append(item)
+
+    def __str__(self):
+        result = []
+        for section in self.sections:
+            result.append(str(section))
+        return '\n'.join(result)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __iter__(self):
+        yield from self.sections
+
+    def __getitem__(self, item: str):
+        return self.find(item)

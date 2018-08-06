@@ -1,7 +1,6 @@
 import unittest
 
 from pyirbis import *
-from pyirbis.infrastructure import *
 
 
 class TestSubField(unittest.TestCase):
@@ -452,67 +451,6 @@ class TestMarcRecord(unittest.TestCase):
         self.assertFalse(bool(record))
         record.add(100, 'Field 100')
         self.assertTrue(bool(record))
-
-
-class TestFileSpecification(unittest.TestCase):
-
-    def test_init_1(self):
-        spec = FileSpecification(1, '', 'file.ext')
-        self.assertEqual(spec.binary, False)
-        self.assertEqual(spec.path, 1)
-        self.assertEqual(spec.database, '')
-        self.assertEqual(spec.filename, 'file.ext')
-        self.assertEqual(spec.content, '')
-
-    def test_str_1(self):
-        spec = FileSpecification(1, '', 'file.ext')
-        self.assertEqual(str(spec), '1..file.ext')
-
-    def test_str_2(self):
-        spec = FileSpecification(6, 'IBIS', 'file.ext')
-        self.assertEqual(str(spec), '6.IBIS.file.ext')
-
-
-class TestIrbisFormat(unittest.TestCase):
-
-    def test_comments_1(self):
-        self.assertEqual("", IrbisFormat.remove_comments(""))
-        self.assertEqual(" ", IrbisFormat.remove_comments(" "))
-        self.assertEqual("v100,/,v200", IrbisFormat.remove_comments("v100,/,v200"))
-        self.assertEqual("\tv100\r\n", IrbisFormat.remove_comments("\tv100\r\n"))
-        self.assertEqual("v100\r\nv200",
-                         IrbisFormat.remove_comments("v100/* Comment\r\nv200"))
-        self.assertEqual("v100, '/* Not comment', v200",
-                         IrbisFormat.remove_comments("v100, '/* Not comment', v200"))
-        self.assertEqual("v100, |/* Not comment|, v200",
-                         IrbisFormat.remove_comments("v100, |/* Not comment|, v200"))
-        self.assertEqual("v100, '/* Not comment', v200, \r\nv300",
-                         IrbisFormat.remove_comments("v100, '/* Not comment', v200, /*comment\r\nv300"))
-
-    def test_prepare_1(self):
-        self.assertEqual("", IrbisFormat.prepare(""))
-        self.assertEqual(" ", IrbisFormat.prepare(" "))
-        self.assertEqual("", IrbisFormat.prepare("\r\n"))
-        self.assertEqual("v100,/,v200", IrbisFormat.prepare("v100,/,v200"))
-        self.assertEqual("v100", IrbisFormat.prepare("\tv100\r\n"))
-        self.assertEqual("v100v200",
-                         IrbisFormat.prepare("v100/*comment\r\nv200"))
-        self.assertEqual("v100",
-                         IrbisFormat.prepare("v100/*comment"))
-
-
-class TestIrbisConnection(unittest.TestCase):
-
-    def test_init_1(self):
-        connection = IrbisConnection()
-        self.assertEqual(connection.host, 'localhost')
-        self.assertEqual(connection.port, 6666)
-        self.assertEqual(connection.username, '')
-        self.assertEqual(connection.password, '')
-        self.assertEqual(connection.database, 'IBIS')
-        self.assertEqual(connection.clientId, 0)
-        self.assertEqual(connection.queryId, 0)
-        self.assertEqual(connection.connected, False)
 
 
 if __name__ == '__main__':

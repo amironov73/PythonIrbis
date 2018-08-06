@@ -1,5 +1,5 @@
 from tkinter import *
-from pyirbis import IrbisConnection
+from pyirbis import *
 
 root = Tk()
 root.title('Поиск по ЭК')

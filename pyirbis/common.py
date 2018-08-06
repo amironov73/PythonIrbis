@@ -298,6 +298,24 @@ def prepare_format(text: str):
 
 ###############################################################################
 
+# Исключение - ошибка протокола
+
+class IrbisError(Exception):
+    """
+    Исключнение - ошибка протокола
+    """
+
+    __slots__ = 'code'
+
+    def __init__(self, code: int = 0):
+        self.code = code
+
+    def __str__(self):
+        return str(self.code)
+
+
+###############################################################################
+
 # Client query
 
 
@@ -721,7 +739,7 @@ class RecordField:
                 self.value = line
             else:
                 if line[0] != '^':
-                    parts = line.split('^', 2)
+                    parts = line.split('^', 1)
                     self.value = parts[0]
                     parts = parts[1].split('^')
                 else:
@@ -731,13 +749,13 @@ class RecordField:
                         sub = SubField(x[:1], x[1:])
                         self.subfields.append(sub)
         else:
-            parts = line.split('#', 2)
+            parts = line.split('#', 1)
             self.tag = int(parts[0])
             if '^' not in parts[1]:
                 self.value = parts[1]
             else:
                 if parts[1][0] != '^':
-                    parts = parts[1].split('^', 2)
+                    parts = parts[1].split('^', 1)
                     self.value = parts[0]
                     parts = parts[1].split('^')
                 else:
@@ -983,6 +1001,176 @@ class IrbisVersion:
 
 ###############################################################################
 
+
+class IniLine:
+    """
+    Строка INI-файла
+    """
+
+    __slots__ = 'key', 'value'
+
+    def __init__(self, key: Optional[str] = None, value: Optional[str] = None):
+        self.key = key
+        self.value = value
+
+    @staticmethod
+    def same_key(first: str, second: str) -> bool:
+        if not first or not second:
+            return False
+        return first.upper() == second.upper()
+
+    def __str__(self):
+        return str(self.key) + '=' + str(self.value)
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class IniSection:
+    """
+    Секция INI-файла.
+    """
+
+    __slots__ = 'name', 'lines'
+
+    def __init__(self, name: Optional[str] = None):
+        self.name: str = name
+        self.lines = []
+
+    def find(self, key: str) -> Optional[IniLine]:
+        for line in self.lines:
+            if IniLine.same_key(line.key, key):
+                return line
+        return None
+
+    def get_value(self, key: str, default: Optional[str] = None) -> Optional[str]:
+        found = self.find(key)
+        return found.value if found else default
+
+    def set_value(self, key: str, value: str) -> None:
+        found = self.find(key)
+        if found:
+            found.value = value
+        else:
+            found = IniLine(key, value)
+            self.lines.append(found)
+
+    def remove(self, key: str) -> None:
+        found = self.find(key)
+        if found:
+            self.lines.remove(found)
+
+    def __str__(self):
+        result = []
+        if self.name:
+            result.append('[' + self.name + ']')
+        for line in self.lines:
+            result.append(str(line))
+        return '\n'.join(result)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __iter__(self):
+        yield from self.lines
+
+    def __getitem__(self, item: Union[str, int]):
+        if isinstance(item, int):
+            return self.lines[item]
+        return self.get_value(item)
+
+    def __len__(self):
+        return len(self.lines)
+
+    def __bool__(self):
+        return bool(len(self.lines))
+
+
+class IniFile:
+    """
+    INI-файл.
+    """
+
+    __slots__ = 'sections'
+
+    def __init__(self):
+        self.sections = []
+
+    def find(self, name: str) -> Optional[IniSection]:
+        for section in self.sections:
+            if not name and not section.name:
+                return section
+            if IniLine.same_key(section.name, name):
+                return section
+        return None
+
+    def get_or_create(self, name: str) -> IniSection:
+        result = self.find(name)
+        if not result:
+            result = IniSection(name)
+            self.sections.append(result)
+        return result
+
+    def get_value(self, name: str, key: str, default: Optional[str] = None) -> Optional[str]:
+        section = self.find(name)
+        if section:
+            return section.get_value(key, default)
+        return default
+
+    def set_value(self, name: str, key: str, value: str) -> None:
+        section = self.get_or_create(name)
+        if not section:
+            section = IniSection(name)
+            self.sections.append(section)
+        section.set_value(key, value)
+
+    def parse(self, text: [str]) -> None:
+        section = None
+        for line in text:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith('['):
+                line = line[1:-1]
+                section = IniSection(line)
+                self.sections.append(section)
+            else:
+                parts = line.split('=', 1)
+                key = parts[0]
+                value = None
+                if len(parts) > 1:
+                    value = parts[1]
+                item = IniLine(key, value)
+                if section is None:
+                    section = IniSection()
+                    self.sections.append(section)
+                section.lines.append(item)
+
+    def __str__(self):
+        result = []
+        for section in self.sections:
+            result.append(str(section))
+        return '\n'.join(result)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __iter__(self):
+        yield from self.sections
+
+    def __getitem__(self, item: Union[str, int]):
+        if isinstance(item, int):
+            return self.sections[item]
+        return self.find(item)
+
+    def __len__(self):
+        return len(self.sections)
+
+    def __bool__(self):
+        return bool(len(self.sections))
+
+###############################################################################
+
 # Подключение к серверу
 
 
@@ -996,7 +1184,8 @@ class IrbisConnection:
     DEFAULT_DATABASE = 'IBIS'
 
     __slots__ = ('host', 'port', 'username', 'password', 'database', 'workstation',
-                 'client_id', 'query_id', 'connected', '_stack', 'server_version')
+                 'client_id', 'query_id', 'connected', '_stack', 'server_version',
+                 'ini_file')
 
     def __init__(self, host: Optional[str] = DEFAULT_HOST, port: int = DEFAULT_PORT,
                  username: str = '', password: str = '', database: str = DELETE_DATABASE,
@@ -1012,17 +1201,31 @@ class IrbisConnection:
         self.connected: bool = False
         self._stack = []
         self.server_version: Optional[str] = None
+        self.ini_file: Optional[IniFile] = None
+
+    def actualize_record(self, mfn: int, database: Optional[str] = None) -> None:
+        """
+        Актуализация записи с указанным MFN.
+
+        :param mfn: MFN записи
+        :param database: База данных
+        :return: None
+        """
+        database = database or self.database or throw_value_error()
+        query = ClientQuery(self, ACTUALIZE_RECORD).ansi(database).add(mfn)
+        with self.execute(query) as response:
+            response.check_return_code()
 
     def connect(self, host: Optional[str] = None, port: int = 0,
                 username: Optional[str] = None, password: Optional[str] = None,
-                database: Optional[str] = None) -> None:
+                database: Optional[str] = None) -> IniFile:
         """
         Подключение к серверу ИРБИС64.
 
         :return: INI-файл
         """
         if self.connected:
-            return None
+            return self.ini_file
 
         self.host = host or self.host or throw_value_error()
         self.port = port or self.port or throw_value_error()
@@ -1034,20 +1237,73 @@ class IrbisConnection:
 
         self.query_id = 0
         self.client_id = random.randint(100000, 999999)
-        query = ClientQuery(self, REGISTER_CLIENT)
-        query.ansi(self.username)
-        query.ansi(self.password)
+        query = ClientQuery(self, REGISTER_CLIENT).ansi(self.username).ansi(self.password)
         with self.execute(query) as response:
             response.check_return_code()
             self.server_version = response.version
-            # result = IniFile()
-            # text = irbis_to_lines(response.ansi_remaining_text())
-            # text = text[0]
-            # text = text.splitlines()
-            # text = text[1:]
-            # result.parse(text)
+            result = IniFile()
+            text = irbis_to_lines(response.ansi_remaining_text())
+            text = text[0]
+            text = text.splitlines()
+            text = text[1:]
+            result.parse(text)
             self.connected = True
-            # return result
+            self.ini_file = result
+            return result
+
+    def create_database(self, database: Optional[str] = None,
+                        description: Optional[str] = None,
+                        reader_access: bool = True) -> None:
+        """
+        Создание базы данных.
+
+        :param database: Имя создаваемой базы
+        :param description: Описание в свободной форме
+        :param reader_access: Читатель будет иметь доступ?
+        :return: None
+        """
+        database = database or self.database or throw_value_error()
+        description = description or ''
+        query = ClientQuery(self, CREATE_DATABASE)
+        query.ansi(database).ansi(description).add(int(reader_access))
+        with self.execute(query) as response:
+            response.check_return_code()
+
+    def create_dictionary(self, database: Optional[str] = None) -> None:
+        """
+        Создание словаря в базе данных.
+
+        :param database: База данных
+        :return: None
+        """
+        database = database or self.database or throw_value_error()
+        query = ClientQuery(self, CREATE_DICTIONARY).ansi(database)
+        with self.execute(query) as response:
+            response.check_return_code()
+
+    def delete_database(self, database: Optional[str] = None) -> None:
+        """
+        Удаление базы данных.
+
+        :param database: Имя удаляемой базы
+        :return: None
+        """
+        database = database or self.database or throw_value_error()
+        query = ClientQuery(self, DELETE_DATABASE).ansi(database)
+        with self.execute(query) as response:
+            response.check_return_code()
+
+    def delete_record(self, mfn: int) -> None:
+        """
+        Удаление записи по ее MFN.
+
+        :param mfn: MFN удаляемой записи
+        :return: None
+        """
+        record = self.read_record(mfn)
+        if not record.is_deleted():
+            record.status |= LOGICALLY_DELETED
+            self.write_record(record, dont_parse=True)
 
     def disconnect(self) -> None:
         """
@@ -1140,7 +1396,31 @@ class IrbisConnection:
             lines = response.ansi_remaining_lines()
             result = IrbisVersion()
             result.parse(lines)
+            if not self.server_version:
+                self.server_version = result.version
             return result
+
+    def list_files(self, *specification: Union[FileSpecification, str]) -> [str]:
+        """
+        Получение списка файлов с сервера.
+
+        :param specification: Спецификация или маска имени файла (если нужны файлы, лежащие в папке текущей базы данных)
+        :return: Список файлов
+        """
+        query = ClientQuery(self, LIST_FILES)
+
+        for spec in specification:
+            if isinstance(spec, str):
+                spec = self.near_master(spec)
+            query.ansi(str(spec))
+
+        result = []
+        with self.execute(query) as response:
+            lines = response.ansi_remaining_lines()
+            lines = [line for line in lines if line]
+            for line in lines:
+                result.extend(one for one in irbis_to_lines(line) if one)
+        return result
 
     def near_master(self, filename: str) -> FileSpecification:
         return FileSpecification(MASTER_FILE, self.database, filename)
@@ -1165,7 +1445,7 @@ class IrbisConnection:
         for item in text.split(';'):
             if not item:
                 continue
-            parts = item.split('=', 2)
+            parts = item.split('=', 1)
             name = parts[0].strip().lower()
             value = parts[1].strip()
 
@@ -1211,6 +1491,24 @@ class IrbisConnection:
         self.database = database
         return result
 
+    def read_ini_file(self, specification: Union[FileSpecification, str]) -> IniFile:
+        """
+        Чтение INI-файла с сервера.
+
+        :param specification: Спецификация
+        :return: INI-файл
+        """
+
+        if isinstance(specification, str):
+            specification = self.near_master(specification)
+
+        query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
+        with self.execute(query) as response:
+            result = IniFile()
+            text = irbis_to_lines(response.ansi_remaining_text())
+            result.parse(text)
+            return result
+
     def read_record(self, mfn: int, version: int = 0) -> MarcRecord:
         """
         Чтение записи с указанным MFN с сервера.
@@ -1255,6 +1553,37 @@ class IrbisConnection:
         result = self.execute(query)
         return result
 
+    def reload_dictionary(self, database: str = '') -> None:
+        """
+        Пересоздание словаря.
+
+        :param database: База данных
+        :return: None
+        """
+        database = database or self.database or throw_value_error()
+        with self.execute_ansi(RELOAD_DICTIONARY, database):
+            pass
+
+    def reload_master_file(self, database: str = '') -> None:
+        """
+        Пересоздание мастер-файла.
+
+        :param database: База данных
+        :return: None
+        """
+        database = database or self.database or throw_value_error()
+        with self.execute_ansi(RELOAD_MASTER_FILE, database):
+            pass
+
+    def restart_server(self) -> None:
+        """
+        Перезапуск сервера (без утери подключенных клиентов).
+
+        :return: None
+        """
+        with self.execute_ansi(RESTART_SERVER):
+            pass
+
     def search(self, parameters: Union[SearchParameters, str]) -> []:
         """
         Поиск записей.
@@ -1288,6 +1617,39 @@ class IrbisConnection:
             result.append(mfn)
         return result
 
+    def to_connection_string(self) -> str:
+        """
+        Выдача строки подключения для текущего соединения.
+
+        :return: Строка подключения
+        """
+        return 'host=' + self.host + ';port=' + str(self.port) \
+               + ';username=' + self.username + ';password=' \
+               + self.password + ';database=' + self.database \
+               + ';workstation=' + self.workstation + ';'
+
+    def truncate_database(self, database: str = '') -> None:
+        """
+        Опустошение базы данных.
+
+        :param database: База данных
+        :return: None
+        """
+        database = database or self.database or throw_value_error()
+        with self.execute_ansi(EMPTY_DATABASE, database):
+            pass
+
+    def unlock_database(self, database: Optional[str] = None) -> None:
+        """
+        Разблокирование базы данных.
+
+        :param database: Имя базы
+        :return: None
+        """
+        database = database or self.database or throw_value_error()
+        with self.execute_ansi(UNLOCK_DATABASE, database):
+            pass
+
     def unlock_records(self, records: [int], database: Optional[str] = None) -> None:
         """
         Разблокирование записей.
@@ -1317,6 +1679,51 @@ class IrbisConnection:
         for line in lines:
             query.ansi(line)
         self.execute_forget(query)
+
+    def write_record(self, record: MarcRecord, lock: bool = False,
+                     actualize: bool = True,
+                     dont_parse: bool = False) -> int:
+        """
+        Сохранение записи на сервере.
+
+        :param record: Запись
+        :param lock: Оставить запись заблокированной?
+        :param actualize: Актуализировать запись?
+        :param dont_parse: Не разбирать ответ сервера?
+        :return: Новый максимальный MFN
+        """
+        database = record.database or self.database or throw_value_error()
+        query = ClientQuery(self, UPDATE_RECORD).ansi(database).add(int(lock)).add(int(actualize))
+        query.utf(IRBIS_DELIMITER.join(record.encode()))
+        with self.execute(query) as response:
+            response.check_return_code()
+            result = response.return_code  # Новый максимальный MFN
+            if not dont_parse:
+                first_line = response.utf()
+                text = short_irbis_to_lines(response.utf())
+                text.insert(0, first_line)
+                record.database = database
+                record.parse(text)
+            return result
+
+    def write_text_file(self, *specification: FileSpecification) -> None:
+        """
+        Сохранение текстового файла на сервере.
+
+        :param specification: Спецификация (включая текст для сохранения)
+        :return: None
+        """
+        query = ClientQuery(self, READ_DOCUMENT)
+        ok = False
+        for spec in specification:
+            assert isinstance(spec, FileSpecification)
+            query.ansi(str(spec))
+            ok = True
+        if not ok:
+            return
+
+        with self.execute(query) as response:
+            response.check_return_code()
 
     def __enter__(self):
         return self

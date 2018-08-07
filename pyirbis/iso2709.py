@@ -1,3 +1,5 @@
+# coding: utf-8
+
 from pyirbis.core import *
 
 # Length of the record marker

@@ -1,3 +1,5 @@
+# coding: utf-8
+
 # Infrastructure related extended functionality for IRBIS64 client
 
 import re

@@ -1,3 +1,5 @@
+# coding: utf-8
+
 # ManagedIrbis ported from C# to Python.
 # Python supported: 3.6.x
 # IRBIS64 supported: 2015 and higher

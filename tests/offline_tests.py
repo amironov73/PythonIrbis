@@ -1,7 +1,16 @@
 import unittest
 
 from pyirbis.core import *
+import os.path
 import pyirbis.iso2709 as iso
+
+
+def script_path():
+    return os.path.dirname(os.path.realpath(__file__))
+
+
+def relative_path(filename: str):
+    return os.path.realpath(os.path.join(script_path(), filename))
 
 
 class TestSubField(unittest.TestCase):
@@ -458,7 +467,8 @@ class Iso2709Test(unittest.TestCase):
 
     def test_read_record(self):
         print('Read ISO file')
-        with open('data/test1.iso', 'rb') as fh:
+        filename = relative_path('data/test1.iso')
+        with open(filename, 'rb') as fh:
             record = iso.read_record(fh)
             print(record)
             print()

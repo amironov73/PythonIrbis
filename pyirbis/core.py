@@ -1,3 +1,5 @@
+# coding: utf-8
+
 # Common stuff for pyirbis
 
 import random
@@ -1202,7 +1204,7 @@ class IrbisConnection:
                  'ini_file')
 
     def __init__(self, host: Optional[str] = DEFAULT_HOST, port: int = DEFAULT_PORT,
-                 username: str = '', password: str = '', database: str = DELETE_DATABASE,
+                 username: str = '', password: str = '', database: str = DEFAULT_DATABASE,
                  workstation: str = 'C'):
         self.host: str = host
         self.port: int = port
@@ -1382,7 +1384,7 @@ class IrbisConnection:
         query = ClientQuery(self, FORMAT_RECORD).ansi(self.database).ansi(script).add(1).add(mfn)
         with self.execute(query) as response:
             response.check_return_code()
-            result = response.utf_remaining_text()
+            result = response.utf_remaining_text().strip('\r\n')
             return result
 
     def get_max_mfn(self, database: Optional[str] = None) -> int:

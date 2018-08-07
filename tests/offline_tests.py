@@ -1,6 +1,7 @@
 import unittest
 
-from pyirbis import *
+from pyirbis.core import *
+import pyirbis.iso2709 as iso
 
 
 class TestSubField(unittest.TestCase):
@@ -451,6 +452,33 @@ class TestMarcRecord(unittest.TestCase):
         self.assertFalse(bool(record))
         record.add(100, 'Field 100')
         self.assertTrue(bool(record))
+
+
+class Iso2709Test(unittest.TestCase):
+
+    def test_read_record(self):
+        print('Read ISO file')
+        with open('data/test1.iso', 'rb') as fh:
+            record = iso.read_record(fh)
+            print(record)
+            print()
+            self.assertEqual(len(record.fields), 16)
+            self.assertEqual(record.fm(200, 'a'), 'Вып. 13.')
+
+            record = iso.read_record(fh)
+            print(record)
+            print()
+            self.assertEqual(len(record.fields), 15)
+            self.assertEqual(record.fm(200, 'a'), 'Задачи и этюды')
+
+            count = 0
+            while True:
+                record = iso.read_record(fh)
+                if record is None:
+                    break
+                count += 1
+            self.assertEqual(count, 79)
+        print()
 
 
 if __name__ == '__main__':

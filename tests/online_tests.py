@@ -218,3 +218,12 @@ class TestConnect(unittest.TestCase):
         print(table.upper('Не слышны в саду даже шорохи!'))
         print(table.upper('Quick brown fox jumps over the lazy dog?'))
         print()
+
+    def test_29_read_search_scenario(self):
+        specification = self.connection.near_master('istu.ini')
+        scenarios = self.connection.read_search_scenario(specification)
+        print('Read search scenario')
+        print(len(scenarios))
+        for scenario in scenarios:
+            print(scenario)
+        print()

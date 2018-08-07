@@ -6,7 +6,7 @@ ManagedIrbis (fully managed client for IRBIS64 library system) ported to Python.
 
 ### Supported environments
 
-PythonIrbis currently supports Python 3.6.
+PythonIrbis currently supports Python 3.6 and IRBIS64 2014 or later.
 
 ### Links
 

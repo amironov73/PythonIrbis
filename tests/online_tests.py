@@ -1,4 +1,7 @@
+# coding: utf-8
+
 import unittest
+import time
 
 from pyirbis.ext import *
 
@@ -13,6 +16,42 @@ class TestConnect(unittest.TestCase):
     def tearDown(self):
         self.connection.disconnect()
         self.connection = None
+
+    @staticmethod
+    def wait_for_a_while():
+        print('Waiting')
+        for i in range(5):
+            time.sleep(1)
+            print('.', end='')
+        print()
+
+    def write_dummy_records(self, database: str):
+        sf = SubField
+        for i in range(10):
+            # Создаем запись
+            record = MarcRecord()
+            record.database = database
+
+            # Наполняем её полями: первый автор
+            record.add(700, sf('a', 'Миронов'), sf('b', 'А. В.'),
+                       sf('g', 'Алексей Владимирович'))
+
+            # заглавие
+            record.add(200, sf('a', f'Работа с ИРБИС64: версия {i}.0'),
+                       sf('e', 'руководство пользователя'))
+
+            # выходные данные
+            record.add(210, sf('a', 'Иркутск'), SubField('c', 'ИРНИТУ'),
+                       sf('d', '2018'))
+
+            # рабочий лист
+            record.add(920, 'PAZK')
+
+            # Отсылаем запись на сервер.
+            # Обратно приходит запись, обработанная AUTOIN.GBL
+            self.connection.write_record(record)
+            print(f'Write record: {i}')
+            print()
 
     def test_01_simple_connection(self):
         print('Connection')
@@ -227,3 +266,53 @@ class TestConnect(unittest.TestCase):
         for scenario in scenarios:
             print(scenario)
         print()
+
+    def test_30_update_user_list(self):
+        import random
+        users = self.connection.get_user_list()
+        name = 'Пользователь' + str(random.randint(100000, 900000))
+        password = 'Пароль' + str(random.randint(100000, 900000))
+        new_user = UserInfo(name, password)
+        new_user.cataloger = "new_irbisc.ini"
+        new_user.reader = "new_irbisr.ini"
+        users.append(new_user)
+        self.connection.update_user_list(users)
+        print('Update user list')
+        print()
+
+    def test_32_create_database(self):
+        return
+
+        no_such_base = 'NOSUCH'
+
+        self.connection.create_database(no_such_base, 'Нет такой базы!')
+        print('Create database')
+        self.wait_for_a_while()
+
+        self.connection.create_dictionary(no_such_base)
+        print('Create dictionary')
+        self.wait_for_a_while()
+
+        self.connection.reload_master_file(no_such_base)
+        print('Reload master file')
+        self.wait_for_a_while()
+
+        self.connection.reload_dictionary(no_such_base)
+        print('Reload dictionary')
+        self.wait_for_a_while()
+
+        self.connection.truncate_database(no_such_base)
+        print('Truncate database')
+        self.wait_for_a_while()
+
+        self.connection.unlock_database(no_such_base)
+        print('Unlock database')
+        self.wait_for_a_while()
+
+        self.write_dummy_records(no_such_base)
+        self.wait_for_a_while()
+
+        self.connection.delete_database(no_such_base)
+        print('Delete database')
+        self.wait_for_a_while()
+

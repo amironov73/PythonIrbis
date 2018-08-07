@@ -185,6 +185,20 @@ READ_RECORD_CODES = [-201, -600, -602, -603]
 READ_TERMS_CODES = [-202, -203, -204]
 
 
+def safe_int(text: Optional[str]):
+    """
+    Безопасное превращение строки в целое.
+
+    :param text: Текст
+    :return: Целое число
+    """
+    try:
+        result = int(text)
+    except ValueError:
+        result = 0
+    return result
+
+
 def throw_value_error() -> None:
     """
     Simple raises ValueError.

@@ -1,6 +1,6 @@
 import wx
 
-from pyirbis import *
+from pyirbis.core import *
 
 
 class Window(wx.Frame):

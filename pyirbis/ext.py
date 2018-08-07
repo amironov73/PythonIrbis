@@ -3,7 +3,7 @@
 import re
 from typing import Tuple
 
-from pyirbis import *
+from pyirbis.core import *
 
 
 ###############################################################################
@@ -533,6 +533,46 @@ class SearchScenario:
                  'mod_by_dic_auto', 'logic', 'advance',
                  'format')
 
+    def __init__(self, name: str = None):
+        self.name: str = name
+        self.prefix: str = ''
+        self.type: int = 0
+        self.menu: str = None
+        self.old: str = None
+        self.correction: str = None
+        self.truncation: bool = False
+        self.hint: str = None
+        self.mod_by_dic_auto: str = None
+        self.logic: int = 0
+        self.advance: str = None
+        self.format = None
+
+    @staticmethod
+    def parse(ini: IniFile) -> []:
+        section = ini.find('SEARCH')
+        if not section:
+            return []
+        count = int(section.get_value('ItemNumb', '0'))
+        if not count:
+            return []
+        result = []
+        for i in range(count):
+            name = section.get_value(f'ItemName{i}')
+            scenario = SearchScenario(name)
+            result.append(scenario)
+            scenario.prefix = section.get_value(f'ItemPref{i}') or ''
+            scenario.type = safe_int(section.get_value(f'ItemDictionType{i}', '0'))
+            scenario.menu = section.get_value(f'ItemMenu{i}')
+            scenario.old = None
+            scenario.correction = section.get_value(f'ModByDic{i}')
+            scenario.truncation = bool(section.get_value(f'ItemTranc{i}', '0'))
+            scenario.hint = section.get_value(f'ItemHint{i}')
+            scenario.mod_by_dic_auto = section.get_value(f'ItemModByDicAuto{i}')
+            scenario.logic = safe_int(section.get_value(f'ItemLogic{i}', '0'))
+            scenario.advance = section.get_value(f'ItemAdv{i}')
+            scenario.format = section.get_value(f'ItemPft{i}')
+        return result
+
     def __str__(self):
         return self.name + ' ' + self.prefix
 
@@ -546,8 +586,11 @@ def read_search_scenario(connection: IrbisConnection,
         specification = connection.near_master(specification)
 
     with connection.read_text_stream(specification) as response:
-        # TODO implement
-        return []
+        ini = IniFile()
+        text = irbis_to_lines(response.ansi_remaining_text())
+        ini.parse(text)
+        result = SearchScenario.parse(ini)
+        return result
 
 
 IrbisConnection.read_search_scenario = read_search_scenario

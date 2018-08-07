@@ -472,13 +472,11 @@ class Iso2709Test(unittest.TestCase):
         filename = relative_path('data/test1.iso')
         with open(filename, 'rb') as fh:
             record = iso.read_record(fh)
-            print(record)
             print()
             self.assertEqual(len(record.fields), 16)
             self.assertEqual(record.fm(200, 'a'), 'Вып. 13.')
 
             record = iso.read_record(fh)
-            print(record)
             print()
             self.assertEqual(len(record.fields), 15)
             self.assertEqual(record.fm(200, 'a'), 'Задачи и этюды')

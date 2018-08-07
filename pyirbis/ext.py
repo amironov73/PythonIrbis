@@ -609,10 +609,10 @@ class UserInfo:
                  'reader', 'circulation', 'acquisitions',
                  'provision', 'administrator')
 
-    def __init__(self):
+    def __init__(self, name: Optional[str] = None, password: Optional[str] = None):
         self.number: str = None
-        self.name: str = None
-        self.password: str = None
+        self.name: str = name
+        self.password: str = password
         self.cataloger: str = None
         self.reader: str = None
         self.circulation: str = None
@@ -641,6 +641,21 @@ class UserInfo:
             result.append(user)
         return result
 
+    @staticmethod
+    def format_pair(prefix: str, value: str, default: str):
+        if same_string(value, default):
+            return ''
+        return prefix + '=' + safe_str(value) + ';'
+
+    def encode(self):
+        return self.name + '\n' + self.password + '\n' \
+            + UserInfo.format_pair('C', self.cataloger,     "irbisc.ini") \
+            + UserInfo.format_pair('R', self.reader,        "irbisr.ini") \
+            + UserInfo.format_pair('B', self.circulation,   "irbisb.ini") \
+            + UserInfo.format_pair('M', self.acquisitions,  "irbism.ini") \
+            + UserInfo.format_pair('K', self.provision,     "irbisk.ini") \
+            + UserInfo.format_pair('A', self.administrator, "irbisa.ini")
+
     def __str__(self):
         buffer = [self.number, self.name, self.password, self.cataloger,
                   self.reader, self.circulation, self.acquisitions,
@@ -665,7 +680,25 @@ def get_user_list(connection: IrbisConnection) -> [UserInfo]:
         return result
 
 
+def update_user_list(connection: IrbisConnection, users: [UserInfo]) -> None:
+    """
+    Обновление списка пользователей на сервере.
+
+    :param connection: Подключение
+    :param users:  Список пользователей
+    :return: None
+    """
+    assert connection and isinstance(connection, IrbisConnection)
+    assert isinstance(users, list) and len(users)
+
+    query = ClientQuery(connection, SET_USER_LIST)
+    for user in users:
+        query.ansi(user.encode())
+    connection.execute_forget(query)
+
+
 IrbisConnection.get_user_list = get_user_list
+IrbisConnection.update_user_list = update_user_list
 
 ###############################################################################
 

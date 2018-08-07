@@ -50,7 +50,7 @@ for mfn in found[:10]:
     description = client.format_record(BRIEF, mfn)
     print('Биб. описание:', description)
     
-    print() # Добавляем пустую строку
+    print()  # Добавляем пустую строку
     
 # Отключаемся от сервера
 client.disconnect()
@@ -90,7 +90,7 @@ for i in range(10):
     # Отсылаем запись на сервер.
     # Обратно приходит запись, обработанная AUTOIN.GBL
     client.write_record(record)
-    print(record) # распечатываем обработанную запись
+    print(record)  # распечатываем обработанную запись
     print()
 
 # Отключаемся от сервера

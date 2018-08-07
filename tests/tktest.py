@@ -1,3 +1,5 @@
+# coding: utf-8
+
 from tkinter import *
 from pyirbis.core import *
 

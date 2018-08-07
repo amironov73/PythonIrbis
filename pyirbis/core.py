@@ -187,6 +187,31 @@ READ_RECORD_CODES = [-201, -600, -602, -603]
 READ_TERMS_CODES = [-202, -203, -204]
 
 
+def same_string(first: Optional[str], second: Optional[str]) -> bool:
+    """
+    Строки совпадают с точностью до регистра?
+
+    :param first: Первая строка
+    :param second: Вторая строка
+    :return: True, если совпадают
+    """
+    if first is None or second is None:
+        return False
+    return first.upper() == second.upper()
+
+
+def safe_str(obj) -> str:
+    """
+    Простое избегание 'None' при выводе текстового представления объекта.
+
+    :param obj: Объект
+    :return: Текстовое представление
+    """
+    if obj is None:
+        return ''
+    return str(obj)
+
+
 def safe_int(text: Optional[str]):
     """
     Безопасное превращение строки в целое.
@@ -316,6 +341,71 @@ def prepare_format(text: str):
 
 # Исключение - ошибка протокола
 
+def get_error_description(code: int) -> str:
+    """
+    Получение описания ошибки.
+
+    :param code: Код ошибки
+    :return: Описание ошибки
+    """
+
+    errors = {
+        -100: 'Заданный MFN вне пределов БД',
+        -101: 'Ошибочный размер полки',
+        -102: 'Ошибочный номер полки',
+        -140: 'MFN вне пределов БД',
+        -141: 'Ошибка чтения',
+        -200: 'Указанное поле отсутствует',
+        -201: 'Предыдущая версия записи отсутствует',
+        -202: 'Заданный термин не найден (термин не существует)',
+        -203: 'Последний термин в списке',
+        -204: 'Первый термин в списке',
+        -300: 'База данных монопольно заблокирована',
+        -301: 'База данных монопольно заблокирована',
+        -400: 'Ошибка при открытии файлов MST или XRF (ошибка файла данных)',
+        -401: 'Ошибка при открытии файлов IFP (ошибка файла индекса)',
+        -402: 'Ошибка при записи',
+        -403: 'Ошибка при актуализации',
+        -600: 'Запись логически удалена',
+        -601: 'Запись физически удалена',
+        -602: 'Запись заблокирована на ввод',
+        -603: 'Запись логически удалена',
+        -605: 'Запись физически удалена',
+        -607: 'Ошибка autoin.gbl',
+        -608: 'Ошибка версии записи',
+        -700: 'Ошибка создания резервной копии',
+        -701: 'Ошибка восстановления из резервной копии',
+        -702: 'Ошибка сортировки',
+        -703: 'Ошибочный термин',
+        -704: 'Ошибка создания словаря',
+        -705: 'Ошибка загрузки словаря',
+        -800: 'Ошибка в параметрах глобальной корректировки',
+        -801: 'ERR_GBL_REP',
+        -801: 'ERR_GBL_MET',
+        -1111: 'Ошибка исполнения сервера (SERVER_EXECUTE_ERROR)',
+        -2222: 'Ошибка в протоколе (WRONG_PROTOCOL)',
+        -3333: 'Незарегистрированный клиент (ошибка входа на сервер) (клиент не в списке)',
+        -3334: 'Клиент не выполнил вход на сервер (клиент не используется)',
+        -3335: 'Неправильный уникальный идентификатор клиента',
+        -3336: 'Нет доступа к командам АРМ',
+        -3337: 'Клиент уже зарегистрирован',
+        -3338: 'Недопустимый клиент',
+        -4444: 'Неверный пароль',
+        -5555: 'Файл не существует',
+        -6666: 'Сервер перегружен. Достигнуто максимальное число потоков обработки',
+        -7777: 'Не удалось запустить/прервать поток администратора (ошибка процесса)',
+        -8888: 'Общая ошибка',
+    }
+
+    if code >= 0:
+        return 'Нормальное завершение'
+
+    if code not in errors:
+        return 'Неизвестная ошибка'
+
+    return errors[code]
+
+
 class IrbisError(Exception):
     """
     Исключнение - ошибка протокола
@@ -327,7 +417,7 @@ class IrbisError(Exception):
         self.code = code
 
     def __str__(self):
-        return str(self.code)
+        return f'{self.code}: {get_error_description(self.code)}'
 
 
 ###############################################################################
@@ -339,6 +429,8 @@ class ClientQuery:
     """
     Клиентский запрос.
     """
+
+    __slots__ = ('_memory',)
 
     def __init__(self, connection, command: str):
         self._memory = bytearray()
@@ -359,7 +451,7 @@ class ClientQuery:
         Добавление целого числа.
 
         :param number: Число
-        :return: Себя
+        :return: Self
         """
         return self.ansi(str(number))
 
@@ -368,7 +460,7 @@ class ClientQuery:
         Добавление строки в кодировке ANSI.
 
         :param text: Добавляемая строка
-        :return: Себя
+        :return: Self
         """
         return self.append(text, ANSI)
 
@@ -378,7 +470,7 @@ class ClientQuery:
 
         :param text: Добавляемая строка
         :param encoding: Кодировка
-        :return: Себя
+        :return: Self
         """
         if text is not None:
             self._memory.extend(text.encode(encoding))
@@ -386,6 +478,11 @@ class ClientQuery:
         return self
 
     def new_line(self):
+        """
+        Перевод строки.
+
+        :return: Self
+        """
         self._memory.append(0x0A)
         return self
 
@@ -394,7 +491,7 @@ class ClientQuery:
         Добавление строки в кодировке UTF-8.
 
         :param text: Добавляемая строка
-        :return: Себя
+        :return: Self
         """
         return self.append(text, UTF)
 
@@ -438,7 +535,27 @@ class FileSpecification:
 
     @staticmethod
     def system(filename: str):
+        """
+        Создание спецификации файла, лежащего в системной папке ИРБИС64.
+
+        :param filename: Имя файла
+        :return: Спецификация файла
+        """
         return FileSpecification(SYSTEM, None, filename)
+
+    @staticmethod
+    def parse(text: str):
+        """
+        Разбор текстового представления спецификации.
+
+        :param text: Текст
+        :return: Спецификация
+        """
+        # TODO учитывать @ и &
+
+        parts = text.split('.', 2)
+        result = FileSpecification(int(parts[0]), parts[1], parts[2])
+        return result
 
     def __str__(self):
         result = self.filename
@@ -525,7 +642,7 @@ class ServerResponse:
 
         if self.get_return_code() < 0:
             if self.return_code not in allowed:
-                raise IOError
+                raise IrbisError(self.return_code)
 
     def close(self) -> None:
         # Пока ничего не делаем

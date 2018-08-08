@@ -6,6 +6,10 @@ import random
 import socket
 from typing import Union, Optional
 
+# Max number of postings
+
+MAX_POSTINGS = 32758
+
 # Encodings
 
 ANSI = 'cp1251'
@@ -647,6 +651,13 @@ class ServerResponse:
     def close(self) -> None:
         # Пока ничего не делаем
         pass
+
+    def get_binary_file(self) -> Optional[bytearray]:
+        preamble = bytearray(b'IRBIS_BINARY_DATA')
+        index = self._memory.find(preamble)
+        if index < 0:
+            return None
+        return self._memory[index + len(preamble):]
 
     def get_return_code(self) -> int:
         self.return_code = self.number()
@@ -1344,7 +1355,12 @@ class IrbisConnection:
         :param database: База данных
         :return: None
         """
+
         database = database or self.database or throw_value_error()
+
+        assert isinstance(mfn, int)
+        assert isinstance(database, str)
+
         query = ClientQuery(self, ACTUALIZE_RECORD).ansi(database).add(mfn)
         with self.execute(query) as response:
             response.check_return_code()
@@ -1365,6 +1381,11 @@ class IrbisConnection:
         self.username = username or self.username or throw_value_error()
         self.password = password or self.password or throw_value_error()
         self.database = database or self.database or throw_value_error()
+
+        assert isinstance(self.host, str)
+        assert isinstance(self.port, int)
+        assert isinstance(self.username, str)
+        assert isinstance(self.password, str)
 
         # TODO Handle -3337
 
@@ -1395,8 +1416,13 @@ class IrbisConnection:
         :param reader_access: Читатель будет иметь доступ?
         :return: None
         """
+
         database = database or self.database or throw_value_error()
         description = description or ''
+
+        assert isinstance(database, str)
+        assert isinstance(description, str)
+
         query = ClientQuery(self, CREATE_DATABASE)
         query.ansi(database).ansi(description).add(int(reader_access))
         with self.execute(query) as response:
@@ -1409,7 +1435,11 @@ class IrbisConnection:
         :param database: База данных
         :return: None
         """
+
         database = database or self.database or throw_value_error()
+
+        assert isinstance(database, str)
+
         query = ClientQuery(self, CREATE_DICTIONARY).ansi(database)
         with self.execute(query) as response:
             response.check_return_code()
@@ -1421,6 +1451,9 @@ class IrbisConnection:
         :param database: Имя удаляемой базы
         :return: None
         """
+
+        assert isinstance(database, str)
+
         database = database or self.database or throw_value_error()
         query = ClientQuery(self, DELETE_DATABASE).ansi(database)
         with self.execute(query) as response:
@@ -1433,6 +1466,10 @@ class IrbisConnection:
         :param mfn: MFN удаляемой записи
         :return: None
         """
+
+        assert mfn
+        assert isinstance(mfn, int)
+
         record = self.read_record(mfn)
         if not record.is_deleted():
             record.status |= LOGICALLY_DELETED
@@ -1444,8 +1481,10 @@ class IrbisConnection:
 
         :return: None
         """
+
         if not self.connected:
             return
+
         query = ClientQuery(self, UNREGISTER_CLIENT)
         query.ansi(self.username)
         self.execute_forget(query)
@@ -1488,20 +1527,86 @@ class IrbisConnection:
         with self.execute(query):
             pass
 
-    def format_record(self, script: str, mfn: int) -> str:
+    def format_record(self, script: str, record: Union[MarcRecord, int],
+                      use_utf: bool = False) -> str:
         """
         Форматирование записи с указанным MFN.
 
         :param script: Текст формата
-        :param mfn: MFN записи
+        :param record: MFN записи либо сама запись
+        :param use_utf: Формат содержит символы, не входящие в ANSI
         :return: Результат расформатирования
         """
+
         script = script or throw_value_error()
-        mfn = mfn or throw_value_error()
-        query = ClientQuery(self, FORMAT_RECORD).ansi(self.database).ansi(script).add(1).add(mfn)
+        record = record or throw_value_error()
+
+        assert isinstance(script, str)
+        assert isinstance(record, MarcRecord) or isinstance(record, int)
+
+        script = prepare_format(script)
+        if not script:
+            return ''
+
+        query = ClientQuery(self, FORMAT_RECORD).ansi(self.database)
+
+        if use_utf:
+            query.utf('!' + script)
+        else:
+            query.ansi(script)
+
+        if isinstance(record, int):
+            query.add(1).add(record)
+        else:
+            query.add(-2).utf(IRBIS_DELIMITER.join(record.encode()))
+
         with self.execute(query) as response:
             response.check_return_code()
             result = response.utf_remaining_text().strip('\r\n')
+            return result
+
+    def format_records(self, script: str, records: [int], use_utf: bool = False) -> [str]:
+        """
+        Форматирование группы записей по MFN.
+
+        :param script: Текст формата
+        :param records: Список MFN
+        :param use_utf: Формат содержит символы, не входяшие в ANSI
+        :return: Список строк
+        """
+
+        if not records:
+            return []
+
+        script = script or throw_value_error()
+
+        assert isinstance(script, str)
+        assert isinstance(records, list)
+
+        script = prepare_format(script)
+        if not script:
+            return [''] * len(records)
+
+        # TODO support long list of records
+
+        if len(records) > MAX_POSTINGS:
+            raise IrbisError()
+
+        query = ClientQuery(self, FORMAT_RECORD).ansi(self.database)
+
+        if use_utf:
+            query.utf('!' + script)
+        else:
+            query.ansi(script)
+
+        query.add(len(records))
+        for mfn in records:
+            query.add(mfn)
+
+        with self.execute(query) as response:
+            response.check_return_code()
+            result = response.utf_remaining_lines()
+            result = [line.split('#', 1)[1] for line in result]
             return result
 
     def get_max_mfn(self, database: Optional[str] = None) -> int:
@@ -1511,7 +1616,11 @@ class IrbisConnection:
         :param database: База данных
         :return: MFN, который будет присвоен следующей записи
         """
+
         database = database or self.database or throw_value_error()
+
+        assert isinstance(database, str)
+
         with self.execute_ansi(GET_MAX_MFN, database) as response:
             response.check_return_code()
             result = response.return_code
@@ -1523,6 +1632,7 @@ class IrbisConnection:
 
         :return: Версия сервера
         """
+
         query = ClientQuery(self, SERVER_INFO)
         with self.execute(query) as response:
             response.check_return_code()
@@ -1542,17 +1652,39 @@ class IrbisConnection:
         """
         query = ClientQuery(self, LIST_FILES)
 
+        ok = False
         for spec in specification:
             if isinstance(spec, str):
                 spec = self.near_master(spec)
             query.ansi(str(spec))
+            ok = True
 
         result = []
+        if not ok:
+            return result
+
         with self.execute(query) as response:
             lines = response.ansi_remaining_lines()
             lines = [line for line in lines if line]
             for line in lines:
                 result.extend(one for one in irbis_to_lines(line) if one)
+        return result
+
+    def monitor_operation(self, operation: str) -> str:
+        import time
+        while True:
+            processes = self.list_processes()
+            found = False
+            for process in processes:
+                if process.client_id == self.client_id and process.last_command == operation:
+                    found = True
+                    break
+            if not found:
+                break
+            time.sleep(1)
+        filename = str(self.client_id) + '.ibf'
+        spec = FileSpecification.system(filename)
+        result = self.read_text_file(spec)
         return result
 
     def near_master(self, filename: str) -> FileSpecification:
@@ -1575,6 +1707,7 @@ class IrbisConnection:
         :param text: Строка подключения
         :return: None
         """
+
         for item in text.split(';'):
             if not item:
                 continue
@@ -1619,10 +1752,31 @@ class IrbisConnection:
         :param database: Новая база данных
         :return: Предыдущая база данных
         """
+
+        assert database and isinstance(database, str)
+
         result = self.database
         self._stack.append(result)
         self.database = database
         return result
+
+    def read_binary_file(self, specification: Union[FileSpecification, str]) -> Optional[bytearray]:
+        """
+        Чтение двоичного файла с сервера.
+
+        :param specification: Спецификация
+        :return: Массив байт или None
+        """
+        if isinstance(specification, str):
+            specification = self.near_master(specification)
+
+        assert isinstance(specification, FileSpecification)
+
+        specification.binary = True
+        query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
+        with self.execute(query) as response:
+            result = response.get_binary_file()
+            return result
 
     def read_ini_file(self, specification: Union[FileSpecification, str]) -> IniFile:
         """
@@ -1634,6 +1788,8 @@ class IrbisConnection:
 
         if isinstance(specification, str):
             specification = self.near_master(specification)
+
+        assert isinstance(specification, FileSpecification)
 
         query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
         with self.execute(query) as response:
@@ -1650,7 +1806,11 @@ class IrbisConnection:
         :param version: версия
         :return: Прочитанная запись
         """
+
         mfn = mfn or throw_value_error()
+
+        assert isinstance(mfn, int)
+
         query = ClientQuery(self, READ_RECORD).ansi(self.database).add(mfn)
         if version:
             query.add(version)
@@ -1673,6 +1833,7 @@ class IrbisConnection:
         :param specification: Спецификация или имя файла (если он находится в папке текущей базы данных).
         :return: Текст файла или пустая строка, если файл не найден
         """
+
         with self.read_text_stream(specification) as response:
             result = response.ansi_remaining_text()
             result = irbis_to_dos(result)
@@ -1682,29 +1843,39 @@ class IrbisConnection:
         if isinstance(specification, str):
             specification = self.near_master(specification)
 
+        assert isinstance(specification, FileSpecification)
+
         query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
         result = self.execute(query)
         return result
 
-    def reload_dictionary(self, database: str = '') -> None:
+    def reload_dictionary(self, database: Optional[str] = None) -> None:
         """
         Пересоздание словаря.
 
         :param database: База данных
         :return: None
         """
+
         database = database or self.database or throw_value_error()
+
+        assert isinstance(database, str)
+
         with self.execute_ansi(RELOAD_DICTIONARY, database):
             pass
 
-    def reload_master_file(self, database: str = '') -> None:
+    def reload_master_file(self, database: Optional[str] = None) -> None:
         """
         Пересоздание мастер-файла.
 
         :param database: База данных
         :return: None
         """
+
         database = database or self.database or throw_value_error()
+
+        assert isinstance(database, str)
+
         with self.execute_ansi(RELOAD_MASTER_FILE, database):
             pass
 
@@ -1714,6 +1885,7 @@ class IrbisConnection:
 
         :return: None
         """
+
         with self.execute_ansi(RESTART_SERVER):
             pass
 
@@ -1726,6 +1898,8 @@ class IrbisConnection:
         """
         if isinstance(parameters, str):
             parameters = SearchParameters(parameters)
+
+        assert isinstance(parameters, SearchParameters)
 
         # TODO support formatting
         # TODO support long results
@@ -1756,6 +1930,7 @@ class IrbisConnection:
 
         :return: Строка подключения
         """
+
         return 'host=' + self.host + ';port=' + str(self.port) \
                + ';username=' + self.username + ';password=' \
                + self.password + ';database=' + self.database \
@@ -1768,7 +1943,11 @@ class IrbisConnection:
         :param database: База данных
         :return: None
         """
+
         database = database or self.database or throw_value_error()
+
+        assert isinstance(database, str)
+
         with self.execute_ansi(EMPTY_DATABASE, database):
             pass
 
@@ -1779,7 +1958,11 @@ class IrbisConnection:
         :param database: Имя базы
         :return: None
         """
+
         database = database or self.database or throw_value_error()
+
+        assert isinstance(database, str)
+
         with self.execute_ansi(UNLOCK_DATABASE, database):
             pass
 
@@ -1791,7 +1974,14 @@ class IrbisConnection:
         :param database: База данных
         :return: None
         """
+
+        if not records:
+            return
+
         database = database or self.database or throw_value_error()
+
+        assert isinstance(database, str)
+
         query = ClientQuery(self, UNLOCK_RECORDS).ansi(database)
         for mfn in records:
             query.add(mfn)
@@ -1813,7 +2003,8 @@ class IrbisConnection:
             query.ansi(line)
         self.execute_forget(query)
 
-    def write_record(self, record: MarcRecord, lock: bool = False,
+    def write_record(self, record: MarcRecord,
+                     lock: bool = False,
                      actualize: bool = True,
                      dont_parse: bool = False) -> int:
         """
@@ -1825,7 +2016,16 @@ class IrbisConnection:
         :param dont_parse: Не разбирать ответ сервера?
         :return: Новый максимальный MFN
         """
+
+        record = record or throw_value_error()
         database = record.database or self.database or throw_value_error()
+
+        assert isinstance(record, MarcRecord)
+        assert isinstance(database, str)
+
+        assert isinstance(record, MarcRecord)
+        assert isinstance(database, str)
+
         query = ClientQuery(self, UPDATE_RECORD).ansi(database).add(int(lock)).add(int(actualize))
         query.utf(IRBIS_DELIMITER.join(record.encode()))
         with self.execute(query) as response:

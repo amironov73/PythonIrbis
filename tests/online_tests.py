@@ -281,38 +281,81 @@ class TestConnect(unittest.TestCase):
         print()
 
     def test_32_create_database(self):
-        return
 
         no_such_base = 'NOSUCH'
 
-        self.connection.create_database(no_such_base, 'Нет такой базы!')
-        print('Create database')
-        self.wait_for_a_while()
+        # self.connection.create_database(no_such_base, 'Нет такой базы!')
+        # print('Create database')
+        # self.wait_for_a_while()
 
-        self.connection.create_dictionary(no_such_base)
-        print('Create dictionary')
-        self.wait_for_a_while()
+        # self.connection.create_dictionary(no_such_base)
+        # print('Create dictionary')
+        # self.wait_for_a_while()
 
+        # self.connection.reload_master_file(no_such_base)
+        # print('Reload master file')
+        # self.wait_for_a_while()
+
+        # self.connection.reload_dictionary(no_such_base)
+        # print('Reload dictionary')
+        # self.wait_for_a_while()
+        #
+        # self.connection.truncate_database(no_such_base)
+        # print('Truncate database')
+        # self.wait_for_a_while()
+        #
+        # self.connection.unlock_database(no_such_base)
+        # print('Unlock database')
+        # self.wait_for_a_while()
+        #
+        # self.write_dummy_records(no_such_base)
+        # self.wait_for_a_while()
+
+        # self.connection.delete_database(no_such_base)
+        # print('Delete database')
+        # self.wait_for_a_while()
+
+    def test_33_format_record(self):
+        sf = SubField
+        record = MarcRecord()
+        record.add(700, sf('a', 'Миронов'), sf('b', 'А. В.'),
+                   sf('g', 'Алексей Владимирович'))
+        record.add(200, sf('a', f'Работа с ИРБИС64: версия 1.0'),
+                   sf('e', 'руководство пользователя'))
+        record.add(210, sf('a', 'Иркутск'), SubField('c', 'ИРНИТУ'),
+                   sf('d', '2018'))
+        record.add(920, 'PAZK')
+        text = self.connection.format_record('@brief', record)
+        self.assertEqual(text, 'Миронов, Алексей Владимирович. Работа с ИРБИС64: '
+                               'версия 1.0 [Текст] : руководство пользователя, 2018')
+
+    def test_34_reload_master_file(self):
+        import time
+        no_such_base = 'NOSUCH'
         self.connection.reload_master_file(no_such_base)
+        time.sleep(3)  # Нужна задержка, иначе ничего не возвращает
         print('Reload master file')
-        self.wait_for_a_while()
+        text = self.connection.monitor_operation('IRBIS_RELOAD_MASTER')
+        print(text)
 
-        self.connection.reload_dictionary(no_such_base)
-        print('Reload dictionary')
-        self.wait_for_a_while()
+    def test_35_read_binary_file(self):
+        import tempfile
+        import os.path
+        specification = FileSpecification.system('irbis.gif')
+        buffer = self.connection.read_binary_file(specification)
+        print('Read binary file')
+        print('size:', len(buffer or b''))
+        if buffer:
+            filename = os.path.join(tempfile.mkdtemp(), 'irbis.gif')
+            print(filename)
+            with open(filename, 'wb') as f:
+                f.write(buffer)
+        print()
 
-        self.connection.truncate_database(no_such_base)
-        print('Truncate database')
-        self.wait_for_a_while()
-
-        self.connection.unlock_database(no_such_base)
-        print('Unlock database')
-        self.wait_for_a_while()
-
-        self.write_dummy_records(no_such_base)
-        self.wait_for_a_while()
-
-        self.connection.delete_database(no_such_base)
-        print('Delete database')
-        self.wait_for_a_while()
-
+    def test_36_format_records(self):
+        records = [1, 2, 3]
+        formatted = self.connection.format_records('@brief', records)
+        print('Format records')
+        for i, line in enumerate(formatted):
+            print(i + 1, '=>', line)
+        print()

@@ -465,6 +465,52 @@ class TestMarcRecord(unittest.TestCase):
         self.assertTrue(bool(record))
 
 
+class TestFileSpecification(unittest.TestCase):
+
+    def test_init_1(self):
+        spec = FileSpecification(1, '', 'file.ext')
+        self.assertEqual(spec.binary, False)
+        self.assertEqual(spec.path, 1)
+        self.assertEqual(spec.database, '')
+        self.assertEqual(spec.filename, 'file.ext')
+        self.assertEqual(spec.content, None)
+
+    def test_str_1(self):
+        spec = FileSpecification(1, '', 'file.ext')
+        self.assertEqual(str(spec), '1..file.ext')
+
+    def test_str_2(self):
+        spec = FileSpecification(6, 'IBIS', 'file.ext')
+        self.assertEqual(str(spec), '6.IBIS.file.ext')
+
+
+class TestIrbisFormat(unittest.TestCase):
+
+    def test_comments_1(self):
+        self.assertEqual("", remove_comments(""))
+        self.assertEqual(" ", remove_comments(" "))
+        self.assertEqual("v100,/,v200", remove_comments("v100,/,v200"))
+        self.assertEqual("\tv100\r\n", remove_comments("\tv100\r\n"))
+        self.assertEqual("v100\r\nv200", remove_comments("v100/* Comment\r\nv200"))
+        self.assertEqual("v100, '/* Not comment', v200",
+                         remove_comments("v100, '/* Not comment', v200"))
+        self.assertEqual("v100, |/* Not comment|, v200",
+                         remove_comments("v100, |/* Not comment|, v200"))
+        self.assertEqual("v100, '/* Not comment', v200, \r\nv300",
+                         remove_comments("v100, '/* Not comment', v200, /*comment\r\nv300"))
+
+    def test_prepare_1(self):
+        self.assertEqual("", prepare_format(""))
+        self.assertEqual(" ", prepare_format(" "))
+        self.assertEqual("", prepare_format("\r\n"))
+        self.assertEqual("v100,/,v200", prepare_format("v100,/,v200"))
+        self.assertEqual("v100", prepare_format("\tv100\r\n"))
+        self.assertEqual("v100v200",
+                         prepare_format("v100/*comment\r\nv200"))
+        self.assertEqual("v100",
+                         prepare_format("v100/*comment"))
+
+
 class Iso2709Test(unittest.TestCase):
 
     def test_read_record(self):
@@ -489,6 +535,20 @@ class Iso2709Test(unittest.TestCase):
                 count += 1
             self.assertEqual(count, 79)
         print()
+
+
+class TestIrbisConnection(unittest.TestCase):
+
+    def test_init_1(self):
+        connection = IrbisConnection()
+        self.assertEqual(connection.host, 'localhost')
+        self.assertEqual(connection.port, 6666)
+        self.assertEqual(connection.username, '')
+        self.assertEqual(connection.password, '')
+        self.assertEqual(connection.database, 'IBIS')
+        self.assertEqual(connection.client_id, 0)
+        self.assertEqual(connection.query_id, 0)
+        self.assertEqual(connection.connected, False)
 
 
 if __name__ == '__main__':

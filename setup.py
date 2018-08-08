@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pyirbis",
-    version="0.0.3",
+    version="0.0.4",
     author="Alexey Mironov",
     author_email="amironov73@gmail.com",
     description="Framework for client development for popular russian library computer system IRBIS64",

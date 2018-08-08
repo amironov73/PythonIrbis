@@ -1,4 +1,4 @@
-version: 1.0.{build}
+version: 0.0.{build}
 image: Visual Studio 2017
 
 clone_folder: c:\projects\pythonirbis
@@ -14,3 +14,5 @@ build: off
 artifacts:
 - path: htmlcov
   name: Coverage
+- path: dist
+  name: dist

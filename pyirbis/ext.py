@@ -3,7 +3,7 @@
 # Infrastructure related extended functionality for IRBIS64 client
 
 import re
-from typing import Tuple
+from typing import Tuple, Dict
 
 from pyirbis.core import *
 
@@ -18,9 +18,9 @@ class MenuEntry:
 
     __slots__ = 'code', 'comment'
 
-    def __init__(self, code: str = '', comment: str = ''):
-        self.code = code
-        self.comment = comment
+    def __init__(self, code: str = '', comment: str = '') -> None:
+        self.code: str = code
+        self.comment: str = comment
 
     def __str__(self):
         if self.comment:
@@ -38,8 +38,8 @@ class MenuFile:
 
     __slots__ = 'entries'
 
-    def __init__(self):
-        self.entries: [MenuEntry] = []
+    def __init__(self) -> None:
+        self.entries: List[MenuEntry] = []
 
     def add(self, code: str, comment: str = ''):
         entry = MenuEntry(code, comment)
@@ -69,7 +69,7 @@ class MenuFile:
         result = entry and entry.comment or default_value
         return result
 
-    def parse(self, lines: [str]) -> None:
+    def parse(self, lines: List[str]) -> None:
         i = 0
         while i + 1 < len(lines):
             code = lines[i]
@@ -120,7 +120,7 @@ def read_menu(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_menu = read_menu
+IrbisConnection.read_menu = read_menu  # type: ignore
 
 ###############################################################################
 
@@ -133,7 +133,7 @@ class ParFile:
     __slots__ = ('xrf', 'mst', 'cnt', 'n01', 'n02', 'l01', 'l02', 'ifp',
                  'any', 'pft', 'ext')
 
-    def __init__(self, mst: str = ''):
+    def __init__(self, mst: str = '') -> None:
         self.xrf: str = mst
         self.mst: str = mst
         self.cnt: str = mst
@@ -147,7 +147,7 @@ class ParFile:
         self.ext: str = mst
 
     @staticmethod
-    def make_dict(text: [str]) -> dict:
+    def make_dict(text: List[str]) -> dict:
         result = dict()
         for line in text:
             if not line:
@@ -160,7 +160,7 @@ class ParFile:
             result[key] = value
         return result
 
-    def parse(self, text: [str]) -> None:
+    def parse(self, text: List[str]) -> None:
         d = ParFile.make_dict(text)
         self.xrf = d['1']
         self.mst = d['2']
@@ -209,7 +209,7 @@ def read_par_file(connection: IrbisConnection, specification: Union[FileSpecific
         return result
 
 
-IrbisConnection.read_par_file = read_par_file
+IrbisConnection.read_par_file = read_par_file  # type: ignore
 
 ###############################################################################
 
@@ -221,12 +221,12 @@ class TermPosting:
 
     __slots__ = 'mfn', 'tag', 'occurrence', 'count', 'text'
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.mfn: int = 0
         self.tag: int = 0
         self.occurrence: int = 0
         self.count: int = 0
-        self.text: str = None
+        self.text: Optional[str] = None
 
     def parse(self, text: str) -> None:
         parts = text.split('#', 4)
@@ -257,12 +257,12 @@ class TermInfo:
 
     __slots__ = 'count', 'text'
 
-    def __init__(self, count: int = 0, text: str = ''):
+    def __init__(self, count: int = 0, text: str = '') -> None:
         self.count: int = count
         self.text: str = text
 
     @staticmethod
-    def parse(lines: [str]):
+    def parse(lines: List[str]):
         result = []
         for line in lines:
             parts = line.split('#', 1)
@@ -286,19 +286,19 @@ class TermParameters:
 
     __slots__ = 'database', 'number', 'reverse', 'start', 'format'
 
-    def __init__(self, start: str = None, number: int = 10):
+    def __init__(self, start: str = None, number: int = 10) -> None:
         self.database: str = ''
         self.number: int = number
         self.reverse: bool = False
-        self.start: str = start
-        self.format: str = ''
+        self.start: Optional[str] = start
+        self.format: Optional[str] = None
 
     def __str__(self):
-        return str(self.number) + ' ' + self.format
+        return str(self.number) + ' ' + safe_str(self.format)
 
 
 def read_terms(connection: IrbisConnection,
-               parameters: Union[TermParameters, str, Tuple[str, int]]) -> [TermInfo]:
+               parameters: Union[TermParameters, str, Tuple[str, int]]) -> List[TermInfo]:
     """
     Получение термов поискового словаря.
 
@@ -311,11 +311,13 @@ def read_terms(connection: IrbisConnection,
     if isinstance(parameters, tuple):
         parameters2 = TermParameters(parameters[0])
         parameters2.number = parameters[1]
-        parameters = parameters
+        parameters = parameters2
 
     if isinstance(parameters, str):
         parameters = TermParameters(parameters)
         parameters.number = 10
+
+    assert isinstance(parameters, TermParameters)
 
     database = parameters.database or connection.database or throw_value_error()
     command = READ_TERMS_REVERSE if parameters.reverse else READ_TERMS
@@ -329,7 +331,7 @@ def read_terms(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_terms = read_terms
+IrbisConnection.read_terms = read_terms  # type: ignore
 
 ###############################################################################
 
@@ -341,12 +343,12 @@ class PostingParameters:
 
     __slots__ = 'database', 'first', 'fmt', 'number', 'terms'
 
-    def __init__(self, term: str = None, fmt: str = None):
-        self.database: str = None
+    def __init__(self, term: str = None, fmt: str = None) -> None:
+        self.database: Optional[str] = None
         self.first: int = 1
-        self.fmt: str = fmt
+        self.fmt: Optional[str] = fmt
         self.number: int = 0
-        self.terms: [str] = []
+        self.terms: List[str] = []
         if term:
             self.terms.append(term)
 
@@ -359,7 +361,7 @@ class PostingParameters:
 
 def read_postings(connection: IrbisConnection,
                   parameters: Union[PostingParameters, str],
-                  fmt: Optional[str] = None) -> [TermPosting]:
+                  fmt: Optional[str] = None) -> List[TermPosting]:
     """
     Считывание постингов для указанных термов из поискового словаря.
 
@@ -393,7 +395,7 @@ def read_postings(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_postings = read_postings
+IrbisConnection.read_postings = read_postings  # type: ignore
 
 ###############################################################################
 
@@ -405,18 +407,18 @@ class TreeNode:
 
     __slots__ = 'children', 'value', 'level'
 
-    def __init__(self, value: Optional[str] = None, level: int = 0):
-        self.children = []
-        self.value = value
-        self.level = level
+    def __init__(self, value: Optional[str] = None, level: int = 0) -> None:
+        self.children: List = []
+        self.value: Optional[str] = value
+        self.level: int = level
 
     def add(self, name: str):
         result = TreeNode(name)
         self.children.append(result)
         return result
 
-    def write(self) -> [str]:
-        result = [TreeFile.INDENT * self.level + self.value]
+    def write(self) -> List[str]:
+        result = [TreeFile.INDENT * self.level + safe_str(self.value)]
         for child in self.children:
             inner = child.write()
             result.extend(inner)
@@ -439,7 +441,7 @@ class TreeFile:
     __slots__ = 'roots'
 
     def __init__(self):
-        self.roots = []
+        self.roots: List[TreeNode] = []
 
     @staticmethod
     def _count_indent(text: str) -> int:
@@ -452,14 +454,14 @@ class TreeFile:
         return result
 
     @staticmethod
-    def _arrange_level(nodes: [TreeNode], level: int) -> None:
+    def _arrange_level(nodes: List[TreeNode], level: int) -> None:
         count = len(nodes)
         index = 0
         while index < count:
             index = TreeFile._arrange_nodes(nodes, level, index, count)
 
     @staticmethod
-    def _arrange_nodes(nodes: [TreeNode], level: int, index: int, count: int) -> int:
+    def _arrange_nodes(nodes: List[TreeNode], level: int, index: int, count: int) -> int:
         nxt = index + 1
         level2 = level + 1
         parent = nodes[index]
@@ -477,7 +479,7 @@ class TreeFile:
         self.roots.append(result)
         return result
 
-    def parse(self, text: [str]):
+    def parse(self, text: List[str]):
         nodes = []
         for line in text:
             level = TreeFile._count_indent(line)
@@ -520,7 +522,7 @@ def read_tree_file(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_tree_file = read_tree_file
+IrbisConnection.read_tree_file = read_tree_file  # type: ignore
 
 ###############################################################################
 
@@ -535,26 +537,26 @@ class SearchScenario:
                  'mod_by_dic_auto', 'logic', 'advance',
                  'format')
 
-    def __init__(self, name: str = None):
-        self.name: str = name
-        self.prefix: str = ''
+    def __init__(self, name: Optional[str] = None) -> None:
+        self.name: Optional[str] = name
+        self.prefix: Optional[str] = None
         self.type: int = 0
-        self.menu: str = None
-        self.old: str = None
-        self.correction: str = None
+        self.menu: Optional[str] = None
+        self.old: Optional[str] = None
+        self.correction: Optional[str] = None
         self.truncation: bool = False
-        self.hint: str = None
-        self.mod_by_dic_auto: str = None
+        self.hint: Optional[str] = None
+        self.mod_by_dic_auto: Optional[str] = None
         self.logic: int = 0
-        self.advance: str = None
-        self.format = None
+        self.advance: Optional[str] = None
+        self.format: Optional[str] = None
 
     @staticmethod
-    def parse(ini: IniFile) -> []:
+    def parse(ini: IniFile) -> List:
         section = ini.find('SEARCH')
         if not section:
             return []
-        count = int(section.get_value('ItemNumb', '0'))
+        count = safe_int(safe_str(section.get_value('ItemNumb', '0')))
         if not count:
             return []
         result = []
@@ -563,24 +565,24 @@ class SearchScenario:
             scenario = SearchScenario(name)
             result.append(scenario)
             scenario.prefix = section.get_value(f'ItemPref{i}') or ''
-            scenario.type = safe_int(section.get_value(f'ItemDictionType{i}', '0'))
+            scenario.type = safe_int(safe_str(section.get_value(f'ItemDictionType{i}', '0')))
             scenario.menu = section.get_value(f'ItemMenu{i}')
             scenario.old = None
             scenario.correction = section.get_value(f'ModByDic{i}')
             scenario.truncation = bool(section.get_value(f'ItemTranc{i}', '0'))
             scenario.hint = section.get_value(f'ItemHint{i}')
             scenario.mod_by_dic_auto = section.get_value(f'ItemModByDicAuto{i}')
-            scenario.logic = safe_int(section.get_value(f'ItemLogic{i}', '0'))
+            scenario.logic = safe_int(safe_str(section.get_value(f'ItemLogic{i}', '0')))
             scenario.advance = section.get_value(f'ItemAdv{i}')
             scenario.format = section.get_value(f'ItemPft{i}')
         return result
 
     def __str__(self):
-        return self.name + ' ' + self.prefix
+        return safe_str(self.name) + ' ' + safe_str(self.prefix)
 
 
 def read_search_scenario(connection: IrbisConnection,
-                         specification: Union[FileSpecification, str]) -> [SearchScenario]:
+                         specification: Union[FileSpecification, str]) -> List[SearchScenario]:
 
     assert connection and isinstance(connection, IrbisConnection)
 
@@ -595,7 +597,7 @@ def read_search_scenario(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_search_scenario = read_search_scenario
+IrbisConnection.read_search_scenario = read_search_scenario  # type: ignore
 
 ###############################################################################
 
@@ -609,20 +611,20 @@ class UserInfo:
                  'reader', 'circulation', 'acquisitions',
                  'provision', 'administrator')
 
-    def __init__(self, name: Optional[str] = None, password: Optional[str] = None):
-        self.number: str = None
-        self.name: str = name
-        self.password: str = password
-        self.cataloger: str = None
-        self.reader: str = None
-        self.circulation: str = None
-        self.acquisitions: str = None
-        self.provision: str = None
-        self.administrator: str = None
+    def __init__(self, name: Optional[str] = None, password: Optional[str] = None) -> None:
+        self.number: Optional[str] = None
+        self.name: Optional[str] = name
+        self.password: Optional[str] = password
+        self.cataloger: Optional[str] = None
+        self.reader: Optional[str] = None
+        self.circulation: Optional[str] = None
+        self.acquisitions: Optional[str] = None
+        self.provision: Optional[str] = None
+        self.administrator: Optional[str] = None
 
     @staticmethod
-    def parse(response: ServerResponse) -> []:
-        result = []
+    def parse(response: ServerResponse) -> List:
+        result: List = []
         user_count = response.number()
         lines_per_user = response.number()
         if not user_count or not lines_per_user:
@@ -663,7 +665,7 @@ class UserInfo:
         return ' '.join(x for x in buffer if x)
 
 
-def get_user_list(connection: IrbisConnection) -> [UserInfo]:
+def get_user_list(connection: IrbisConnection) -> List[UserInfo]:
     """
     Получение списка пользователей с сервера.
 
@@ -680,7 +682,7 @@ def get_user_list(connection: IrbisConnection) -> [UserInfo]:
         return result
 
 
-def update_user_list(connection: IrbisConnection, users: [UserInfo]) -> None:
+def update_user_list(connection: IrbisConnection, users: List[UserInfo]) -> None:
     """
     Обновление списка пользователей на сервере.
 
@@ -697,68 +699,9 @@ def update_user_list(connection: IrbisConnection, users: [UserInfo]) -> None:
     connection.execute_forget(query)
 
 
-IrbisConnection.get_user_list = get_user_list
-IrbisConnection.update_user_list = update_user_list
+IrbisConnection.get_user_list = get_user_list  # type: ignore
+IrbisConnection.update_user_list = update_user_list  # type: ignore
 
-###############################################################################
-
-
-class ServerProcess:
-    """
-    Информация о запущенном на сервере процессе.
-    """
-
-    __slots__ = ('number', 'ip', 'name', 'client_id', 'workstation',
-                 'started', 'last_command', 'command_number',
-                 'process_id', 'state')
-
-    @staticmethod
-    def parse(response: ServerResponse):
-        result = []
-        process_count = response.number()
-        lines_per_process = response.number()
-        if not process_count or not lines_per_process:
-            return result
-        for i in range(process_count):
-            process = ServerProcess()
-            process.number = response.ansi()
-            process.ip = response.ansi()
-            process.name = response.ansi()
-            process.client_id = response.ansi()
-            process.workstation = response.ansi()
-            process.started = response.ansi()
-            process.last_command = response.ansi()
-            process.command_number = response.ansi()
-            process.process_id = response.ansi()
-            process.state = response.ansi()
-            result.append(process)
-        return result
-
-    def __str__(self):
-        buffer = [self.number, self.ip, self.name, self.client_id,
-                  self.workstation, self.started, self.last_command,
-                  self.command_number, self.process_id, self.state]
-        return '\n'.join(x for x in buffer if x)
-
-
-def list_processes(connection: IrbisConnection) -> [ServerProcess]:
-    """
-    Получение списка серверных процессов.
-
-    :param connection: Подключение
-    :return: Список процессов
-    """
-
-    assert connection and isinstance(connection, IrbisConnection)
-
-    query = ClientQuery(connection, GET_PROCESS_LIST)
-    with connection.execute(query) as response:
-        response.check_return_code()
-        result = ServerProcess.parse(response)
-        return result
-
-
-IrbisConnection.list_processes = list_processes
 
 ###############################################################################
 
@@ -770,7 +713,7 @@ class OptLine:
 
     __slots__ = 'pattern', 'worksheet'
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.pattern: str = ''
         self.worksheet: str = ''
 
@@ -794,7 +737,7 @@ class OptFile:
         self.length: int = 5
         self.tag: int = 920
 
-    def parse(self, text: [str]):
+    def parse(self, text: List[str]):
         self.tag = int(text[0])
         self.length = int(text[1])
         for line in text[2:]:
@@ -879,7 +822,7 @@ def read_opt_file(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_opt_file = read_opt_file
+IrbisConnection.read_opt_file = read_opt_file  # type: ignore
 
 ###############################################################################
 
@@ -970,7 +913,7 @@ def get_server_stat(connection: IrbisConnection) -> ServerStat:
         return result
 
 
-IrbisConnection.get_server_stat = get_server_stat
+IrbisConnection.get_server_stat = get_server_stat  # type: ignore
 
 ###############################################################################
 
@@ -984,19 +927,19 @@ class DatabaseInfo:
                  'physically_deleted', 'nonactualized', 'locked_records',
                  'database_locked', 'read_only')
 
-    def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
-        self.name: str = name
-        self.description: str = description
+    def __init__(self, name: Optional[str] = None, description: Optional[str] = None) -> None:
+        self.name: Optional[str] = name
+        self.description: Optional[str] = description
         self.max_mfn: int = 0
-        self.logically_deleted: [int] = []
-        self.physically_deleted: [int] = []
-        self.nonactualized: [int] = []
-        self.locked_records: [int] = []
+        self.logically_deleted: List[int] = []
+        self.physically_deleted: List[int] = []
+        self.nonactualized: List[int] = []
+        self.locked_records: List[int] = []
         self.database_locked: bool = False
         self.read_only: bool = False
 
     @staticmethod
-    def _parse(line: str) -> [int]:
+    def _parse(line: str) -> List[int]:
         if not line:
             return []
         return [int(x) for x in line.split(SHORT_DELIMITER) if x]
@@ -1037,7 +980,7 @@ def get_database_info(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.get_database_info = get_database_info
+IrbisConnection.get_database_info = get_database_info  # type: ignore
 
 ###############################################################################
 
@@ -1087,7 +1030,7 @@ def print_table(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.print_table = print_table
+IrbisConnection.print_table = print_table  # type: ignore
 
 ###############################################################################
 
@@ -1101,8 +1044,8 @@ class AlphabetTable:
 
     __slots__ = 'characters'
 
-    def __init__(self):
-        self.characters = []
+    def __init__(self) -> None:
+        self.characters: List[str] = []
 
     @staticmethod
     def get_default():
@@ -1142,15 +1085,15 @@ class AlphabetTable:
 
     def parse(self, response: ServerResponse) -> None:
         text = response.ansi_remaining_text()
-        text = irbis_to_lines(text)
+        lines = irbis_to_lines(text)
         b = bytearray()
-        for line in text:
+        for line in lines:
             parts = line.strip().split(' ')
             b.extend(int(x) for x in parts if x and x.isdigit())
         b.remove(0x98)  # Этот символ не мапится
         self.characters = list(b.decode(ANSI))
 
-    def split_words(self, text: str) -> [str]:
+    def split_words(self, text: str) -> List[str]:
         result = []
         accumulator = []
         for c in text:
@@ -1196,7 +1139,7 @@ def read_alphabet_table(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_alphabet_table = read_alphabet_table
+IrbisConnection.read_alphabet_table = read_alphabet_table  # type: ignore
 
 ###############################################################################
 
@@ -1210,8 +1153,8 @@ class UpperCaseTable:
 
     __slots__ = 'mapping'
 
-    def __init__(self):
-        self.mapping = dict()
+    def __init__(self) -> None:
+        self.mapping: Dict = dict()
 
     @staticmethod
     def get_default():
@@ -1478,17 +1421,17 @@ class UpperCaseTable:
 
     def parse(self, response: ServerResponse) -> None:
         text = response.ansi_remaining_text()
-        text = irbis_to_lines(text)
+        lines = irbis_to_lines(text)
         first = bytearray()
-        for line in text:
+        for line in lines:
             parts = line.strip().split(' ')
             first.extend(int(x) for x in parts if x and x.isdigit())
         first = first.replace(b'\x98', b'\x20')  # Этот символ не мапится
-        first = list(first.decode(ANSI))
+        first_chars = list(first.decode(ANSI))
         second = bytearray(x for x in range(256))
         second = second.replace(b'\x98', b'\x20')  # Этот символ не мапится
-        second = list(second.decode(ANSI))
-        for f, s in zip(first, second):
+        second_chars = list(second.decode(ANSI))
+        for f, s in zip(first_chars, second_chars):
             self.mapping[s] = f
 
     def upper(self, text: str) -> str:
@@ -1524,6 +1467,6 @@ def read_uppercase_table(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_uppercase_table = read_uppercase_table
+IrbisConnection.read_uppercase_table = read_uppercase_table  # type: ignore
 
 ###############################################################################

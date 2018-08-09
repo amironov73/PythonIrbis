@@ -57,7 +57,7 @@ class TestConnect(unittest.TestCase):
         print('Connection')
         print('Server version:', self.connection.server_version)
         print('Connected:', bool(self.connection))
-        print(self.connection.ini_file['MAIN']['STTMNU'])
+        print(self.connection.ini_file['MAIN']['DBNNAMECAT'])
 
     def test_02_nop(self):
         self.connection.nop()

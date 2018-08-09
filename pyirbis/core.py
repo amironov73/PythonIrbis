@@ -4,7 +4,7 @@
 
 import random
 import socket
-from typing import Union, Optional
+from typing import Union, Optional, SupportsInt, List
 
 # Max number of postings
 
@@ -216,7 +216,7 @@ def safe_str(obj) -> str:
     return str(obj)
 
 
-def safe_int(text: Optional[str]):
+def safe_int(text: Union[str, bytes, SupportsInt]) -> int:
     """
     Безопасное превращение строки в целое.
 
@@ -224,7 +224,7 @@ def safe_int(text: Optional[str]):
     :return: Целое число
     """
     try:
-        result = int(text)
+        result:int = int(text)
     except ValueError:
         result = 0
     return result
@@ -249,7 +249,7 @@ def irbis_to_dos(text: str) -> str:
     return text.replace(IRBIS_DELIMITER, '\n')
 
 
-def irbis_to_lines(text: str) -> [str]:
+def irbis_to_lines(text: str) -> List[str]:
     """
     Convert IRBIS text to list of strings.
 
@@ -259,7 +259,7 @@ def irbis_to_lines(text: str) -> [str]:
     return text.split(IRBIS_DELIMITER)
 
 
-def short_irbis_to_lines(text: str) -> [str]:
+def short_irbis_to_lines(text: str) -> List[str]:
     """
     Convert IRBIS with short delimiter text to list of strings.
 

@@ -13,27 +13,27 @@ environment:
   TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
 
 install:
-  - %PYTHON% -m pip install --upgrade pip
-  - %PIP% install --upgrade setuptools wheel coverage mypy
+  -cmd: %PYTHON% -m pip install --upgrade pip
+  -cmd: %PIP% install --upgrade setuptools wheel coverage mypy
 
 before_build:
-  - %PYTHON% utils\patch_version.py pyirbis\__init__.py %APPVEYOR_BUILD_VERSION%
-  - %PYTHON% utils\patch_version.py setup.py %APPVEYOR_BUILD_VERSION%
+  -cmd: %PYTHON% utils\patch_version.py pyirbis\__init__.py %APPVEYOR_BUILD_VERSION%
+  -cmd: %PYTHON% utils\patch_version.py setup.py %APPVEYOR_BUILD_VERSION%
 
 build_script:
-  - %PYTHON% -m mypy pyirbis\core.py
-  - %PYTHON% -m mypy pyirbis\ext.py
+  -cmd: %PYTHON% -m mypy pyirbis\core.py
+  -cmd: %PYTHON% -m mypy pyirbis\ext.py
 
 after_build:
-  - %PYTHON% setup.py sdist bdist_wheel
+  -cmd: %PYTHON% setup.py sdist bdist_wheel
 
 test_script:
-  - %COVERAGE% run tests\offline_tests.py
-  - %COVERAGE% report
-  - %COVERAGE% html
+  -cmd: %COVERAGE% run tests\offline_tests.py
+  -cmd: %COVERAGE% report
+  -cmd: %COVERAGE% html
 
 after_test:
-  - %TWINE% upload dist/*
+  -cmd: %TWINE% upload dist/*
 
 artifacts:
   - path: htmlcov

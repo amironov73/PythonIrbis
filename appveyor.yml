@@ -14,31 +14,31 @@ environment:
   TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
 
 install:
-  -cmd: python -m pip install --upgrade pip
-  -cmd: pip install --upgrade setuptools wheel coverage mypy
+  - python -m pip install --upgrade pip
+  - pip install --upgrade setuptools wheel coverage mypy
 
 before_build:
-  -cmd: python utils\patch_version.py pyirbis\__init__.py %APPVEYOR_BUILD_VERSION%
-  -cmd: python utils\patch_version.py setup.py %APPVEYOR_BUILD_VERSION%
+  - python utils\patch_version.py pyirbis\__init__.py %APPVEYOR_BUILD_VERSION%
+  - python utils\patch_version.py setup.py %APPVEYOR_BUILD_VERSION%
 
 build_script:
-  -cmd: cd c:\projects\pythonirbis
-  -cmd: python -m mypy pyirbis\core.py
-  -cmd: python -m mypy pyirbis\ext.py
+  - cd c:\projects\pythonirbis
+  - python -m mypy pyirbis\core.py
+  - python -m mypy pyirbis\ext.py
 
 after_build:
-  -cmd: cd c:\projects\pythonirbis
-  -cmd: python setup.py sdist bdist_wheel
+  - cd c:\projects\pythonirbis
+  - python setup.py sdist bdist_wheel
 
 test_script:
-  -cmd: cd c:\projects\pythonirbis
-  -cmd: coverage run tests\offline_tests.py
-  -cmd: coverage report
-  -cmd: coverage html
+  - cd c:\projects\pythonirbis
+  - coverage run tests\offline_tests.py
+  - coverage report
+  - coverage html
 
 after_test:
-  -cmd: cd c:\projects\pythonirbis
-  -cmd: twine upload dist/*
+  - cd c:\projects\pythonirbis
+  - twine upload dist/*
 
 artifacts:
   - path: htmlcov

@@ -4,6 +4,7 @@ image: Visual Studio 2017
 clone_folder: c:\projects\pythonirbis
 
 environment:
+  PATH: C:\Python36-x64;C:\Python36-x64\Scripts;%PATH%
   PYTHON: C:\Python36-x64\python.exe
   PIP: C:\Python36-x64\Scripts\pip.exe
   COVERAGE: C:\Python36-x64\Scripts\coverage.exe
@@ -13,31 +14,31 @@ environment:
   TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
 
 install:
-  -cmd: "%PYTHON%" -m pip install --upgrade pip
-  -cmd: "%PIP%" install --upgrade setuptools wheel coverage mypy
+  -cmd: python -m pip install --upgrade pip
+  -cmd: pip install --upgrade setuptools wheel coverage mypy
 
 before_build:
-  -cmd: "%PYTHON%" utils\patch_version.py pyirbis\__init__.py "%APPVEYOR_BUILD_VERSION%"
-  -cmd: "%PYTHON%" utils\patch_version.py setup.py "%APPVEYOR_BUILD_VERSION%"
+  -cmd: python utils\patch_version.py pyirbis\__init__.py %APPVEYOR_BUILD_VERSION%
+  -cmd: python utils\patch_version.py setup.py %APPVEYOR_BUILD_VERSION%
 
 build_script:
   -cmd: cd c:\projects\pythonirbis
-  -cmd: "%PYTHON%" -m mypy pyirbis\core.py
-  -cmd: "%PYTHON%" -m mypy pyirbis\ext.py
+  -cmd: python -m mypy pyirbis\core.py
+  -cmd: python -m mypy pyirbis\ext.py
 
 after_build:
   -cmd: cd c:\projects\pythonirbis
-  -cmd: "%PYTHON%" setup.py sdist bdist_wheel
+  -cmd: python setup.py sdist bdist_wheel
 
 test_script:
   -cmd: cd c:\projects\pythonirbis
-  -cmd: "%COVERAGE%" run tests\offline_tests.py
-  -cmd: "%COVERAGE%" report
-  -cmd: "%COVERAGE%" html
+  -cmd: coverage run tests\offline_tests.py
+  -cmd: coverage report
+  -cmd: coverage html
 
 after_test:
   -cmd: cd c:\projects\pythonirbis
-  -cmd: "%TWINE%" upload dist/*
+  -cmd: twine upload dist/*
 
 artifacts:
   - path: htmlcov

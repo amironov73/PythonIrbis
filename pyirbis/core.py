@@ -224,19 +224,21 @@ def safe_int(text: Union[str, bytes, SupportsInt]) -> int:
     :return: Целое число
     """
     try:
-        result:int = int(text)
+        result: int = int(text)
     except ValueError:
         result = 0
     return result
 
 
-def throw_value_error() -> None:
+# noinspection PyUnreachableCode
+def throw_value_error() -> str:
     """
     Simple raises ValueError.
 
     :return: None
     """
     raise ValueError()
+    return ''
 
 
 def irbis_to_dos(text: str) -> str:
@@ -417,7 +419,7 @@ class IrbisError(Exception):
 
     __slots__ = 'code'
 
-    def __init__(self, code: int = 0):
+    def __init__(self, code: int = 0) -> None:
         self.code = code
 
     def __str__(self):
@@ -436,7 +438,7 @@ class ClientQuery:
 
     __slots__ = ('_memory',)
 
-    def __init__(self, connection, command: str):
+    def __init__(self, connection, command: str) -> None:
         self._memory = bytearray()
         self.ansi(command)
         self.ansi(connection.workstation)
@@ -459,7 +461,7 @@ class ClientQuery:
         """
         return self.ansi(str(number))
 
-    def ansi(self, text: str):
+    def ansi(self, text: Optional[str]):
         """
         Добавление строки в кодировке ANSI.
 
@@ -468,7 +470,7 @@ class ClientQuery:
         """
         return self.append(text, ANSI)
 
-    def append(self, text: str, encoding: str):
+    def append(self, text: Optional[str], encoding: str):
         """
         Добавление строки в указанной кодировке.
 
@@ -490,7 +492,7 @@ class ClientQuery:
         self._memory.append(0x0A)
         return self
 
-    def utf(self, text: str):
+    def utf(self, text: Optional[str]):
         """
         Добавление строки в кодировке UTF-8.
 
@@ -530,12 +532,12 @@ class FileSpecification:
 
     __slots__ = 'binary', 'path', 'database', 'filename', 'content'
 
-    def __init__(self, path: int, database: Optional[str], filename: str):
+    def __init__(self, path: int, database: Optional[str], filename: str) -> None:
         self.binary: bool = False
         self.path: int = path
-        self.database: str = database
+        self.database: Optional[str] = database
         self.filename: str = filename
-        self.content: str = None
+        self.content: Optional[str] = None
 
     @staticmethod
     def system(filename: str):
@@ -593,7 +595,7 @@ class ServerResponse:
 
     __slots__ = '_memory', 'command', 'client_id', 'query_id', 'length', 'version', 'return_code'
 
-    def __init__(self, sock: socket.socket):
+    def __init__(self, sock: socket.socket) -> None:
         self._memory: bytearray = bytearray()
         while sock:
             buffer = sock.recv(4096)
@@ -613,7 +615,7 @@ class ServerResponse:
     def ansi(self) -> str:
         return self.read().decode(ANSI)
 
-    def ansi_n(self, count: int) -> [str]:
+    def ansi_n(self, count: int) -> List[str]:
         """
         Считывание не менее указанного количества строк.
 
@@ -700,7 +702,7 @@ class ServerResponse:
     def utf(self) -> str:
         return self.read().decode(UTF)
 
-    def utf_n(self, count: int) -> [str]:
+    def utf_n(self, count: int) -> List[str]:
         """
         Считывание не менее указанного количества строк.
 
@@ -750,7 +752,7 @@ class SearchParameters:
     __slots__ = ('database', 'first', 'format', 'max_mfn', 'min_mfn',
                  'number', 'expression', 'sequential', 'filter', 'utf')
 
-    def __init__(self, expression: Optional[str] = None, number: int = 0):
+    def __init__(self, expression: Optional[str] = None, number: int = 0) -> None:
         self.database: Optional[str] = None
         self.first: int = 1
         self.format: Optional[str] = None
@@ -758,8 +760,8 @@ class SearchParameters:
         self.min_mfn: int = 0
         self.number: int = number
         self.expression = expression
-        self.sequential: str = None
-        self.filter: str = None
+        self.sequential: Optional[str] = None
+        self.filter: Optional[str] = None
         self.utf = False
 
     def __str__(self):
@@ -780,9 +782,10 @@ class SubField:
 
     __slots__ = 'code', 'value'
 
-    def __init__(self, code: Optional[str] = DEFAULT_CODE, value: Optional[str] = None):
+    def __init__(self, code: str = DEFAULT_CODE, value: Optional[str] = None) -> None:
+        code = code or SubField.DEFAULT_CODE
         self.code: str = code.lower()
-        self.value: str = value
+        self.value: Optional[str] = value
 
     def assign_from(self, other):
         self.code = other.code
@@ -816,27 +819,29 @@ class RecordField:
 
     __slots__ = 'tag', 'value', 'subfields'
 
-    def __init__(self, tag: Optional[int] = DEFAULT_TAG, value: Union[SubField, str] = None, *subfields: [SubField]):
+    def __init__(self, tag: Optional[int] = DEFAULT_TAG, value: Union[SubField, str] = None,
+                 *subfields: SubField) -> None:
         self.tag: int = tag or self.DEFAULT_TAG
-        self.value: value = None
+        self.value: Optional[str] = None
         if isinstance(value, str):
             self.value = value
-        self.subfields: [SubField] = []
+        self.subfields: List[SubField] = []
         if isinstance(value, SubField):
             self.subfields.append(value)
-        self.subfields.extend(subfields)
+        for sf in subfields:
+            self.subfields.append(sf)
 
     def add(self, code: str, value: str = ''):
         self.subfields.append(SubField(code, value))
         return self
 
-    def all(self, code: str) -> [SubField]:
+    def all(self, code: str) -> List[SubField]:
         code = code.lower()
         return [sf for sf in self.subfields if sf.code == code]
 
-    def all_values(self, code: str) -> [str]:
+    def all_values(self, code: str) -> List[str]:
         code = code.lower()
-        return [sf.value for sf in self.subfields if sf.code == code]
+        return [sf.value for sf in self.subfields if sf.code == code if sf.value]
 
     def assign_from(self, other):
         self.value = other.value
@@ -981,7 +986,7 @@ class MarcRecord:
         self.fields.append(field)
         return self
 
-    def all(self, tag: int) -> [RecordField]:
+    def all(self, tag: int) -> List[RecordField]:
         return [f for f in self.fields if f.tag == tag]
 
     def clear(self):
@@ -997,7 +1002,7 @@ class MarcRecord:
         result.fields = [field.clone() for field in self.fields]
         return result
 
-    def encode(self) -> [str]:
+    def encode(self) -> List[str]:
         result = [str(self.mfn) + '#' + str(self.status),
                   '0#' + str(self.version)]
         for field in self.fields:
@@ -1019,7 +1024,7 @@ class MarcRecord:
                     return field.value
         return None
 
-    def fma(self, tag: int, code: str = '') -> [str]:
+    def fma(self, tag: int, code: str = '') -> List[str]:
         result = []
         for field in self.fields:
             if field.tag == tag:
@@ -1046,7 +1051,7 @@ class MarcRecord:
         """
         return (self.status & (LOGICALLY_DELETED | PHYSICALLY_DELETED)) != 0
 
-    def parse(self, text: [str]) -> None:
+    def parse(self, text: List[str]) -> None:
         if not text:
             return
         line = text[0]
@@ -1078,32 +1083,33 @@ class MarcRecord:
 
     def __setitem__(self, key: int, value: Union[RecordField, SubField, str, None]):
         if value is None:
-            found = self.all(key)
-            for field in found:
-                self.fields.remove(field)
+            found: List[RecordField] = self.all(key)
+            for fld in found:
+                self.fields.remove(fld)
             return
 
-        found = self.first(key)
+        field: Optional[RecordField] = self.first(key)
         if isinstance(value, str):
-            if found is None:
-                found = RecordField(key, value)
-                self.fields.append(found)
+            if field is None:
+                field = RecordField(key, value)
+                self.fields.append(field)
             else:
-                found.clear()
-                found.parse(value)
+                field.clear()
+                # TODO need headless_parse() method
+                field.parse(value)
 
         if isinstance(value, RecordField):
-            if found is None:
-                found = RecordField(key)
-                self.fields.append(found)
-            found.assign_from(value)
+            if field is None:
+                field = RecordField(key)
+                self.fields.append(field)
+            field.assign_from(value)
 
         if isinstance(value, SubField):
-            if found is None:
-                found = RecordField(key)
-                self.fields.append(found)
-            found.clear()
-            found.subfields.append(value)
+            if field is None:
+                field = RecordField(key)
+                self.fields.append(field)
+            field.clear()
+            field.subfields.append(value)
 
     def __len__(self):
         return len(self.fields)
@@ -1128,7 +1134,7 @@ class IrbisVersion:
         self.max_clients = 0
         self.connected_clients = 0
 
-    def parse(self, lines: [str]):
+    def parse(self, lines: List[str]):
         if len(lines) == 3:
             self.version = lines[0]
             self.connected_clients = int(lines[1])
@@ -1153,21 +1159,21 @@ class IniLine:
 
     __slots__ = 'key', 'value'
 
-    def __init__(self, key: Optional[str] = None, value: Optional[str] = None):
+    def __init__(self, key: Optional[str] = None, value: Optional[str] = None) -> None:
         self.key = key
         self.value = value
-
-    @staticmethod
-    def same_key(first: str, second: str) -> bool:
-        if not first or not second:
-            return False
-        return first.upper() == second.upper()
 
     def __str__(self):
         return str(self.key) + '=' + str(self.value)
 
     def __repr__(self):
         return self.__str__()
+
+
+def same_key(first: Optional[str], second: Optional[str]) -> bool:
+    if not first or not second:
+        return False
+    return first.upper() == second.upper()
 
 
 class IniSection:
@@ -1177,13 +1183,13 @@ class IniSection:
 
     __slots__ = 'name', 'lines'
 
-    def __init__(self, name: Optional[str] = None):
-        self.name: str = name
-        self.lines = []
+    def __init__(self, name: Optional[str] = None) -> None:
+        self.name: Optional[str] = name
+        self.lines: List[IniLine] = []
 
     def find(self, key: str) -> Optional[IniLine]:
         for line in self.lines:
-            if IniLine.same_key(line.key, key):
+            if same_key(line.key, key):
                 return line
         return None
 
@@ -1244,7 +1250,7 @@ class IniFile:
         for section in self.sections:
             if not name and not section.name:
                 return section
-            if IniLine.same_key(section.name, name):
+            if same_key(section.name, name):
                 return section
         return None
 
@@ -1268,7 +1274,7 @@ class IniFile:
             self.sections.append(section)
         section.set_value(key, value)
 
-    def parse(self, text: [str]) -> None:
+    def parse(self, text: List[str]) -> None:
         section = None
         for line in text:
             line = line.strip()
@@ -1315,6 +1321,58 @@ class IniFile:
 
 ###############################################################################
 
+
+class ServerProcess:
+    """
+    Информация о запущенном на сервере процессе.
+    """
+
+    __slots__ = ('number', 'ip', 'name', 'client_id', 'workstation',
+                 'started', 'last_command', 'command_number',
+                 'process_id', 'state')
+
+    def __init__(self) -> None:
+        self.number: str = ''
+        self.ip: str = ''
+        self.name: str = ''
+        self.client_id: str = ''
+        self.workstation: str = ''
+        self.started: str = ''
+        self.last_command: str = ''
+        self.command_number: str = ''
+        self.process_id: str = ''
+        self.state: str = ''
+
+    def __str__(self):
+        buffer = [self.number, self.ip, self.name, self.client_id,
+                  self.workstation, self.started, self.last_command,
+                  self.command_number, self.process_id, self.state]
+        return '\n'.join(x for x in buffer if x)
+
+
+def parse_process_list(response: ServerResponse) -> List[ServerProcess]:
+    result: List[ServerProcess] = []
+    process_count = response.number()
+    lines_per_process = response.number()
+    if not process_count or not lines_per_process:
+        return result
+    for i in range(process_count):
+        process = ServerProcess()
+        process.number = response.ansi()
+        process.ip = response.ansi()
+        process.name = response.ansi()
+        process.client_id = response.ansi()
+        process.workstation = response.ansi()
+        process.started = response.ansi()
+        process.last_command = response.ansi()
+        process.command_number = response.ansi()
+        process.process_id = response.ansi()
+        process.state = response.ansi()
+        result.append(process)
+    return result
+
+###############################################################################
+
 # Подключение к серверу
 
 
@@ -1331,21 +1389,24 @@ class IrbisConnection:
                  'client_id', 'query_id', 'connected', '_stack', 'server_version',
                  'ini_file')
 
-    def __init__(self, host: Optional[str] = DEFAULT_HOST, port: int = DEFAULT_PORT,
-                 username: str = '', password: str = '', database: str = DEFAULT_DATABASE,
-                 workstation: str = 'C'):
-        self.host: str = host
-        self.port: int = port
-        self.username: str = username
-        self.password: str = password
-        self.database: str = database
+    def __init__(self, host: Optional[str] = None,
+                 port: int = 0,
+                 username: Optional[str] = None,
+                 password: Optional[str] = None,
+                 database: Optional[str] = None,
+                 workstation: str = 'C') -> None:
+        self.host: str = host or IrbisConnection.DEFAULT_HOST
+        self.port: int = port or IrbisConnection.DEFAULT_PORT
+        self.username: Optional[str] = username
+        self.password: Optional[str] = password
+        self.database: str = database or IrbisConnection.DEFAULT_DATABASE
         self.workstation: str = workstation
         self.client_id: int = 0
         self.query_id: int = 0
         self.connected: bool = False
-        self._stack = []
+        self._stack: List[str] = []
         self.server_version: Optional[str] = None
-        self.ini_file: Optional[IniFile] = None
+        self.ini_file: IniFile = IniFile()
 
     def actualize_record(self, mfn: int, database: Optional[str] = None) -> None:
         """
@@ -1365,8 +1426,10 @@ class IrbisConnection:
         with self.execute(query) as response:
             response.check_return_code()
 
-    def connect(self, host: Optional[str] = None, port: int = 0,
-                username: Optional[str] = None, password: Optional[str] = None,
+    def connect(self, host: Optional[str] = None,
+                port: int = 0,
+                username: Optional[str] = None,
+                password: Optional[str] = None,
                 database: Optional[str] = None) -> IniFile:
         """
         Подключение к серверу ИРБИС64.
@@ -1377,7 +1440,7 @@ class IrbisConnection:
             return self.ini_file
 
         self.host = host or self.host or throw_value_error()
-        self.port = port or self.port or throw_value_error()
+        self.port = port or self.port or int(throw_value_error())
         self.username = username or self.username or throw_value_error()
         self.password = password or self.password or throw_value_error()
         self.database = database or self.database or throw_value_error()
@@ -1397,8 +1460,8 @@ class IrbisConnection:
             self.server_version = response.version
             result = IniFile()
             text = irbis_to_lines(response.ansi_remaining_text())
-            text = text[0]
-            text = text.splitlines()
+            line = text[0]
+            text = line.splitlines()
             text = text[1:]
             result.parse(text)
             self.connected = True
@@ -1539,7 +1602,8 @@ class IrbisConnection:
         """
 
         script = script or throw_value_error()
-        record = record or throw_value_error()
+        if not record:
+            raise ValueError()
 
         assert isinstance(script, str)
         assert isinstance(record, MarcRecord) or isinstance(record, int)
@@ -1565,7 +1629,7 @@ class IrbisConnection:
             result = response.utf_remaining_text().strip('\r\n')
             return result
 
-    def format_records(self, script: str, records: [int], use_utf: bool = False) -> [str]:
+    def format_records(self, script: str, records: List[int], use_utf: bool = False) -> List[str]:
         """
         Форматирование группы записей по MFN.
 
@@ -1643,7 +1707,7 @@ class IrbisConnection:
                 self.server_version = result.version
             return result
 
-    def list_files(self, *specification: Union[FileSpecification, str]) -> [str]:
+    def list_files(self, *specification: Union[FileSpecification, str]) -> List[str]:
         """
         Получение списка файлов с сервера.
 
@@ -1659,7 +1723,7 @@ class IrbisConnection:
             query.ansi(str(spec))
             ok = True
 
-        result = []
+        result: List[str] = []
         if not ok:
             return result
 
@@ -1670,13 +1734,27 @@ class IrbisConnection:
                 result.extend(one for one in irbis_to_lines(line) if one)
         return result
 
+    def list_processes(self) -> List[ServerProcess]:
+        """
+        Получение списка серверных процессов.
+
+        :return: Список процессов
+        """
+
+        query = ClientQuery(self, GET_PROCESS_LIST)
+        with self.execute(query) as response:
+            response.check_return_code()
+            result = parse_process_list(response)
+            return result
+
     def monitor_operation(self, operation: str) -> str:
         import time
+        client_id = str(self.client_id)
         while True:
             processes = self.list_processes()
             found = False
             for process in processes:
-                if process.client_id == self.client_id and process.last_command == operation:
+                if process.client_id == client_id and process.last_command == operation:
                     found = True
                     break
             if not found:
@@ -1807,7 +1885,7 @@ class IrbisConnection:
         :return: Прочитанная запись
         """
 
-        mfn = mfn or throw_value_error()
+        mfn = mfn or int(throw_value_error())
 
         assert isinstance(mfn, int)
 
@@ -1889,7 +1967,7 @@ class IrbisConnection:
         with self.execute_ansi(RESTART_SERVER):
             pass
 
-    def search(self, parameters: Union[SearchParameters, str]) -> []:
+    def search(self, parameters: Union[SearchParameters, str]) -> List:
         """
         Поиск записей.
 
@@ -1931,12 +2009,14 @@ class IrbisConnection:
         :return: Строка подключения
         """
 
-        return 'host=' + self.host + ';port=' + str(self.port) \
-               + ';username=' + self.username + ';password=' \
-               + self.password + ';database=' + self.database \
-               + ';workstation=' + self.workstation + ';'
+        return 'host=' + safe_str(self.host) + \
+               ';port=' + str(self.port) + \
+               ';username=' + safe_str(self.username) + \
+               ';password=' + safe_str(self.password) + \
+               ';database=' + safe_str(self.database) + \
+               ';workstation=' + safe_str(self.workstation) + ';'
 
-    def truncate_database(self, database: str = '') -> None:
+    def truncate_database(self, database: Optional[str] = None) -> None:
         """
         Опустошение базы данных.
 
@@ -1966,7 +2046,7 @@ class IrbisConnection:
         with self.execute_ansi(UNLOCK_DATABASE, database):
             pass
 
-    def unlock_records(self, records: [int], database: Optional[str] = None) -> None:
+    def unlock_records(self, records: List[int], database: Optional[str] = None) -> None:
         """
         Разблокирование записей.
 
@@ -1988,7 +2068,7 @@ class IrbisConnection:
         with self.execute(query) as response:
             response.check_return_code()
 
-    def update_ini_file(self, lines: [str]) -> None:
+    def update_ini_file(self, lines: List[str]) -> None:
         """
         Обновление строк серверного INI-файла.
 
@@ -2017,8 +2097,9 @@ class IrbisConnection:
         :return: Новый максимальный MFN
         """
 
-        record = record or throw_value_error()
         database = record.database or self.database or throw_value_error()
+        if not record:
+            raise ValueError()
 
         assert isinstance(record, MarcRecord)
         assert isinstance(database, str)

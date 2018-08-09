@@ -13,27 +13,31 @@ environment:
   TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
 
 install:
-  -cmd: %PYTHON% -m pip install --upgrade pip
-  -cmd: %PIP% install --upgrade setuptools wheel coverage mypy
+  -cmd: "%PYTHON%" -m pip install --upgrade pip
+  -cmd: "%PIP%" install --upgrade setuptools wheel coverage mypy
 
 before_build:
-  -cmd: %PYTHON% utils\patch_version.py pyirbis\__init__.py %APPVEYOR_BUILD_VERSION%
-  -cmd: %PYTHON% utils\patch_version.py setup.py %APPVEYOR_BUILD_VERSION%
+  -cmd: "%PYTHON%" utils\patch_version.py pyirbis\__init__.py "%APPVEYOR_BUILD_VERSION%"
+  -cmd: "%PYTHON%" utils\patch_version.py setup.py "%APPVEYOR_BUILD_VERSION%"
 
 build_script:
-  -cmd: %PYTHON% -m mypy pyirbis\core.py
-  -cmd: %PYTHON% -m mypy pyirbis\ext.py
+  -cmd: cd c:\projects\pythonirbis
+  -cmd: "%PYTHON%" -m mypy pyirbis\core.py
+  -cmd: "%PYTHON%" -m mypy pyirbis\ext.py
 
 after_build:
-  -cmd: %PYTHON% setup.py sdist bdist_wheel
+  -cmd: cd c:\projects\pythonirbis
+  -cmd: "%PYTHON%" setup.py sdist bdist_wheel
 
 test_script:
-  -cmd: %COVERAGE% run tests\offline_tests.py
-  -cmd: %COVERAGE% report
-  -cmd: %COVERAGE% html
+  -cmd: cd c:\projects\pythonirbis
+  -cmd: "%COVERAGE%" run tests\offline_tests.py
+  -cmd: "%COVERAGE%" report
+  -cmd: "%COVERAGE%" html
 
 after_test:
-  -cmd: %TWINE% upload dist/*
+  -cmd: cd c:\projects\pythonirbis
+  -cmd: "%TWINE%" upload dist/*
 
 artifacts:
   - path: htmlcov

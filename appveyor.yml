@@ -3,16 +3,40 @@ image: Visual Studio 2017
 
 clone_folder: c:\projects\pythonirbis
 
+environment:
+  PYTHON: C:\Python36-x64\python.exe
+  PIP: C:\Python36-x64\Scripts\pip.exe
+  COVERAGE: C:\Python36-x64\Scripts\coverage.exe
+  TWINE: C:\Python36-x64\Scripts\twine.exe
+  TWINE_USERNAME: amironov73
+  TWINE_PASSWORD: 1JY9Dr54nOTpD3EAV4mqMQ==
+  TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
+
+install:
+  - %PYTHON% -m pip install --upgrade pip
+  - %PIP% install --upgrade setuptools wheel coverage mypy
+
+before_build:
+  - %PYTHON% utils\patch_version.py pyirbis\__init__.py %APPVEYOR_BUILD_VERSION%
+  - %PYTHON% utils\patch_version.py setup.py %APPVEYOR_BUILD_VERSION%
+
+build_script:
+  - %PYTHON% -m mypy pyirbis\core.py
+  - %PYTHON% -m mypy pyirbis\ext.py
+
+after_build:
+  - %PYTHON% setup.py sdist bdist_wheel
+
 test_script:
-- cmd: >-
-    cd c:\projects\pythonirbis
+  - %COVERAGE% run tests\offline_tests.py
+  - %COVERAGE% report
+  - %COVERAGE% html
 
-    call build.cmd
-
-build: off
+after_test:
+  - %TWINE% upload dist/*
 
 artifacts:
-- path: htmlcov
-  name: Coverage
-- path: dist
-  name: dist
+  - path: htmlcov
+    name: Coverage
+  - path: dist
+    name: dist

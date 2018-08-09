@@ -11,7 +11,8 @@ environment:
   COVERAGE: C:\Python36-x64\Scripts\coverage.exe
   TWINE: C:\Python36-x64\Scripts\twine.exe
   TWINE_USERNAME: amironov73
-  TWINE_PASSWORD: 1JY9Dr54nOTpD3EAV4mqMQ==
+  TWINE_PASSWORD: 
+    secure: 1JY9Dr54nOTpD3EAV4mqMQ==
   TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
 
 install:

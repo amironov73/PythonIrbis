@@ -1,6 +1,7 @@
 # coding: utf-8
 
 from pyirbis.core import *
+from typing.io import BinaryIO
 
 # Length of the record marker
 MARKER_LENGTH = 24
@@ -22,7 +23,7 @@ def parse_int(buffer):
     return result
 
 
-def read_record(stream, charset=ANSI) -> Optional[MarcRecord]:
+def read_record(stream: BinaryIO, charset=ANSI) -> Optional[MarcRecord]:
     """
     Чтение записи из файла в формате ISO 2709.
 

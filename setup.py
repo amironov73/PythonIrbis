@@ -15,6 +15,10 @@ setuptools.setup(
     url="https://github.com/amironov73/PythonIrbis",
     packages=setuptools.find_packages(),
     classifiers=(
+        "Development Status :: 3 - Alpha",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: IronPython",
+        "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",

@@ -2,7 +2,8 @@
 
 import unittest
 
-from pyirbis.core import *
+from pyirbis.export import *
+
 import os.path
 import pyirbis.iso2709 as iso
 
@@ -13,6 +14,12 @@ def script_path():
 
 def relative_path(filename: str):
     return os.path.realpath(os.path.join(script_path(), filename))
+
+
+def random_text_file():
+    import tempfile
+    result = tempfile.NamedTemporaryFile(mode='wt', encoding='utf-8', delete=False)
+    return result
 
 
 class TestSubField(unittest.TestCase):
@@ -514,16 +521,13 @@ class TestIrbisFormat(unittest.TestCase):
 class Iso2709Test(unittest.TestCase):
 
     def test_read_record(self):
-        print('Read ISO file')
         filename = relative_path('data/test1.iso')
         with open(filename, 'rb') as fh:
             record = iso.read_record(fh)
-            print()
             self.assertEqual(len(record.fields), 16)
             self.assertEqual(record.fm(200, 'a'), 'Вып. 13.')
 
             record = iso.read_record(fh)
-            print()
             self.assertEqual(len(record.fields), 15)
             self.assertEqual(record.fm(200, 'a'), 'Задачи и этюды')
 
@@ -535,6 +539,41 @@ class Iso2709Test(unittest.TestCase):
                 count += 1
             self.assertEqual(count, 79)
         print()
+
+
+class TestExport(unittest.TestCase):
+
+    def test_read_text_record(self):
+        filename = relative_path('data/records.txt')
+        with open(filename, 'rt', encoding='utf-8') as stream:
+            record = read_text_record(stream)
+            self.assertIsNotNone(record)
+            self.assertEqual(len(record.fields), 20)
+            self.assertEqual(record.fm(200, 'a'), 'Странные люди')
+            record = read_text_record(stream)
+            self.assertIsNotNone(record)
+            self.assertEqual(len(record.fields), 23)
+            self.assertEqual(record.fm(200, 'a'), 'Передовые охотники')
+            record = read_text_record(stream)
+            self.assertIsNotNone(record)
+            self.assertEqual(len(record.fields), 26)
+            self.assertEqual(record.fm(200, 'a'), 'Focus 5')
+            record = read_text_record(stream)
+            self.assertIsNone(record)
+
+    def test_write_text_record(self):
+        sf = SubField
+        with random_text_file() as stream:
+            for i in range(10):
+                record = MarcRecord()
+                record.add(700, sf('a', 'Миронов'), sf('b', 'А. В.'),
+                           sf('g', 'Алексей Владимирович'))
+                record.add(200, sf('a', f'Работа с ИРБИС64: версия {i}.0'),
+                           sf('e', 'руководство пользователя'))
+                record.add(210, sf('a', 'Иркутск'), SubField('c', 'ИРНИТУ'),
+                           sf('d', '2018'))
+                record.add(920, 'PAZK')
+                write_text_record(stream, record)
 
 
 class TestIrbisConnection(unittest.TestCase):

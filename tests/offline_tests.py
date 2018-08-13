@@ -1,10 +1,12 @@
 # coding: utf-8
 
+import os
+import os.path
 import unittest
 
+from pyirbis.ext import *
 from pyirbis.export import *
 
-import os.path
 import pyirbis.iso2709 as iso
 
 
@@ -19,6 +21,13 @@ def relative_path(filename: str):
 def random_text_file():
     import tempfile
     result = tempfile.NamedTemporaryFile(mode='wt', encoding='utf-8', delete=False)
+    return result
+
+
+def random_file_name():
+    tempdir = os.environ['TMP']
+    filename = str(random.randint(1111111, 9999999))
+    result = os.path.join(tempdir, filename)
     return result
 
 
@@ -588,6 +597,163 @@ class TestIrbisConnection(unittest.TestCase):
         self.assertEqual(connection.client_id, 0)
         self.assertEqual(connection.query_id, 0)
         self.assertEqual(connection.connected, False)
+
+
+class TestMenuFile(unittest.TestCase):
+
+    # noinspection PyMethodMayBeStatic
+    def get_menu(self):
+        result = MenuFile()
+        result.add('ISTU', 'Учебники, монографии и продолжающиеся издания')
+        result.add('PERIO', 'Периодические издания')
+        result.add('HUDO', 'Художественная литература')
+        result.add('NTD', 'Нормативно-техническая документация')
+        result.add('WORKS', 'Труды сотрудников ИРНИТУ')
+        return result
+
+    def test_init_1(self):
+        menu = MenuFile()
+        self.assertEqual(len(menu.entries), 0)
+
+    def test_add_1(self):
+        menu = MenuFile()
+        menu.add('a', 'Item A')
+        self.assertEqual(len(menu.entries), 1)
+
+    def test_get_entry(self):
+        menu = self.get_menu()
+        entry = menu.get_entry('istu')
+        self.assertIsNotNone(entry)
+        self.assertEqual(entry.code, 'ISTU')
+        self.assertEqual(entry.comment, 'Учебники, монографии и продолжающиеся издания')
+
+    def test_get_value(self):
+        menu = self.get_menu()
+        value = menu.get_value('istu')
+        self.assertEqual(value, 'Учебники, монографии и продолжающиеся издания')
+
+    def test_load_menu_1(self):
+        filename = relative_path('data/dbnam1.mnu')
+        menu = load_menu(filename)
+        self.assertEqual(len(menu.entries), 39)
+
+    def test_save_1(self):
+        menu = self.get_menu()
+        filename = random_file_name()
+        menu.save(filename)
+        self.assertTrue(os.path.isfile(filename))
+
+
+class TestParFile(unittest.TestCase):
+
+    def test_init_1(self):
+        path = 'SomePath'
+        par = ParFile(path)
+        self.assertEqual(par.xrf, path)
+        self.assertEqual(par.mst, path)
+        self.assertEqual(par.cnt, path)
+        self.assertEqual(par.n01, path)
+        self.assertEqual(par.n02, path)
+        self.assertEqual(par.l01, path)
+        self.assertEqual(par.l02, path)
+        self.assertEqual(par.ifp, path)
+        self.assertEqual(par.any, path)
+        self.assertEqual(par.pft, path)
+        self.assertEqual(par.ext, path)
+
+    def test_load_par_file_1(self):
+        filename = relative_path('data/istu.par')
+        expected = '.\\DATAI\\ISTU\\'
+        par = load_par_file(filename)
+        self.assertEqual(par.xrf, expected)
+        self.assertEqual(par.mst, expected)
+        self.assertEqual(par.cnt, expected)
+        self.assertEqual(par.n01, expected)
+        self.assertEqual(par.n02, expected)
+        self.assertEqual(par.l01, expected)
+        self.assertEqual(par.l02, expected)
+        self.assertEqual(par.ifp, expected)
+        self.assertEqual(par.any, expected)
+        self.assertEqual(par.pft, expected)
+        self.assertEqual(par.ext, '\\\\172.20.1.208\\cover\\')
+
+    def test_save_1(self):
+        par = ParFile('SomePath')
+        filename = random_file_name()
+        par.save(filename)
+        self.assertTrue(os.path.isfile(filename))
+
+
+class TestTreeFile(unittest.TestCase):
+
+    # noinspection PyMethodMayBeStatic
+    def get_tree(self):
+        result = TreeFile()
+        result.add('1 - First')
+        result.add('2 - Second')
+        result.roots[1].add('2.1 - Second first')
+        result.roots[1].add('2.2 - Second second')
+        result.roots[1].children[1].add('2.2.1 - Second second first')
+        result.roots[1].add('2.3 - Second third')
+        result.add('3 - Third')
+        result.roots[2].add('3.1 - Third first')
+        result.roots[2].children[0].add('3.1.1 - Third first first')
+        result.add('4 - Fourth')
+        return result
+
+    def test_init_1(self):
+        tree = TreeFile()
+        self.assertEqual(len(tree.roots), 0)
+
+    def test_load_1(self):
+        filename = relative_path('data/test1.tre')
+        tree = load_tree_file(filename)
+        self.assertEqual(len(tree.roots), 4)
+
+    def test_save_1(self):
+        tree = self.get_tree()
+        filename = random_file_name()
+        tree.save(filename)
+        os.path.isfile(filename)
+
+
+class TestOptFile(unittest.TestCase):
+
+    # noinspection PyMethodMayBeStatic
+    def get_opt(self):
+        result = OptFile()
+        result.tag = 920
+        result.length = 5
+        result.lines.append(OptLine('PAZK',  'PAZK42'))
+        result.lines.append(OptLine('PVK',   'PVK42'))
+        result.lines.append(OptLine('SPEC',  'SPEC42'))
+        result.lines.append(OptLine('J',     '!RPJ51'))
+        result.lines.append(OptLine('NJ',    '!NJ31'))
+        result.lines.append(OptLine('NJP',   '!NJ31'))
+        result.lines.append(OptLine('NJK',   '!NJ31'))
+        result.lines.append(OptLine('AUNTD', 'AUNTD42'))
+        result.lines.append(OptLine('ASP',   'ASP42'))
+        result.lines.append(OptLine('MUSP',  'MUSP'))
+        result.lines.append(OptLine('SZPRF', 'SZPRF'))
+        result.lines.append(OptLine('BOUNI', 'BOUNI'))
+        result.lines.append(OptLine('IBIS',  'IBIS'))
+        result.lines.append(OptLine('+++++', 'PAZK42'))
+        return result
+
+    def test_init(self):
+        opt = OptFile()
+        self.assertEqual(len(opt.lines), 0)
+
+    def test_load_opt_file(self):
+        filename = relative_path('data/ws31.opt')
+        opt = load_opt_file(filename)
+        self.assertEqual(len(opt.lines), 14)
+
+    def test_save(self):
+        filename = random_file_name()
+        opt = self.get_opt()
+        opt.save(filename)
+        self.assertTrue(os.path.isfile(filename))
 
 
 if __name__ == '__main__':

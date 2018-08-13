@@ -17,7 +17,7 @@ environment:
 
 install:
   - python -m pip install --upgrade pip
-  - pip install --upgrade setuptools wheel coverage mypy twine
+  - pip install --upgrade setuptools wheel coverage mypy twine pylint
 
 before_build:
   - python utils\patch_version.py pyirbis\__init__.py %APPVEYOR_BUILD_VERSION%
@@ -27,6 +27,10 @@ build_script:
   - cd c:\projects\pythonirbis
   - python -m mypy pyirbis\core.py
   - python -m mypy pyirbis\ext.py
+  - python -m pylint pyirbis\core.py
+  - python -m pylint pyirbis\ext.py
+  - python -m pylint pyirbis\iso2709.py
+  - python -m pylint pyirbis\export.py
 
 after_build:
   - cd c:\projects\pythonirbis

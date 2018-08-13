@@ -79,6 +79,13 @@ class MenuFile:
             self.add(code, comment)
             i += 2
 
+    def save(self, filename: str) -> None:
+        with open(filename, 'wt', encoding=ANSI) as stream:
+            for entry in self.entries:
+                stream.write(entry.code + '\n')
+                stream.write(entry.comment + '\n')
+            stream.write(STOP_MARKER + '\n')
+
     @staticmethod
     def trim_code(code: str) -> str:
         result = code.strip(' -=:')
@@ -100,6 +107,20 @@ class MenuFile:
 
     def __getitem__(self, item: str):
         return self.get_value(item)
+
+
+def load_menu(filename: str) -> MenuFile:
+    """
+    Чтение меню из файла.
+
+    :param filename: Имя файла
+    :return: Меню
+    """
+    with open(filename, 'rt', encoding=ANSI) as stream:
+        result = MenuFile()
+        lines = stream.readlines()
+        result.parse(lines)
+        return result
 
 
 def read_menu(connection: IrbisConnection,
@@ -174,6 +195,20 @@ class ParFile:
         self.pft = d['10']
         self.ext = d['11']
 
+    def save(self, filename: str) -> None:
+        with open(filename, 'wt', encoding=ANSI) as stream:
+            stream.write(f'1={self.xrf}\n')
+            stream.write(f'2={self.mst}\n')
+            stream.write(f'3={self.cnt}\n')
+            stream.write(f'4={self.n01}\n')
+            stream.write(f'5={self.n02}\n')
+            stream.write(f'6={self.l01}\n')
+            stream.write(f'7={self.l02}\n')
+            stream.write(f'8={self.ifp}\n')
+            stream.write(f'9={self.any}\n')
+            stream.write(f'10={self.pft}\n')
+            stream.write(f'11={self.ext}\n')
+
     def __str__(self):
         result = ['1=' + self.xrf,
                   '2=' + self.mst,
@@ -187,6 +222,14 @@ class ParFile:
                   '10=' + self.pft,
                   '11=' + self.ext]
         return '\n'.join(result)
+
+
+def load_par_file(filename: str) -> ParFile:
+    result = ParFile()
+    with open(filename, 'rt', encoding=ANSI) as stream:
+        lines = stream.readlines()
+        result.parse(lines)
+    return result
 
 
 def read_par_file(connection: IrbisConnection, specification: Union[FileSpecification, str]) -> ParFile:
@@ -479,6 +522,12 @@ class TreeFile:
         self.roots.append(result)
         return result
 
+    @staticmethod
+    def determine_level(nodes: List[TreeNode], current: int) -> None:
+        for node in nodes:
+            node.level = current
+            TreeFile.determine_level(node.children, current + 1)
+
     def parse(self, text: List[str]):
         nodes = []
         for line in text:
@@ -495,11 +544,25 @@ class TreeFile:
             if node.level == 0:
                 self.roots.append(node)
 
+    def save(self, filename: str) -> None:
+        with open(filename, 'wt', encoding=ANSI) as stream:
+            text = str(self)
+            stream.write(text)
+
     def __str__(self):
+        TreeFile.determine_level(self.roots, 0)
         result = []
         for node in self.roots:
             result.extend(node.write())
         return '\n'.join(result)
+
+
+def load_tree_file(filename: str) -> TreeFile:
+    result = TreeFile()
+    with open(filename, 'rt', encoding=ANSI) as stream:
+        lines = stream.readlines()
+        result.parse(lines)
+    return result
 
 
 def read_tree_file(connection: IrbisConnection,
@@ -713,9 +776,9 @@ class OptLine:
 
     __slots__ = 'pattern', 'worksheet'
 
-    def __init__(self) -> None:
-        self.pattern: str = ''
-        self.worksheet: str = ''
+    def __init__(self, pattern: str = '', worksheet: str = '') -> None:
+        self.pattern: str = pattern
+        self.worksheet: str = worksheet
 
     def parse(self, text: str) -> None:
         parts = re.split('\s+', text.strip())
@@ -733,7 +796,7 @@ class OptFile:
     __slots__ = 'lines', 'length', 'tag'
 
     def __init__(self):
-        self.lines: [OptLine] = []
+        self.lines: List[OptLine] = []
         self.length: int = 5
         self.tag: int = 920
 
@@ -796,12 +859,25 @@ class OptFile:
                 return line.worksheet
         return None
 
+    def save(self, filename) -> None:
+        with open(filename, 'wt', encoding=ANSI) as stream:
+            text = str(self)
+            stream.write(text)
+
     def __str__(self):
         result = [str(self.tag), str(self.length)]
         for line in self.lines:
             result.append(line.pattern.ljust(6) + line.worksheet)
         result.append(STOP_MARKER)
         return '\n'.join(result)
+
+
+def load_opt_file(filename: str) -> OptFile:
+    result = OptFile()
+    with open(filename, 'rt', encoding=ANSI) as stream:
+        lines = stream.readlines()
+        result.parse(lines)
+    return result
 
 
 def read_opt_file(connection: IrbisConnection,

@@ -1156,16 +1156,12 @@ class AlphabetTable:
         ]
         return result
 
-    def is_alpha(self, c) -> bool:
-        return c is self.characters
+    def is_alpha(self, c: str) -> bool:
+        return c in self.characters
 
-    def parse(self, response: ServerResponse) -> None:
-        text = response.ansi_remaining_text()
-        lines = irbis_to_lines(text)
-        b = bytearray()
-        for line in lines:
-            parts = line.strip().split(' ')
-            b.extend(int(x) for x in parts if x and x.isdigit())
+    def parse(self, text: str) -> None:
+        parts = re.findall(r'\d+', text)
+        b = bytearray(int(x) for x in parts if x and x.isdigit())
         b.remove(0x98)  # Этот символ не мапится
         self.characters = list(b.decode(ANSI))
 
@@ -1192,6 +1188,14 @@ class AlphabetTable:
         return result
 
 
+def load_alphabet_table(filename: str) -> AlphabetTable:
+    with open(filename, 'rt', encoding=ANSI) as stream:
+        text = stream.read()
+    result = AlphabetTable()
+    result.parse(text)
+    return result
+
+
 def read_alphabet_table(connection: IrbisConnection,
                         specification: Optional[FileSpecification] = None) -> AlphabetTable:
     """
@@ -1208,9 +1212,11 @@ def read_alphabet_table(connection: IrbisConnection,
         specification = FileSpecification(SYSTEM, None, AlphabetTable.FILENAME)
 
     with connection.read_text_stream(specification) as response:
-        result = AlphabetTable()
-        result.parse(response)
-        if not result.characters:
+        text = response.ansi_remaining_text()
+        if text:
+            result = AlphabetTable()
+            result.parse(text)
+        else:
             result = AlphabetTable.get_default()
         return result
 
@@ -1495,13 +1501,10 @@ class UpperCaseTable:
         }
         return result
 
-    def parse(self, response: ServerResponse) -> None:
-        text = response.ansi_remaining_text()
-        lines = irbis_to_lines(text)
-        first = bytearray()
-        for line in lines:
-            parts = line.strip().split(' ')
-            first.extend(int(x) for x in parts if x and x.isdigit())
+    def parse(self, text: str) -> None:
+        parts = re.findall(r'\d+', text)
+        assert len(parts) == 256
+        first = bytearray(int(x) for x in parts if x and x.isdigit())
         first = first.replace(b'\x98', b'\x20')  # Этот символ не мапится
         first_chars = list(first.decode(ANSI))
         second = bytearray(x for x in range(256))
@@ -1520,6 +1523,14 @@ class UpperCaseTable:
         return ''.join(result)
 
 
+def load_uppercase_table(filename: str) -> UpperCaseTable:
+    with open(filename, 'rt', encoding=ANSI) as stream:
+        text = stream.read()
+    result = UpperCaseTable()
+    result.parse(text)
+    return result
+
+
 def read_uppercase_table(connection: IrbisConnection,
                          specification: Optional[FileSpecification] = None) -> UpperCaseTable:
     """
@@ -1536,9 +1547,11 @@ def read_uppercase_table(connection: IrbisConnection,
         specification = FileSpecification(SYSTEM, None, UpperCaseTable.FILENAME)
 
     with connection.read_text_stream(specification) as response:
-        result = UpperCaseTable()
-        result.parse(response)
-        if not result.mapping:
+        text = response.ansi_remaining_text()
+        if text:
+            result = UpperCaseTable()
+            result.parse(text)
+        else:
             result = UpperCaseTable.get_default()
         return result
 

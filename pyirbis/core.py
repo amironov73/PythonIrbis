@@ -43,6 +43,7 @@ INTERNAL_RESOURCE = 12
 
 IRBIS_DELIMITER = '\x1F\x1E'
 SHORT_DELIMITER = '\x1E'
+OTHER_DELIMITER = '\x1F'
 MSDOS_DELIMITER = '\r\n'
 
 # Common formats
@@ -1901,6 +1902,36 @@ class IrbisConnection:
 
         if version:
             self.unlock_records([mfn])
+
+        return result
+
+    def read_records(self, *mfns: int) -> List[MarcRecord]:
+        """
+        Чтение записей с указанными MFN с сервера.
+
+        :param mfns: Перечень MFN
+        :return: Список записей
+        """
+
+        array = list(mfns)
+
+        if not array:
+            return []
+
+        if len(array) == 1:
+            return [self.read_record(array[0])]
+
+        lines = self.format_records(ALL, array)
+        result = []
+        for line in lines:
+            parts = line.split(OTHER_DELIMITER)
+            if parts:
+                parts = [x for x in parts[1:] if x]
+                record = MarcRecord()
+                record.parse(parts)
+                if record:
+                    record.database = self.database
+                    result.append(record)
 
         return result
 

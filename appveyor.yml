@@ -25,13 +25,12 @@ before_build:
 
 build_script:
   - cd c:\projects\pythonirbis
-  - chcp 1251
   - python -m mypy pyirbis\core.py
   - python -m mypy pyirbis\ext.py
-  - python -m pylint pyirbis\core.py
-  - python -m pylint pyirbis\ext.py
-  - python -m pylint pyirbis\iso2709.py
-  - python -m pylint pyirbis\export.py
+  - rem python -m pylint pyirbis\core.py
+  - rem python -m pylint pyirbis\ext.py
+  - rem python -m pylint pyirbis\iso2709.py
+  - rem python -m pylint pyirbis\export.py
 
 after_build:
   - cd c:\projects\pythonirbis

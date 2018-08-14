@@ -756,5 +756,39 @@ class TestOptFile(unittest.TestCase):
         self.assertTrue(os.path.isfile(filename))
 
 
+class TestAlphabetTable(unittest.TestCase):
+
+    def test_load_alphabet_table_1(self):
+        filename = relative_path('data/isisacw.tab')
+        table = load_alphabet_table(filename)
+        self.assertTrue(table.is_alpha('A'))
+        self.assertFalse(table.is_alpha(' '))
+        self.assertEqual(table.split_words('Не слышны в саду даже шорохи!'),
+                         ['Не', 'слышны', 'в', 'саду', 'даже', 'шорохи'])
+        self.assertEqual(table.trim('___Удаление лишних символов!!!'),
+                         'Удаление лишних символов')
+
+    def test_get_default_1(self):
+        table = AlphabetTable.get_default()
+        self.assertTrue(table.is_alpha('A'))
+        self.assertFalse(table.is_alpha(' '))
+        self.assertEqual(table.split_words('Не слышны в саду даже шорохи!'),
+                         ['Не', 'слышны', 'в', 'саду', 'даже', 'шорохи'])
+        self.assertEqual(table.trim('___Удаление лишних символов!!!'),
+                         'Удаление лишних символов')
+
+
+class TestUpperCaseTable(unittest.TestCase):
+
+    def test_load_uppercase_table_1(self):
+        filename = relative_path('data/isisucw.tab')
+        table = load_uppercase_table(filename)
+        self.assertEqual(table.upper('привет'), 'ПРИВЕТ')
+
+    def test_get_default_1(self):
+        table = UpperCaseTable.get_default()
+        self.assertEqual(table.upper('привет'), 'ПРИВЕТ')
+
+
 if __name__ == '__main__':
     unittest.main()

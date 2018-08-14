@@ -36,7 +36,6 @@ def read_text_record(stream: TextIO) -> Optional[MarcRecord]:
     return result
 
 
-
 def write_text_record(stream: TextIO, record: MarcRecord) -> None:
     """
     Сохранение записи в файл в текстовом обменном формате ИРБИС.

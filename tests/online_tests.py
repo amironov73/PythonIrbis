@@ -359,3 +359,11 @@ class TestConnect(unittest.TestCase):
         for i, line in enumerate(formatted):
             print(i + 1, '=>', line)
         print()
+
+    def test_37_read_records(self):
+        records = self.connection.read_records(1, 2, 3)
+        self.assertEqual(len(records), 3)
+        self.assertEqual(records[0].mfn, 1)
+        self.assertEqual(records[1].mfn, 2)
+        self.assertEqual(records[2].mfn, 3)
+

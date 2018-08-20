@@ -27,10 +27,7 @@ build_script:
   - cd c:\projects\pythonirbis
   - python -m mypy pyirbis\core.py
   - python -m mypy pyirbis\ext.py
-  - rem python -m pylint pyirbis\core.py
-  - rem python -m pylint pyirbis\ext.py
-  - rem python -m pylint pyirbis\iso2709.py
-  - rem python -m pylint pyirbis\export.py
+  - call pylint0 pyirbis\core.py pyirbis\ext.py pyirbis\iso2709.py pyirbis\export.py
 
 after_build:
   - cd c:\projects\pythonirbis

@@ -4,7 +4,7 @@
 
 import random
 import socket
-from typing import Union, Optional, SupportsInt, List
+from typing import Union, Optional, SupportsInt, List, Iterable
 
 # Max number of postings
 
@@ -820,7 +820,8 @@ class RecordField:
 
     __slots__ = 'tag', 'value', 'subfields'
 
-    def __init__(self, tag: Optional[int] = DEFAULT_TAG, value: Union[SubField, str] = None,
+    def __init__(self, tag: Optional[int] = DEFAULT_TAG,
+                 value: Union[SubField, str] = None,
                  *subfields: SubField) -> None:
         self.tag: int = tag or self.DEFAULT_TAG
         self.value: Optional[str] = None
@@ -829,8 +830,7 @@ class RecordField:
         self.subfields: List[SubField] = []
         if isinstance(value, SubField):
             self.subfields.append(value)
-        for sf in subfields:
-            self.subfields.append(sf)
+        self.subfields.extend(subfields)
 
     def add(self, code: str, value: str = ''):
         self.subfields.append(SubField(code, value))
@@ -927,6 +927,23 @@ class RecordField:
     def __iter__(self):
         yield from self.subfields
 
+    def __iadd__(self, other: Union[SubField, Iterable[SubField]]):
+        if isinstance(other, SubField):
+            self.subfields.append(other)
+        else:
+            self.subfields.extend(other)
+        return self
+
+    def __isub__(self, other: Union[SubField, Iterable[SubField]]):
+        if isinstance(other, SubField):
+            if other in self.subfields:
+                self.subfields.remove(other)
+        else:
+            for one in other:
+                if one in self.subfields:
+                    self.subfields.remove(one)
+        return self
+
     def __getitem__(self, item: Union[str, int]):
         if isinstance(item, int):
             return self.subfields[item]
@@ -968,12 +985,13 @@ class MarcRecord:
 
     __slots__ = 'database', 'mfn', 'version', 'status', 'fields'
 
-    def __init__(self):
+    def __init__(self, *fields: RecordField):
         self.database: str = None
         self.mfn: int = 0
         self.version: int = 0
         self.status: int = 0
         self.fields: [RecordField] = []
+        self.fields.extend(fields)
 
     def add(self, tag: int, value: Union[str, SubField] = None,
             *subfields: SubField):
@@ -1078,6 +1096,23 @@ class MarcRecord:
 
     def __iter__(self):
         yield from self.fields
+
+    def __iadd__(self, other: Union[RecordField, Iterable[RecordField]]):
+        if isinstance(other, RecordField):
+            self.fields.append(other)
+        else:
+            self.fields.extend(other)
+        return self
+
+    def __isub__(self, other: Union[RecordField, Iterable[RecordField]]):
+        if isinstance(other, RecordField):
+            if other in self.fields:
+                self.fields.remove(other)
+        else:
+            for one in other:
+                if one in self.fields:
+                    self.fields.remove(one)
+        return self
 
     def __getitem__(self, item: int):
         return self.fm(item)

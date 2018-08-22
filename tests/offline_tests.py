@@ -217,6 +217,44 @@ class TestRecordField(unittest.TestCase):
             ok = True
         self.assertTrue(ok)
 
+    def test_iadd_1(self):
+        field = RecordField(100)
+        self.assertEqual(len(field.subfields), 0)
+        field += SubField('a', 'SubA')
+        self.assertEqual(len(field.subfields), 1)
+        field += SubField('b', 'SubB')
+        self.assertEqual(len(field.subfields), 2)
+        self.assertEqual(str(field), '100#^aSubA^bSubB')
+
+    def test_iadd_2(self):
+        field = RecordField(100)
+        field += (SubField('a', 'SubA'), SubField('b', 'SubB'))
+        self.assertEqual(len(field.subfields), 2)
+        self.assertEqual(str(field), '100#^aSubA^bSubB')
+
+    def test_isub_1(self):
+        sfa = SubField('a', 'SubA')
+        sfb = SubField('b', 'SubB')
+        field = RecordField(100, sfa, sfb)
+        self.assertEqual(len(field.subfields), 2)
+        field -= sfa
+        self.assertEqual(len(field.subfields), 1)
+        field -= sfa
+        self.assertEqual(len(field.subfields), 1)
+        field -= sfb
+        self.assertEqual(len(field.subfields), 0)
+        field -= sfb
+        self.assertEqual(len(field.subfields), 0)
+
+    def test_isub_2(self):
+        sfa = SubField('a', 'SubA')
+        sfb = SubField('b', 'SubB')
+        field = RecordField(100, sfa, sfb)
+        field -= (sfa, sfb)
+        self.assertEqual(len(field.subfields), 0)
+        field -= (sfa, sfb)
+        self.assertEqual(len(field.subfields), 0)
+
     def test_getitem_1(self):
         sfa = SubField('a', 'SubA')
         sfb = SubField('b', 'SubB')
@@ -298,6 +336,14 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(record.version, 0)
         self.assertEqual(record.status, 0)
         self.assertEqual(len(record.fields), 0)
+
+    def test_init_2(self):
+        f100 = RecordField(100, 'Field 100')
+        f200 = RecordField(200, 'Field 200')
+        record = MarcRecord(f100, f200)
+        self.assertEqual(len(record.fields), 2)
+        self.assertEqual(record.fields[0].tag, 100)
+        self.assertEqual(record.fields[1].tag, 200)
 
     def test_add_1(self):
         record = MarcRecord().add(100, 'Some value')
@@ -420,6 +466,41 @@ class TestMarcRecord(unittest.TestCase):
         except StopIteration:
             ok = True
         self.assertTrue(ok)
+
+    def test_iadd_1(self):
+        record = MarcRecord()
+        self.assertEqual(len(record.fields), 0)
+        record += RecordField(100, 'Field 100')
+        self.assertEqual(len(record.fields), 1)
+        record += RecordField(200, SubField('a', 'SubA'))
+        self.assertEqual(len(record.fields), 2)
+
+    def test_iadd_2(self):
+        record = MarcRecord()
+        record += (RecordField(100, 'Field 100'), RecordField(200, 'Field 200'))
+        self.assertEqual(len(record.fields), 2)
+
+    def test_isub_1(self):
+        f100 = RecordField(100, 'Field 100')
+        f200 = RecordField(200, SubField('a', 'SubA'))
+        record = MarcRecord(f100, f200)
+        record -= (f100, f200)
+        self.assertEqual(len(record.fields), 0)
+        record -= (f100, f200)
+        self.assertEqual(len(record.fields), 0)
+
+    def test_isub_2(self):
+        f100 = RecordField(100, 'Field 100')
+        f200 = RecordField(200, SubField('a', 'SubA'))
+        record = MarcRecord(f100, f200)
+        record -= f100
+        self.assertEqual(len(record.fields), 1)
+        record -= f100
+        self.assertEqual(len(record.fields), 1)
+        record -= f200
+        self.assertEqual(len(record.fields), 0)
+        record -= f200
+        self.assertEqual(len(record.fields), 0)
 
     def test_getitem_1(self):
         record = MarcRecord().add(100, 'Field 100').add(200, SubField('a', 'SubA'), SubField('b', 'SubB'))

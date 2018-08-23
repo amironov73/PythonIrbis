@@ -1,7 +1,13 @@
 # coding: utf-8
 
-from pyirbis.core import *
+"""
+Reading and writing ISO 2709 records.
+"""
+
+from typing import Iterable, Optional
 from typing.io import BinaryIO
+
+from pyirbis.core import ANSI, SubField, RecordField, MarcRecord
 
 # Length of the record marker
 MARKER_LENGTH = 24
@@ -16,10 +22,17 @@ FIELD_DELIMITER = 0x1E
 SUBFIELD_DELIMITER = 0x1F
 
 
-def parse_int(buffer):
+def parse_int(buffer: Iterable):
+    """
+    Parse the bytes for integer value.
+
+    :param buffer: Buffer to parse
+    :return: Integer value
+    """
+
     result = 0
-    for b in buffer:
-        result = result * 10 + b - 48
+    for byte in buffer:
+        result = result * 10 + byte - 48
     return result
 
 
@@ -106,3 +119,6 @@ def read_record(stream: BinaryIO, charset=ANSI) -> Optional[MarcRecord]:
         directory += 12
 
     return result
+
+
+__all__ = ['read_record']

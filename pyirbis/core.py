@@ -985,12 +985,12 @@ class MarcRecord:
 
     __slots__ = 'database', 'mfn', 'version', 'status', 'fields'
 
-    def __init__(self, *fields: RecordField):
-        self.database: str = None
+    def __init__(self, *fields: RecordField) -> None:
+        self.database: Optional[str] = None
         self.mfn: int = 0
         self.version: int = 0
         self.status: int = 0
-        self.fields: [RecordField] = []
+        self.fields: List[RecordField] = []
         self.fields.extend(fields)
 
     def add(self, tag: int, value: Union[str, SubField] = None,

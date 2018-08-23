@@ -1,7 +1,14 @@
 # coding: utf-8
 
-from pyirbis.core import *
+"""
+Reading and writing plain text files in IRBIS format.
+"""
+
+
+from typing import Optional
 from typing.io import TextIO
+
+from pyirbis.core import STOP_MARKER, RecordField, MarcRecord, safe_str
 
 
 def read_text_record(stream: TextIO) -> Optional[MarcRecord]:
@@ -31,8 +38,9 @@ def read_text_record(stream: TextIO) -> Optional[MarcRecord]:
         field.parse(text)
         result.fields.append(field)
 
-    if len(result.fields) == 0:  # Если в записи нет полей, возвратим None
+    if not result.fields:  # Если в записи нет полей, возвращаем None
         result = None
+        
     return result
 
 
@@ -55,3 +63,6 @@ def write_text_record(stream: TextIO, record: MarcRecord) -> None:
         line = ''.join(parts) + '\n'
         stream.write(line)
     stream.write(STOP_MARKER + '\n')
+
+
+__all__ = ['read_text_record', 'write_text_record']

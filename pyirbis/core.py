@@ -413,6 +413,9 @@ def get_error_description(code: int) -> str:
     return errors[code]
 
 
+###############################################################################
+
+
 class IrbisError(Exception):
     """
     Исключнение - ошибка протокола
@@ -421,6 +424,7 @@ class IrbisError(Exception):
     __slots__ = 'code'
 
     def __init__(self, code: int = 0) -> None:
+        super().__init__(self)
         self.code = code
 
     def __str__(self):
@@ -428,8 +432,6 @@ class IrbisError(Exception):
 
 
 ###############################################################################
-
-# Client query
 
 
 class ClientQuery:
@@ -514,8 +516,6 @@ class ClientQuery:
 
 ###############################################################################
 
-# File specification
-
 
 class FileSpecification:
     """
@@ -586,8 +586,6 @@ class FileSpecification:
 
 ###############################################################################
 
-# Server response
-
 
 class ServerResponse:
     """
@@ -610,7 +608,7 @@ class ServerResponse:
         self.length: int = self.may_be_number()
         self.version: str = self.ansi()
         self.return_code: int = 0
-        for i in range(5):
+        for _ in range(5):
             self.read()
 
     def ansi(self) -> str:
@@ -688,7 +686,7 @@ class ServerResponse:
         """
         result = bytearray()
         while True:
-            if not len(self._memory):
+            if not self._memory:
                 break
             c = self._memory.pop(0)
             if c == 0x0D:
@@ -711,7 +709,7 @@ class ServerResponse:
         :return: Список строк или None
         """
         result = []
-        for i in range(count):
+        for _ in range(count):
             line = self.utf()
             if len(line) == 0:
                 return []
@@ -725,7 +723,7 @@ class ServerResponse:
         result = []
         while True:
             line = self.utf()
-            if len(line) == 0:
+            if not line:
                 break
             result.append(line)
         return result
@@ -742,12 +740,10 @@ class ServerResponse:
 
 ###############################################################################
 
-# Parameters for search request
-
 
 class SearchParameters:
     """
-    Параметры поискового запроса.
+    Parameters for search request.
     """
 
     __slots__ = ('database', 'first', 'format', 'max_mfn', 'min_mfn',
@@ -771,12 +767,10 @@ class SearchParameters:
 
 ###############################################################################
 
-# MARC record subfield
-
 
 class SubField:
     """
-    Подполе с кодом и значением.
+    MARC record subfield with code and text value.
     """
 
     DEFAULT_CODE = '\0'
@@ -808,12 +802,11 @@ class SubField:
 
 ###############################################################################
 
-# MARC record field
-
 
 class RecordField:
     """
-    Поле с тегом, значением (до первого разделителя) и подполями.
+    MARC record field with tag, value (up to the first delimiter)
+    and subfields.
     """
 
     DEFAULT_TAG = 0
@@ -975,12 +968,10 @@ class RecordField:
 
 ###############################################################################
 
-# MARC record
-
 
 class MarcRecord:
     """
-    Запись с MFN, статусом, версией и полями.
+    MARC record with MFN, status, version and fields.
     """
 
     __slots__ = 'database', 'mfn', 'version', 'status', 'fields'
@@ -1155,8 +1146,6 @@ class MarcRecord:
 
 ###############################################################################
 
-# Server version
-
 
 class IrbisVersion:
     """
@@ -1170,7 +1159,13 @@ class IrbisVersion:
         self.max_clients = 0
         self.connected_clients = 0
 
-    def parse(self, lines: List[str]):
+    def parse(self, lines: List[str]) -> None:
+        """
+        Parse the text.
+
+        :param lines: Text to parse
+        :return: None
+        """
         if len(lines) == 3:
             self.version = lines[0]
             self.connected_clients = int(lines[1])
@@ -1280,7 +1275,7 @@ class IniFile:
     INI-файл.
     """
 
-    __slots__ = 'sections'
+    __slots__ = ('sections',)
 
     def __init__(self):
         self.sections = []
@@ -1390,12 +1385,21 @@ class ServerProcess:
 
 
 def parse_process_list(response: ServerResponse) -> List[ServerProcess]:
+    """
+    Parse the server response for process infos.
+
+    :param response: Server response
+    :return: List of server processes
+    """
+
     result: List[ServerProcess] = []
     process_count = response.number()
     lines_per_process = response.number()
+
     if not process_count or not lines_per_process:
         return result
-    for i in range(process_count):
+
+    for _ in range(process_count):
         process = ServerProcess()
         process.number = response.ansi()
         process.ip = response.ansi()
@@ -1408,11 +1412,10 @@ def parse_process_list(response: ServerResponse) -> List[ServerProcess]:
         process.process_id = response.ansi()
         process.state = response.ansi()
         result.append(process)
+
     return result
 
 ###############################################################################
-
-# Подключение к серверу
 
 
 class IrbisConnection:
@@ -1423,6 +1426,8 @@ class IrbisConnection:
     DEFAULT_HOST = 'localhost'
     DEFAULT_PORT = 6666
     DEFAULT_DATABASE = 'IBIS'
+
+    # TODO Do we need slots here?
 
     __slots__ = ('host', 'port', 'username', 'password', 'database', 'workstation',
                  'client_id', 'query_id', 'connected', '_stack', 'server_version',
@@ -1787,6 +1792,13 @@ class IrbisConnection:
             return result
 
     def monitor_operation(self, operation: str) -> str:
+        """
+        Мониторинг операции (ждем завершения указанной операции).
+
+        :param operation: Какую операцию ждем
+        :return: Серверный лог-файл (результат выполнения операции)
+        """
+
         import time
         client_id = str(self.client_id)
         while True:
@@ -1805,6 +1817,13 @@ class IrbisConnection:
         return result
 
     def near_master(self, filename: str) -> FileSpecification:
+        """
+        Файл рядом с мастер-файлом текущей базы данных.
+
+        :param filename: Имя файла
+        :return: Спецификация файла
+        """
+
         return FileSpecification(MASTER_FILE, self.database, filename)
 
     def nop(self) -> None:
@@ -2065,7 +2084,7 @@ class IrbisConnection:
         response.check_return_code()
         expected = response.number()
         result = []
-        for i in range(expected):
+        for _ in range(expected):
             line = response.ansi()
             mfn = int(line)
             result.append(mfn)
@@ -2115,7 +2134,8 @@ class IrbisConnection:
         with self.execute_ansi(UNLOCK_DATABASE, database):
             pass
 
-    def unlock_records(self, records: List[int], database: Optional[str] = None) -> None:
+    def unlock_records(self, records: List[int],
+                       database: Optional[str] = None) -> None:
         """
         Разблокирование записей.
 
@@ -2217,3 +2237,19 @@ class IrbisConnection:
 
     def __bool__(self):
         return self.connected
+
+
+###############################################################################
+
+
+__all__ = ['MAX_POSTINGS', 'ANSI', 'STOP_MARKER', 'LOGICALLY_DELETED',
+           'PHYSICALLY_DELETED', 'ABSENT', 'NON_ACTUALIZED', 'LAST', 'LOCKED',
+           'SYSTEM', 'DATA', 'MASTER_FILE', 'INVERTED_FILE', 'PARAMETER_FILE',
+           'FULL_TEXT', 'INTERNAL_RESOURCE', 'IRBIS_DELIMITER', 'SHORT_DELIMITER',
+           'MSDOS_DELIMITER', 'BRIEF', 'READ_TERMS_CODES', 'same_string',
+           'safe_str', 'safe_int', 'throw_value_error', 'irbis_to_lines',
+           'remove_comments', 'prepare_format', 'get_error_description',
+           'IrbisError', 'ClientQuery', 'FileSpecification', 'ServerResponse',
+           'SearchParameters', 'SubField', 'RecordField', 'MarcRecord',
+           'IrbisVersion', 'IniLine', 'IniSection', 'IniFile', 'ServerProcess',
+           'IrbisConnection']

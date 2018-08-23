@@ -1,11 +1,20 @@
 # coding: utf-8
 
+"""
+Tests that doesn't require the IRBIS server connection.
+"""
+
+import random
 import os
 import os.path
 import unittest
 
-from pyirbis.ext import *
-from pyirbis.export import *
+from pyirbis.core import SubField, RecordField, MarcRecord, FileSpecification, IrbisConnection, \
+    LOGICALLY_DELETED, PHYSICALLY_DELETED, LAST, remove_comments, prepare_format
+from pyirbis.ext import OptLine, OptFile, load_opt_file, MenuFile, load_menu, ParFile, \
+    load_par_file, TreeFile, load_tree_file, AlphabetTable, load_alphabet_table, UpperCaseTable, \
+    load_uppercase_table
+from pyirbis.export import read_text_record, write_text_record
 
 import pyirbis.iso2709 as iso
 
@@ -350,13 +359,15 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(len(record.fields), 1)
 
     def test_add_2(self):
-        record = MarcRecord().add(100, SubField('a', 'SubA'), SubField('b', 'SubB'))
+        record = MarcRecord().add(100, SubField('a', 'SubA'),
+                                  SubField('b', 'SubB'))
         self.assertEqual(len(record.fields), 1)
         self.assertEqual(len(record.fields[0].subfields), 2)
 
     def test_all_1(self):
         record = MarcRecord()
-        record.add(100, 'Field100').add(200, 'Field200').add(300, 'Field300/1').add(300, 'Field300/2')
+        record.add(100, 'Field100').add(200, 'Field200')\
+            .add(300, 'Field300/1').add(300, 'Field300/2')
         self.assertEqual(len(record.fields), 4)
         self.assertEqual(len(record.all(100)), 1)
         self.assertEqual(len(record.all(200)), 1)
@@ -443,18 +454,21 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(record.fields[1].subfields[1].value, 'SubB')
 
     def test_str_1(self):
-        record = MarcRecord().add(100, 'Field 100').add(200, 'Field 200', SubField('a', 'Subfield A'))
+        record = MarcRecord().add(100, 'Field 100')\
+            .add(200, 'Field 200', SubField('a', 'Subfield A'))
         self.assertEqual('100#Field 100\n200#Field 200^aSubfield A', str(record))
 
     def test_iter_1(self):
-        record = MarcRecord().add(100, 'Field 100').add(200, SubField('a', 'SubA'), SubField('b', 'SubB'))
+        record = MarcRecord().add(100, 'Field 100')\
+            .add(200, SubField('a', 'SubA'), SubField('b', 'SubB'))
         s = list(record)
         self.assertEqual(len(s), 2)
         self.assertEqual(s[0].tag, 100)
         self.assertEqual(s[1].tag, 200)
 
     def test_iter_2(self):
-        record = MarcRecord().add(100, 'Field 100').add(200, SubField('a', 'SubA'), SubField('b', 'SubB'))
+        record = MarcRecord().add(100, 'Field 100')\
+            .add(200, SubField('a', 'SubA'), SubField('b', 'SubB'))
         i = iter(record)
         f = next(i)
         self.assertEqual(f.tag, 100)
@@ -503,7 +517,8 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(len(record.fields), 0)
 
     def test_getitem_1(self):
-        record = MarcRecord().add(100, 'Field 100').add(200, SubField('a', 'SubA'), SubField('b', 'SubB'))
+        record = MarcRecord().add(100, 'Field 100')\
+            .add(200, SubField('a', 'SubA'), SubField('b', 'SubB'))
         self.assertEqual(record[100], 'Field 100')
         self.assertIsNone(record[200])
         self.assertIsNone(record[300])
@@ -805,19 +820,19 @@ class TestOptFile(unittest.TestCase):
         result = OptFile()
         result.tag = 920
         result.length = 5
-        result.lines.append(OptLine('PAZK',  'PAZK42'))
-        result.lines.append(OptLine('PVK',   'PVK42'))
-        result.lines.append(OptLine('SPEC',  'SPEC42'))
-        result.lines.append(OptLine('J',     '!RPJ51'))
-        result.lines.append(OptLine('NJ',    '!NJ31'))
-        result.lines.append(OptLine('NJP',   '!NJ31'))
-        result.lines.append(OptLine('NJK',   '!NJ31'))
+        result.lines.append(OptLine('PAZK', 'PAZK42'))
+        result.lines.append(OptLine('PVK', 'PVK42'))
+        result.lines.append(OptLine('SPEC', 'SPEC42'))
+        result.lines.append(OptLine('J', '!RPJ51'))
+        result.lines.append(OptLine('NJ', '!NJ31'))
+        result.lines.append(OptLine('NJP', '!NJ31'))
+        result.lines.append(OptLine('NJK', '!NJ31'))
         result.lines.append(OptLine('AUNTD', 'AUNTD42'))
-        result.lines.append(OptLine('ASP',   'ASP42'))
-        result.lines.append(OptLine('MUSP',  'MUSP'))
+        result.lines.append(OptLine('ASP', 'ASP42'))
+        result.lines.append(OptLine('MUSP', 'MUSP'))
         result.lines.append(OptLine('SZPRF', 'SZPRF'))
         result.lines.append(OptLine('BOUNI', 'BOUNI'))
-        result.lines.append(OptLine('IBIS',  'IBIS'))
+        result.lines.append(OptLine('IBIS', 'IBIS'))
         result.lines.append(OptLine('+++++', 'PAZK42'))
         return result
 

@@ -1,16 +1,22 @@
 # coding: utf-8
 
+"""
+Tests that requires the IRBIS server connection.
+"""
+
 import unittest
 import time
 
-from pyirbis.ext import *
+from pyirbis.core import IrbisConnection, SubField, MarcRecord, FileSpecification, BRIEF
+from pyirbis.ext import TableDefinition, UserInfo
 
 
 class TestConnect(unittest.TestCase):
 
     def setUp(self):
         self.connection: IrbisConnection = IrbisConnection()
-        self.connection.parse_connection_string('host=127.0.0.1;port=6666;user=1;password=1;db=ISTU;arm=A;')
+        self.connection.parse_connection_string \
+            ('host=127.0.0.1;port=6666;user=1;password=1;db=ISTU;arm=A;')
         self.connection.connect()
 
     def tearDown(self):
@@ -20,7 +26,7 @@ class TestConnect(unittest.TestCase):
     @staticmethod
     def wait_for_a_while():
         print('Waiting')
-        for i in range(5):
+        for _ in range(5):
             time.sleep(1)
             print('.', end='')
         print()
@@ -330,7 +336,6 @@ class TestConnect(unittest.TestCase):
                                'версия 1.0 [Текст] : руководство пользователя, 2018')
 
     def test_34_reload_master_file(self):
-        import time
         no_such_base = 'NOSUCH'
         self.connection.reload_master_file(no_such_base)
         time.sleep(3)  # Нужна задержка, иначе ничего не возвращает

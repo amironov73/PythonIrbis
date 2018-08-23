@@ -5,9 +5,13 @@ Infrastructure related extended functionality for IRBIS64 client
 """
 
 import re
-from typing import Tuple, Dict
+from typing import List, Tuple, Dict, Iterable, Optional, Union
 
-from pyirbis.core import *
+from pyirbis.core import IrbisConnection, FileSpecification, ClientQuery, ServerResponse, IniFile, \
+    safe_str, safe_int, irbis_to_lines, throw_value_error, same_string, \
+    ANSI, STOP_MARKER, SYSTEM, DATA, SHORT_DELIMITER, \
+    READ_TERMS, READ_TERMS_REVERSE, READ_TERMS_CODES, READ_POSTINGS, GET_USER_LIST, SET_USER_LIST, \
+    GET_SERVER_STAT, RECORD_LIST, PRINT
 
 
 ###############################################################################
@@ -1158,6 +1162,9 @@ class ClientInfo:
         return self.__str__()
 
 
+###############################################################################
+
+
 class ServerStat:
     """
     Статистика работы ИРБИС-сервера
@@ -1858,3 +1865,10 @@ def read_uppercase_table(connection: IrbisConnection,
 IrbisConnection.read_uppercase_table = read_uppercase_table  # type: ignore
 
 ###############################################################################
+
+__all__ = ['MenuEntry', 'MenuFile', 'load_menu', 'ParFile', 'load_par_file',
+           'TermPosting', 'TermInfo', 'TermParameters', 'PostingParameters',
+           'TreeNode', 'TreeFile', 'load_tree_file', 'SearchScenario',
+           'UserInfo', 'OptLine', 'OptFile', 'load_opt_file', 'ClientInfo',
+           'ServerStat', 'DatabaseInfo', 'TableDefinition', 'AlphabetTable',
+           'load_alphabet_table', 'UpperCaseTable', 'load_uppercase_table']

@@ -558,7 +558,7 @@ class FileSpecification:
         :param text: Текст
         :return: Спецификация
         """
-        # TODO учитывать @ и &
+        # TODO Take into consideration @ and & symbols
 
         parts = text.split('.', 2)
         result = FileSpecification(int(parts[0]), parts[1], parts[2])
@@ -1182,7 +1182,10 @@ class IrbisVersion:
             self.max_clients = int(lines[3])
 
     def __str__(self):
-        buffer = [self.organization, self.version, str(self.connected_clients), str(self.max_clients)]
+        buffer = [self.organization,
+                  self.version,
+                  str(self.connected_clients),
+                  str(self.max_clients)]
         return '\n'.join(buffer)
 
 ###############################################################################

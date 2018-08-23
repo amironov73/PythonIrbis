@@ -1,6 +1,8 @@
 # coding: utf-8
 
-# Infrastructure related extended functionality for IRBIS64 client
+"""
+Infrastructure related extended functionality for IRBIS64 client
+"""
 
 import re
 from typing import Tuple, Dict
@@ -36,17 +38,31 @@ class MenuFile:
     Файл меню.
     """
 
-    __slots__ = 'entries'
+    __slots__ = ('entries',)
 
     def __init__(self) -> None:
         self.entries: List[MenuEntry] = []
 
     def add(self, code: str, comment: str = ''):
+        """
+        Add an entry to the menu.
+
+        :param code: Code
+        :param comment: Comment
+        :return: Self
+        """
         entry = MenuEntry(code, comment)
         self.entries.append(entry)
         return self
 
     def get_entry(self, code: str) -> Optional[MenuEntry]:
+        """
+        Get an entry for the specified code.
+
+        :param code: Code to search
+        :return: Found entry or None
+        """
+
         code = code.lower()
         for entry in self.entries:
             if entry.code.lower() == code:
@@ -64,12 +80,28 @@ class MenuFile:
 
         return None
 
-    def get_value(self, code: str, default_value: Optional[str]=None) -> Optional[str]:
+    def get_value(self, code: str,
+                  default_value: Optional[str] = None) -> Optional[str]:
+        """
+        Get value for the specified code.
+
+        :param code: Code to search
+        :param default_value: Default value
+        :return: Found or default value
+        """
+
         entry = self.get_entry(code)
-        result = entry and entry.comment or default_value
+        result = entry.comment if entry else default_value
         return result
 
     def parse(self, lines: List[str]) -> None:
+        """
+        Parse the text for menu entries.
+
+        :param lines: Text to parse
+        :return: None
+        """
+
         i = 0
         while i + 1 < len(lines):
             code = lines[i]
@@ -80,6 +112,13 @@ class MenuFile:
             i += 2
 
     def save(self, filename: str) -> None:
+        """
+        Save the menu to the specified file.
+
+        :param filename: Name of the file
+        :return: None
+        """
+
         with open(filename, 'wt', encoding=ANSI) as stream:
             for entry in self.entries:
                 stream.write(entry.code + '\n')
@@ -88,6 +127,13 @@ class MenuFile:
 
     @staticmethod
     def trim_code(code: str) -> str:
+        """
+        Trim the code.
+
+        :param code: code to process
+        :return: Trimmed code
+        """
+
         result = code.strip(' -=:')
         return result
 
@@ -168,8 +214,16 @@ class ParFile:
         self.ext: str = mst
 
     @staticmethod
-    def make_dict(text: List[str]) -> dict:
-        result = dict()
+    def make_dict(text: Iterable[str]) -> Dict:
+        """
+        Make the dictionary from the text.
+
+        :param text: Text to parse.
+        :return: Dictionary
+        """
+
+        import collections
+        result: Dict = collections.defaultdict(lambda: '')
         for line in text:
             if not line:
                 continue
@@ -181,21 +235,34 @@ class ParFile:
             result[key] = value
         return result
 
-    def parse(self, text: List[str]) -> None:
-        d = ParFile.make_dict(text)
-        self.xrf = d['1']
-        self.mst = d['2']
-        self.cnt = d['3']
-        self.n01 = d['4']
-        self.n02 = d['5']
-        self.l01 = d['6']
-        self.l02 = d['7']
-        self.ifp = d['8']
-        self.any = d['9']
-        self.pft = d['10']
-        self.ext = d['11']
+    def parse(self, text: Iterable[str]) -> None:
+        """
+        Parse the text for PAR entries.
+
+        :param text: Text to parse
+        :return: None
+        """
+
+        paths = ParFile.make_dict(text)
+        self.xrf = paths['1']
+        self.mst = paths['2']
+        self.cnt = paths['3']
+        self.n01 = paths['4']
+        self.n02 = paths['5']
+        self.l01 = paths['6']
+        self.l02 = paths['7']
+        self.ifp = paths['8']
+        self.any = paths['9']
+        self.pft = paths['10']
+        self.ext = paths['11']
 
     def save(self, filename: str) -> None:
+        """
+        Save paths to the specified file.
+
+        :param filename: File to use
+        :return: None
+        """
         with open(filename, 'wt', encoding=ANSI) as stream:
             stream.write(f'1={self.xrf}\n')
             stream.write(f'2={self.mst}\n')
@@ -225,6 +292,13 @@ class ParFile:
 
 
 def load_par_file(filename: str) -> ParFile:
+    """
+    Load PAR from the specified file.
+
+    :param filename: File to use
+    :return: PAR file
+    """
+
     result = ParFile()
     with open(filename, 'rt', encoding=ANSI) as stream:
         lines = stream.readlines()
@@ -232,7 +306,8 @@ def load_par_file(filename: str) -> ParFile:
     return result
 
 
-def read_par_file(connection: IrbisConnection, specification: Union[FileSpecification, str]) -> ParFile:
+def read_par_file(connection: IrbisConnection,
+                  specification: Union[FileSpecification, str]) -> ParFile:
     """
     Получение PAR-файла с сервера.
 
@@ -272,6 +347,13 @@ class TermPosting:
         self.text: Optional[str] = None
 
     def parse(self, text: str) -> None:
+        """
+        Parse the text for term postings.
+
+        :param text: Text to parse
+        :return: None
+        """
+
         parts = text.split('#', 4)
         if len(parts) < 4:
             return
@@ -305,7 +387,13 @@ class TermInfo:
         self.text: str = text
 
     @staticmethod
-    def parse(lines: List[str]):
+    def parse(lines: Iterable[str]):
+        """
+        Parse the text for term info.
+
+        :param lines: Text to parse
+        :return: Term info
+        """
         result = []
         for line in lines:
             parts = line.split('#', 1)
@@ -424,7 +512,7 @@ def read_postings(connection: IrbisConnection,
     query.ansi(database).add(parameters.number)
     query.add(parameters.first).ansi(parameters.fmt)
     for term in parameters.terms:
-            query.utf(term)
+        query.utf(term)
     with connection.execute(query) as response:
         response.check_return_code(READ_TERMS_CODES)
         result = []
@@ -456,11 +544,23 @@ class TreeNode:
         self.level: int = level
 
     def add(self, name: str):
+        """
+        Add a child node.
+
+        :param name: Name of the child.
+        :return: Added subnode
+        """
+
         result = TreeNode(name)
         self.children.append(result)
         return result
 
     def write(self) -> List[str]:
+        """
+        Represent the node and its child as lines.
+
+        :return: List of lines
+        """
         result = [TreeFile.INDENT * self.level + safe_str(self.value)]
         for child in self.children:
             inner = child.write()
@@ -481,7 +581,7 @@ class TreeFile:
 
     INDENT = '\u0009'
 
-    __slots__ = 'roots'
+    __slots__ = ('roots',)
 
     def __init__(self):
         self.roots: List[TreeNode] = []
@@ -489,8 +589,8 @@ class TreeFile:
     @staticmethod
     def _count_indent(text: str) -> int:
         result = 0
-        for c in text:
-            if c == TreeFile.INDENT:
+        for char in text:
+            if char == TreeFile.INDENT:
                 result += 1
             else:
                 break
@@ -518,17 +618,39 @@ class TreeFile:
         return nxt
 
     def add(self, name: str) -> TreeNode:
+        """
+        Add zero level node with specified name.
+
+        :param name: Name of the node
+        :return: Created node
+        """
+
         result = TreeNode(name)
         self.roots.append(result)
         return result
 
     @staticmethod
-    def determine_level(nodes: List[TreeNode], current: int) -> None:
+    def determine_level(nodes: Iterable[TreeNode], current: int) -> None:
+        """
+        Determine level of the nodes.
+
+        :param nodes: Nodes to process
+        :param current: Current level
+        :return: None
+        """
+
         for node in nodes:
             node.level = current
             TreeFile.determine_level(node.children, current + 1)
 
-    def parse(self, text: List[str]):
+    def parse(self, text: Iterable[str]) -> None:
+        """
+        Parse the text for the tree structure.
+
+        :param text: Text to parse
+        :return: None
+        """
+
         nodes = []
         for line in text:
             level = TreeFile._count_indent(line)
@@ -545,6 +667,13 @@ class TreeFile:
                 self.roots.append(node)
 
     def save(self, filename: str) -> None:
+        """
+        Save the tree to the specified file.
+
+        :param filename: Name of the file
+        :return: None
+        """
+
         with open(filename, 'wt', encoding=ANSI) as stream:
             text = str(self)
             stream.write(text)
@@ -558,6 +687,13 @@ class TreeFile:
 
 
 def load_tree_file(filename: str) -> TreeFile:
+    """
+    Load the tree from the specified file.
+
+    :param filename: Name of the file.
+    :return: Tree structure
+    """
+
     result = TreeFile()
     with open(filename, 'rt', encoding=ANSI) as stream:
         lines = stream.readlines()
@@ -616,6 +752,13 @@ class SearchScenario:
 
     @staticmethod
     def parse(ini: IniFile) -> List:
+        """
+        Parse the INI file for the search scenarios.
+
+        :param ini: INI file
+        :return: List of search scenarios
+        """
+
         section = ini.find('SEARCH')
         if not section:
             return []
@@ -646,6 +789,13 @@ class SearchScenario:
 
 def read_search_scenario(connection: IrbisConnection,
                          specification: Union[FileSpecification, str]) -> List[SearchScenario]:
+    """
+    Read search scenario from the server.
+
+    :param connection: Connection to use
+    :param specification: File which contains the scenario
+    :return: List of the scenarios (possibly empty)
+    """
 
     assert connection and isinstance(connection, IrbisConnection)
 
@@ -687,12 +837,19 @@ class UserInfo:
 
     @staticmethod
     def parse(response: ServerResponse) -> List:
+        """
+        Parse the server response for the user info.
+
+        :param response: Response to parse.
+        :return: List of user infos.
+        """
+
         result: List = []
         user_count = response.number()
         lines_per_user = response.number()
         if not user_count or not lines_per_user:
             return result
-        for i in range(user_count):
+        for _ in range(user_count):
             user = UserInfo()
             user.number = response.ansi()
             user.name = response.ansi()
@@ -707,18 +864,34 @@ class UserInfo:
         return result
 
     @staticmethod
-    def format_pair(prefix: str, value: str, default: str):
+    def format_pair(prefix: str, value: str, default: str) -> str:
+        """
+        Format the pair prefix=value.
+
+        :param prefix: Prefix to use
+        :param value: Value to use
+        :param default: Default value
+        :return: Formatted text
+        """
+
         if same_string(value, default):
             return ''
+
         return prefix + '=' + safe_str(value) + ';'
 
     def encode(self):
+        """
+        Encode the user info.
+
+        :return: Text representation of the user info.
+        """
+
         return self.name + '\n' + self.password + '\n' \
-            + UserInfo.format_pair('C', self.cataloger,     "irbisc.ini") \
-            + UserInfo.format_pair('R', self.reader,        "irbisr.ini") \
-            + UserInfo.format_pair('B', self.circulation,   "irbisb.ini") \
-            + UserInfo.format_pair('M', self.acquisitions,  "irbism.ini") \
-            + UserInfo.format_pair('K', self.provision,     "irbisk.ini") \
+            + UserInfo.format_pair('C', self.cataloger, "irbisc.ini") \
+            + UserInfo.format_pair('R', self.reader, "irbisr.ini") \
+            + UserInfo.format_pair('B', self.circulation, "irbisb.ini") \
+            + UserInfo.format_pair('M', self.acquisitions, "irbism.ini") \
+            + UserInfo.format_pair('K', self.provision, "irbisk.ini") \
             + UserInfo.format_pair('A', self.administrator, "irbisa.ini")
 
     def __str__(self):
@@ -754,7 +927,7 @@ def update_user_list(connection: IrbisConnection, users: List[UserInfo]) -> None
     :return: None
     """
     assert connection and isinstance(connection, IrbisConnection)
-    assert isinstance(users, list) and len(users)
+    assert isinstance(users, list) and users
 
     query = ClientQuery(connection, SET_USER_LIST)
     for user in users:
@@ -781,7 +954,14 @@ class OptLine:
         self.worksheet: str = worksheet
 
     def parse(self, text: str) -> None:
-        parts = re.split('\s+', text.strip())
+        """
+        Parse the line.
+
+        :param text: Text to parse
+        :return: None
+        """
+
+        parts = re.split(r'\s+', text.strip())
         self.pattern = parts[0]
         self.worksheet = parts[1]
 
@@ -800,7 +980,13 @@ class OptFile:
         self.length: int = 5
         self.tag: int = 920
 
-    def parse(self, text: List[str]):
+    def parse(self, text: List[str]) -> None:
+        """
+        Parse the text for OPT table.
+
+        :param text: Text to parse
+        :return: None
+        """
         self.tag = int(text[0])
         self.length = int(text[1])
         for line in text[2:]:
@@ -817,15 +1003,32 @@ class OptFile:
 
     @staticmethod
     def same_char(pattern: str, testable: str) -> bool:
+        """
+        Compare the character against the pattern.
+
+        :param pattern: Pattern character
+        :param testable: Character to examine
+        :return: True or False
+        """
         if pattern == OptFile.WILDCARD:
             return True
         return pattern.lower() == testable.lower()
 
     def same_text(self, pattern: str, testable: str) -> bool:
+        """
+        Compare tag value against the OPT pattern.
+
+        :param pattern: Pattern to use
+        :param testable: Tag value to examine
+        :return: True or False
+        """
+
         if not pattern:
             return False
+
         if not testable:
             return pattern[0] == OptFile.WILDCARD
+
         pattern_index = 0
         testable_index = 0
 
@@ -854,12 +1057,25 @@ class OptFile:
                 return False
 
     def resolve_worksheet(self, tag: str) -> Optional[str]:
+        """
+        Resolve worksheet for the specified tag value.
+
+        :param tag: Tag value, e. g. "SPEC"
+        :return: Worksheet name or None
+        """
+
         for line in self.lines:
             if self.same_text(line.pattern, tag):
                 return line.worksheet
         return None
 
-    def save(self, filename) -> None:
+    def save(self, filename: str) -> None:
+        """
+        Save the OPT table to the specified file.
+
+        :param filename: Name of the file
+        :return: None
+        """
         with open(filename, 'wt', encoding=ANSI) as stream:
             text = str(self)
             stream.write(text)
@@ -873,6 +1089,13 @@ class OptFile:
 
 
 def load_opt_file(filename: str) -> OptFile:
+    """
+    Load the OPT from the specified file.
+
+    :param filename: Name of the file
+    :return: OPT file
+    """
+
     result = OptFile()
     with open(filename, 'rt', encoding=ANSI) as stream:
         lines = stream.readlines()
@@ -948,13 +1171,20 @@ class ServerStat:
         self.total_command_count: int = 0
 
     def parse(self, response: ServerResponse) -> None:
+        """
+        Parse the server response for the stat.
+
+        :param response: Server response
+        :return: None
+        """
+
         self.total_command_count = response.number()
         self.client_count = response.number()
         lines_per_client = response.number()
         if not lines_per_client:
             return
 
-        for i in range(self.client_count):
+        for _ in range(self.client_count):
             client = ClientInfo()
             client.number = response.ansi()
             client.ip = response.ansi()
@@ -1021,6 +1251,12 @@ class DatabaseInfo:
         return [int(x) for x in line.split(SHORT_DELIMITER) if x]
 
     def parse(self, response: ServerResponse) -> None:
+        """
+        Parse the server response for database info.
+
+        :param response: Response to parse
+        :return: None
+        """
         self.logically_deleted = self._parse(response.ansi())
         self.physically_deleted = self._parse(response.ansi())
         self.nonactualized = self._parse(response.ansi())
@@ -1118,13 +1354,18 @@ class AlphabetTable:
 
     FILENAME = 'isisacw.tab'
 
-    __slots__ = 'characters'
+    __slots__ = ('characters',)
 
     def __init__(self) -> None:
         self.characters: List[str] = []
 
     @staticmethod
     def get_default():
+        """
+        Get the default alphabet table.
+
+        :return: Alphabet table
+        """
         result = AlphabetTable()
         result.characters = [
             '\u0026', '\u0040', '\u0041', '\u0042', '\u0043', '\u0044', '\u0045',
@@ -1156,21 +1397,43 @@ class AlphabetTable:
         ]
         return result
 
-    def is_alpha(self, c: str) -> bool:
-        return c in self.characters
+    def is_alpha(self, char: str) -> bool:
+        """
+        Determine whether the character is in the alphabet.
+
+        :param char: Character to examine
+        :return: True or False
+        """
+
+        return char in self.characters
 
     def parse(self, text: str) -> None:
+        """
+        Parse the text for alphabet table.
+
+        :param text: Text to parse
+        :return: None
+        """
         parts = re.findall(r'\d+', text)
-        b = bytearray(int(x) for x in parts if x and x.isdigit())
-        b.remove(0x98)  # Этот символ не мапится
-        self.characters = list(b.decode(ANSI))
+        array = bytearray(int(x) for x in parts if x and x.isdigit())
+        array.remove(0x98)  # Этот символ не мапится
+        self.characters = list(array.decode(ANSI))
 
     def split_words(self, text: str) -> List[str]:
+        """
+        Split the text to words according the alphabet table.
+
+        :param text: Text to split
+        :return: List of words
+        """
+
+        # TODO convert to generator?
+
         result = []
         accumulator = []
-        for c in text:
-            if c in self.characters:
-                accumulator.append(c)
+        for char in text:
+            if char in self.characters:
+                accumulator.append(char)
             else:
                 if accumulator:
                     result.append(''.join(accumulator))
@@ -1180,6 +1443,12 @@ class AlphabetTable:
         return result
 
     def trim(self, text: str) -> str:
+        """
+        Trim the text according to the alphabet table.
+
+        :param text: Text to trim
+        :return: Trimmed text
+        """
         result = text
         while result and result[0] not in self.characters:
             result = result[1:]
@@ -1189,6 +1458,12 @@ class AlphabetTable:
 
 
 def load_alphabet_table(filename: str) -> AlphabetTable:
+    """
+    Load the alphabet table from the specified file.
+
+    :param filename: Name of the file
+    :return: Alphabet table
+    """
     with open(filename, 'rt', encoding=ANSI) as stream:
         text = stream.read()
     result = AlphabetTable()
@@ -1233,13 +1508,18 @@ class UpperCaseTable:
 
     FILENAME = 'isisucw.tab'
 
-    __slots__ = 'mapping'
+    __slots__ = ('mapping',)
 
     def __init__(self) -> None:
         self.mapping: Dict = dict()
 
     @staticmethod
     def get_default():
+        """
+        Get the default uppercase table.
+
+        :return: Uppercase table
+        """
         result = UpperCaseTable()
         result.mapping = {
             chr(0x0000): chr(0x0000),
@@ -1502,6 +1782,13 @@ class UpperCaseTable:
         return result
 
     def parse(self, text: str) -> None:
+        """
+        Parse the text for the uppercase table.
+
+        :param text: Text to parse
+        :return: None
+        """
+
         parts = re.findall(r'\d+', text)
         assert len(parts) == 256
         first = bytearray(int(x) for x in parts if x and x.isdigit())
@@ -1510,20 +1797,32 @@ class UpperCaseTable:
         second = bytearray(x for x in range(256))
         second = second.replace(b'\x98', b'\x20')  # Этот символ не мапится
         second_chars = list(second.decode(ANSI))
-        for f, s in zip(first_chars, second_chars):
-            self.mapping[s] = f
+        for upper, lower in zip(first_chars, second_chars):
+            self.mapping[lower] = upper
 
     def upper(self, text: str) -> str:
+        """
+        Convert the text to uppercase according the table.
+
+        :param text: Text to convert
+        :return: Converted text
+        """
         result = []
-        for c in text:
-            if c in self.mapping:
-                result.append(self.mapping[c])
+        for char in text:
+            if char in self.mapping:
+                result.append(self.mapping[char])
             else:
-                result.append(c)
+                result.append(char)
         return ''.join(result)
 
 
 def load_uppercase_table(filename: str) -> UpperCaseTable:
+    """
+    Load the uppercase table from the specified file.
+
+    :param filename: Name of the file
+    :return: Uppercase table
+    """
     with open(filename, 'rt', encoding=ANSI) as stream:
         text = stream.read()
     result = UpperCaseTable()

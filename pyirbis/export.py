@@ -39,8 +39,8 @@ def read_text_record(stream: TextIO) -> Optional[MarcRecord]:
         result.fields.append(field)
 
     if not result.fields:  # Если в записи нет полей, возвращаем None
-        result = None
-        
+        return None
+
     return result
 
 

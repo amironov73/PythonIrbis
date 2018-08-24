@@ -10,7 +10,8 @@ import os.path
 import unittest
 
 from pyirbis.core import SubField, RecordField, MarcRecord, FileSpecification, IrbisConnection, \
-    LOGICALLY_DELETED, PHYSICALLY_DELETED, LAST, remove_comments, prepare_format
+    LOGICALLY_DELETED, PHYSICALLY_DELETED, LAST, remove_comments, prepare_format, \
+    ANSI, UTF
 from pyirbis.ext import OptLine, OptFile, load_opt_file, MenuFile, load_menu, ParFile, \
     load_par_file, TreeFile, load_tree_file, AlphabetTable, load_alphabet_table, UpperCaseTable, \
     load_uppercase_table
@@ -30,6 +31,12 @@ def relative_path(filename: str):
 def random_text_file():
     import tempfile
     result = tempfile.NamedTemporaryFile(mode='wt', encoding='utf-8', delete=False)
+    return result
+
+
+def random_binary_file():
+    import tempfile
+    result = tempfile.NamedTemporaryFile(mode='wb', delete=False)
     return result
 
 
@@ -366,7 +373,7 @@ class TestMarcRecord(unittest.TestCase):
 
     def test_all_1(self):
         record = MarcRecord()
-        record.add(100, 'Field100').add(200, 'Field200')\
+        record.add(100, 'Field100').add(200, 'Field200') \
             .add(300, 'Field300/1').add(300, 'Field300/2')
         self.assertEqual(len(record.fields), 4)
         self.assertEqual(len(record.all(100)), 1)
@@ -454,12 +461,12 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(record.fields[1].subfields[1].value, 'SubB')
 
     def test_str_1(self):
-        record = MarcRecord().add(100, 'Field 100')\
+        record = MarcRecord().add(100, 'Field 100') \
             .add(200, 'Field 200', SubField('a', 'Subfield A'))
         self.assertEqual('100#Field 100\n200#Field 200^aSubfield A', str(record))
 
     def test_iter_1(self):
-        record = MarcRecord().add(100, 'Field 100')\
+        record = MarcRecord().add(100, 'Field 100') \
             .add(200, SubField('a', 'SubA'), SubField('b', 'SubB'))
         s = list(record)
         self.assertEqual(len(s), 2)
@@ -467,7 +474,7 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(s[1].tag, 200)
 
     def test_iter_2(self):
-        record = MarcRecord().add(100, 'Field 100')\
+        record = MarcRecord().add(100, 'Field 100') \
             .add(200, SubField('a', 'SubA'), SubField('b', 'SubB'))
         i = iter(record)
         f = next(i)
@@ -517,7 +524,7 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(len(record.fields), 0)
 
     def test_getitem_1(self):
-        record = MarcRecord().add(100, 'Field 100')\
+        record = MarcRecord().add(100, 'Field 100') \
             .add(200, SubField('a', 'SubA'), SubField('b', 'SubB'))
         self.assertEqual(record[100], 'Field 100')
         self.assertIsNone(record[200])
@@ -642,8 +649,87 @@ class Iso2709Test(unittest.TestCase):
                 if record is None:
                     break
                 count += 1
-            self.assertEqual(count, 79)
-        print()
+        self.assertEqual(count, 79)
+
+    def test_write_record_1(self):
+        sf = SubField
+        with random_binary_file() as stream:
+            for i in range(10):
+                record = MarcRecord()
+                record.add(700, sf('a', 'Миронов'), sf('b', 'А. В.'),
+                           sf('g', 'Алексей Владимирович'))
+                record.add(200, sf('a', f'Работа с ИРБИС64: версия {i}.0'),
+                           sf('e', 'руководство пользователя'))
+                record.add(210, sf('a', 'Иркутск'), SubField('c', 'ИРНИТУ'),
+                           sf('d', '2018'))
+                record.add(920, 'PAZK')
+                iso.write_record(stream, record, ANSI)
+            self.assertTrue(stream.name)
+
+    def test_write_record_000(self):
+        with random_binary_file() as stream:
+            record = MarcRecord()
+            iso.write_record(stream, record, ANSI)
+        self.assertTrue(stream.name)
+
+    def test_write_record_001(self):
+        with random_binary_file() as stream:
+            record = MarcRecord()
+            iso.write_record(stream, record, UTF)
+        self.assertTrue(stream.name)
+
+    def test_write_record_00(self):
+        sf = SubField
+        with random_binary_file() as stream:
+            record = MarcRecord()
+            record.add(700, sf('a', 'Миронов'), sf('b', 'А. В.'),
+                       sf('g', 'Алексей Владимирович'))
+            record.add(200, sf('a', f'Работа с ИРБИС64: версия 0.0'),
+                       sf('e', 'руководство пользователя'))
+            record.add(210, sf('a', 'Иркутск'), SubField('c', 'ИРНИТУ'),
+                       sf('d', '2018'))
+            record.add(920, 'PAZK')
+            iso.write_record(stream, record, ANSI)
+        self.assertTrue(stream.name)
+
+    def test_write_record_01(self):
+        sf = SubField
+        with random_binary_file() as stream:
+            record = MarcRecord()
+            record.add(700, sf('a', 'Миронов'), sf('b', 'А. В.'),
+                       sf('g', 'Алексей Владимирович'))
+            record.add(200, sf('a', f'Работа с ИРБИС64: версия 0.0'),
+                       sf('e', 'руководство пользователя'))
+            record.add(210, sf('a', 'Иркутск'), SubField('c', 'ИРНИТУ'),
+                       sf('d', '2018'))
+            record.add(920, 'PAZK')
+            iso.write_record(stream, record, UTF)
+        self.assertTrue(stream.name)
+
+    def test_write_record_2(self):
+        sf = SubField
+        with random_binary_file() as stream:
+            for i in range(10):
+                record = MarcRecord()
+                record.add(700, sf('a', 'Миронов'), sf('b', 'А. В.'),
+                           sf('g', 'Алексей Владимирович'))
+                record.add(200, sf('a', f'Работа с ИРБИС64: версия {i}.0'),
+                           sf('e', 'руководство пользователя'))
+                record.add(210, sf('a', 'Иркутск'), SubField('c', 'ИРНИТУ'),
+                           sf('d', '2018'))
+                record.add(920, 'PAZK')
+                iso.write_record(stream, record, UTF)
+            filename = stream.name
+
+        with open(filename, 'rb') as fh:
+            count = 0
+            while True:
+                record = iso.read_record(fh, UTF)
+                if record is None:
+                    break
+                self.assertEqual(len(record.fields), 4)
+                count += 1
+        self.assertEqual(count, 10)
 
 
 class TestExport(unittest.TestCase):

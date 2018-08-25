@@ -4,7 +4,7 @@
 # Python supported: 3.6.x
 # IRBIS64 supported: 2015 and higher
 
-__version__ = '0.0.4'
+__version__ = '0.0.51'
 __author__ = 'Alexey Mironov'
 __email__ = 'amironov73@gmail.com'
 

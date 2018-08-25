@@ -13,11 +13,11 @@ environment:
   TWINE_USERNAME: amironov73
   TWINE_PASSWORD: 
     secure: 1JY9Dr54nOTpD3EAV4mqMQ==
-  TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
 
 install:
   - python -m pip install --upgrade pip
   - pip install --upgrade setuptools wheel coverage mypy twine pylint
+  - IF not "L%APPVEYOR_REPO_BRANCH%L" == "LpypiL" SET TWINE_REPOSITORY_URL=https://test.pypi.org/legacy/
 
 before_build:
   - python utils\patch_version.py pyirbis\__init__.py %APPVEYOR_BUILD_VERSION%

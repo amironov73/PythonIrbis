@@ -788,7 +788,7 @@ class SearchScenario:
         return result
 
     def __str__(self):
-	if not self.prefix:
+        if not self.prefix:
             return safe_str(self.name)
 
         return safe_str(self.name) + ' ' + safe_str(self.prefix)

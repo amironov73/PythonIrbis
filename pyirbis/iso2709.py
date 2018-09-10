@@ -7,7 +7,8 @@ Reading and writing ISO 2709 records.
 from typing import Iterable, Optional, List
 from typing.io import BinaryIO
 
-from pyirbis.core import ANSI, SubField, RecordField, MarcRecord
+from pyirbis.core import ANSI, SubField, RecordField, MarcRecord, \
+    IrbisError, safe_str
 
 # Length of the record marker
 MARKER_LENGTH = 24
@@ -192,6 +193,9 @@ def write_record(stream: BinaryIO, record: MarcRecord, encoding: str) -> None:
             if field.value:
                 fldlen += len(field.value.encode(encoding))
             for subfield in field.subfields:
+                code = subfield.code
+                if code is None or ord(code) <= 32 or ord(code) >= 255:
+                    raise IrbisError('Bad code: ' + safe_str(code))
                 fldlen += 2  # Признак подполя и его код
                 fldlen += len(subfield.value.encode(encoding))
         fldlen += 1  # Разделитель полей
@@ -220,15 +224,17 @@ def write_record(stream: BinaryIO, record: MarcRecord, encoding: str) -> None:
     encode_int(buffer, 0, 5, record_length)
     encode_int(buffer, 12, 5, base_address)
 
-    buffer[5] = ord('n')
-    buffer[6] = ord('a')
-    buffer[7] = ord('m')
+    buffer[5] = ord('n') # Record status
+    buffer[6] = ord('a') # Record type
+    buffer[7] = ord('m') # Bibligraphical index
     buffer[8] = ord('2')
     buffer[10] = ord('2')
     buffer[11] = ord('2')
-    buffer[18] = ord('i')
-    buffer[20] = ord('4')
-    buffer[21] = ord('5')
+    buffer[17] = ord(' ') # Bibliographical level
+    buffer[18] = ord('i') # Cataloging rules
+    buffer[19] = ord(' ') # Related record
+    buffer[20] = ord('4') # Field length
+    buffer[21] = ord('5') # Field offset
     buffer[22] = ord('0')
 
     # Кодируем конец справочника

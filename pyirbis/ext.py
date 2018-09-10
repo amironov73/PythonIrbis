@@ -778,7 +778,7 @@ class SearchScenario:
             scenario.type = safe_int(safe_str(section.get_value(f'ItemDictionType{i}', '0')))
             scenario.menu = section.get_value(f'ItemMenu{i}')
             scenario.old = None
-            scenario.correction = section.get_value(f'ModByDic{i}')
+            scenario.correction = section.get_value(f'ItemModByDic{i}')
             scenario.truncation = bool(section.get_value(f'ItemTranc{i}', '0'))
             scenario.hint = section.get_value(f'ItemHint{i}')
             scenario.mod_by_dic_auto = section.get_value(f'ItemModByDicAuto{i}')
@@ -788,6 +788,9 @@ class SearchScenario:
         return result
 
     def __str__(self):
+	if not self.prefix:
+            return safe_str(self.name)
+
         return safe_str(self.name) + ' ' + safe_str(self.prefix)
 
 

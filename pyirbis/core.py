@@ -1,6 +1,9 @@
 # coding: utf-8
 
-# Common stuff for pyirbis
+"""
+Модуль содержит основную функциональность по работе с сервером ИРБИС64,
+в т. ч. для манипуляций с записями.
+"""
 
 import random
 import socket
@@ -288,28 +291,28 @@ def remove_comments(text: str) -> str:
     index = 0
     length = len(text)
     while index < length:
-        c = text[index]
+        char = text[index]
         if state == "'" or state == '"' or state == '|':
-            if c == state:
+            if char == state:
                 state = ''
-            result.append(c)
+            result.append(char)
         else:
-            if c == '/':
+            if char == '/':
                 if index + 1 < length and text[index + 1] == '*':
                     while index < length:
-                        c = text[index]
-                        if c == '\r' or c == '\n':
-                            result.append(c)
+                        char = text[index]
+                        if char == '\r' or char == '\n':
+                            result.append(char)
                             break
                         index = index + 1
                 else:
-                    result.append(c)
+                    result.append(char)
             else:
-                if c == "'" or c == '"' or c == '|':
-                    state = c
-                    result.append(c)
+                if char == "'" or char == '"' or char == '|':
+                    state = char
+                    result.append(char)
                 else:
-                    result.append(c)
+                    result.append(char)
         index = index + 1
 
     return ''.join(result)
@@ -328,8 +331,8 @@ def prepare_format(text: str) -> str:
         return text
 
     flag = False
-    for c in text:
-        if c < ' ':
+    for char in text:
+        if char < ' ':
             flag = True
             break
 
@@ -337,9 +340,9 @@ def prepare_format(text: str) -> str:
         return text
 
     result = []
-    for c in text:
-        if c >= ' ':
-            result.append(c)
+    for char in text:
+        if char >= ' ':
+            result.append(char)
 
     return ''.join(result)
 
@@ -617,36 +620,63 @@ class ServerResponse:
             self.read()
 
     def ansi(self) -> str:
+        """
+        Считывание одной строки в кодировке ANSI.
+
+        :return: Строка (возможно, пустая)
+        """
         return self.read().decode(ANSI)
 
     def ansi_n(self, count: int) -> List[str]:
         """
-        Считывание не менее указанного количества строк.
+        Считывание не менее указанного количества строк
+        в кодировке ANSI.
 
         :param count: Сколько строк надо
         :return: Список строк или None
         """
         result = []
-        for i in range(count):
+        for _ in range(count):
             line = self.ansi()
-            if len(line) == 0:
+            if not line:
                 return []
             result.append(line)
         return result
 
     def ansi_remaining_text(self) -> str:
+        """
+        Получение всего оставшегося текста ответа сервера
+        как строки в кодировке ANSI.
+
+        :return: Строка (возможно, пустая)
+        """
+
         return self._memory.decode(ANSI)
 
     def ansi_remaining_lines(self) -> List[str]:
+        """
+        Получение всего оставшегося текста ответа сервера
+        как списка строк в кодировке ANSI.
+
+        :return: Список строк (возможно, пустой)
+        """
         result = []
         while True:
             line = self.ansi()
-            if len(line) == 0:
+            if not line:
                 break
             result.append(line)
         return result
 
-    def check_return_code(self, allowed=None) -> None:
+    def check_return_code(self, allowed: List[int] = None) -> None:
+        """
+        Проверка кода возврата. Если код меньше нуля,
+        генерируется IrbisError.
+        Можно указать допустимые значения кода.
+
+        :param allowed: Допустимые отрицательные значения (опционально)
+        :return: None
+        """
         if allowed is None:
             allowed = []
 
@@ -655,10 +685,22 @@ class ServerResponse:
                 raise IrbisError(self.return_code)
 
     def close(self) -> None:
+        """
+        Закрытие сокета.
+
+        :return: None
+        """
+
         # Пока ничего не делаем
         pass
 
     def get_binary_file(self) -> Optional[bytearray]:
+        """
+        Получение двоичного файла с сервера.
+
+        :return: Содержимое файла или None
+        """
+
         preamble = bytearray(b'IRBIS_BINARY_DATA')
         index = self._memory.find(preamble)
         if index < 0:
@@ -666,13 +708,32 @@ class ServerResponse:
         return self._memory[index + len(preamble):]
 
     def get_return_code(self) -> int:
+        """
+        Считывание кода возврата без его проверки.
+
+        :return: Код возврата
+        """
+
         self.return_code = self.number()
         return self.return_code
 
-    def nop(self):
+    def nop(self) -> None:
+        """
+        Пустая операция (не нужна).
+
+        :return: None
+        """
         pass
 
     def may_be_number(self) -> int:
+        """
+        Считывание строки, в которой может быть число,
+        но может быть и что-нибудь иное.
+
+        :return: Считанное число либо 0, если строку
+        не удалось интерпретировать как число.
+        """
+
         result = 0
         try:
             result = int(self.ansi())
@@ -681,6 +742,12 @@ class ServerResponse:
         return result
 
     def number(self) -> int:
+        """
+        Считывание строки, в которой ожидается число (возможно,
+        со знаком) в десятеричной системе счисления.
+
+        :return: Считанное число
+        """
         return int(self.ansi())
 
     def read(self) -> bytearray:
@@ -693,22 +760,28 @@ class ServerResponse:
         while True:
             if not self._memory:
                 break
-            c = self._memory.pop(0)
-            if c == 0x0D:
-                if not len(self._memory):
+            char = self._memory.pop(0)
+            if char == 0x0D:
+                if not self._memory:
                     break
-                c = self._memory.pop(0)
-                if c == 0x0A:
+                char = self._memory.pop(0)
+                if char == 0x0A:
                     break
-            result.append(c)
+            result.append(char)
         return result
 
     def utf(self) -> str:
+        """
+        Считывание одной строки в кодировке UTF-8.
+
+        :return: Строка (возможно, пустая)
+        """
         return self.read().decode(UTF)
 
     def utf_n(self, count: int) -> List[str]:
         """
-        Считывание не менее указанного количества строк.
+        Считывание не менее указанного количества строк
+        в кодировке UTF-8.
 
         :param count: Сколько строк надо
         :return: Список строк или None
@@ -722,9 +795,22 @@ class ServerResponse:
         return result
 
     def utf_remaining_text(self) -> str:
+        """
+        Получение всего оставшегося текста ответа сервера
+        как строки в кодировке UTF-8.
+
+        :return: Строка (возможно, пустая)
+        """
         return self._memory.decode(UTF)
 
     def utf_remaining_lines(self) -> List[str]:
+        """
+        Получение всего оставшегося текста ответа сервера
+        как списка строк в кодировке UTF-8.
+
+        :return: Список строк (возможно, пустой)
+        """
+
         result = []
         while True:
             line = self.utf()
@@ -742,6 +828,7 @@ class ServerResponse:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         return exc_type is None
+
 
 ###############################################################################
 
@@ -788,10 +875,22 @@ class SubField:
         self.value: Optional[str] = value
 
     def assign_from(self, other: 'SubField') -> None:
+        """
+        Присваивание от другого поля: код и значение
+        берутся от другого подполя.
+
+        :param other: Другое подполе
+        :return: None
+        """
         self.code = other.code
         self.value = other.value
 
     def clone(self) -> 'SubField':
+        """
+        Клонирование подполя.
+
+        :return: Клон подполя
+        """
         return SubField(self.code, self.value)
 
     def __str__(self):
@@ -804,6 +903,7 @@ class SubField:
 
     def __bool__(self):
         return self.code != self.DEFAULT_CODE and bool(self.value)
+
 
 ###############################################################################
 
@@ -831,27 +931,69 @@ class RecordField:
         self.subfields.extend(subfields)
 
     def add(self, code: str, value: str = '') -> 'RecordField':
+        """
+        Добавление подполя с указанным кодом (и, возможно, значением)
+        к записи.
+
+        :param code: Код подполя
+        :param value: Значение подполя (опционально)
+        :return: Self
+        """
+
         self.subfields.append(SubField(code, value))
         return self
 
     def all(self, code: str) -> List[SubField]:
+        """
+        Список всех подполей с указанным кодом.
+
+        :param code: Код
+        :return: Список подполей (возможно, пустой)
+        """
         code = code.lower()
         return [sf for sf in self.subfields if sf.code == code]
 
     def all_values(self, code: str) -> List[str]:
+        """
+        Список значений всех подполей с указанным кодом.
+        Пустые значения подполей в список не включаются.
+
+        :param code: Код
+        :return: Список значений (возможно, пустой)
+        """
         code = code.lower()
         return [sf.value for sf in self.subfields if sf.code == code if sf.value]
 
     def assign_from(self, other: 'RecordField') -> None:
+        """
+        Присваивание от другого поля.
+        1. Значение данного поля становится равным значению другого поля.
+        2. В данное поле помещаются клоны подполей из другого поля.
+        3. Тег поля не меняется.
+
+        :param other: Поле-источник
+        :return: None
+        """
         self.value = other.value
         self.subfields = [sf.clone() for sf in other.subfields]
 
     def clear(self) -> 'RecordField':
+        """
+        Очистка поля. Удаляются все подполя.
+
+        :return: Self
+        """
+
         self.value = None
         self.subfields = []
         return self
 
     def clone(self) -> 'RecordField':
+        """
+        Создание полного клона поля.
+
+        :return: Клон поля
+        """
         result = RecordField(self.tag, self.value)
         for sf in self.subfields:
             result.subfields.append(sf.clone())
@@ -882,6 +1024,12 @@ class RecordField:
         return None
 
     def parse(self, line: str) -> None:
+        """
+        Разбор текстового представления поля (в серверном формате).
+
+        :param line: Строка с текстовым представлением
+        :return: None
+        """
         if '#' not in line:
             if '^' not in line:
                 self.value = line
@@ -971,6 +1119,7 @@ class RecordField:
     def __bool__(self):
         return bool(self.tag) and bool(self.value) or bool(self.subfields)
 
+
 ###############################################################################
 
 
@@ -991,24 +1140,53 @@ class MarcRecord:
 
     def add(self, tag: int, value: Union[str, SubField] = None,
             *subfields: SubField) -> 'MarcRecord':
+        """
+        Добавление поля (возможно, с значением и подполями) к записи.
+
+        :param tag: Тег
+        :param value: Значение поля (опционально)
+        :param subfields: Подполя (опционально)
+        :return: Self
+        """
+
         if isinstance(value, str):
             field = RecordField(tag, value)
         else:
             field = RecordField(tag)
             if isinstance(value, SubField):
                 field.subfields.append(value)
+
         field.subfields.extend(subfields)
         self.fields.append(field)
         return self
 
     def all(self, tag: int) -> List[RecordField]:
+        """
+        Список полей с указанным тегом.
+
+        :param tag: Тег
+        :return: Список полей (возможно, пустой)
+        """
+
         return [f for f in self.fields if f.tag == tag]
 
     def clear(self) -> 'MarcRecord':
+        """
+        Очистка записи (удаление всех полей).
+
+        :return: Self
+        """
+
         self.fields.clear()
         return self
 
     def clone(self) -> 'MarcRecord':
+        """
+        Клонирование записи.
+
+        :return: Полный клон записи
+        """
+
         result = MarcRecord()
         result.database = self.database
         result.mfn = self.mfn
@@ -1018,6 +1196,12 @@ class MarcRecord:
         return result
 
     def encode(self) -> List[str]:
+        """
+        Кодирование записи в серверное представление.
+
+        :return: Список строк
+        """
+
         result = [str(self.mfn) + '#' + str(self.status),
                   '0#' + str(self.version)]
         for field in self.fields:
@@ -1028,7 +1212,7 @@ class MarcRecord:
         """
         Текст первого поля с указанным тегом.
         :param tag: Тег
-        :param code: Значение (опционально)
+        :param code: Код (опционально)
         :return: Текст или None
         """
         for field in self.fields:
@@ -1040,6 +1224,13 @@ class MarcRecord:
         return None
 
     def fma(self, tag: int, code: str = '') -> List[str]:
+        """
+        Тексты полей с указанным тегом.
+
+        :param tag: Тег
+        :param code: Код (опционально)
+        :return: Список с текстами (м. б. пустой)
+        """
         result = []
         for field in self.fields:
             if field.tag == tag:
@@ -1054,6 +1245,12 @@ class MarcRecord:
         return result
 
     def first(self, tag: int) -> Optional[RecordField]:
+        """
+        Первое из полей с указанным тегом.
+
+        :param tag: Тег
+        :return: Поле либо None
+        """
         for field in self.fields:
             if field.tag == tag:
                 return field
@@ -1067,8 +1264,16 @@ class MarcRecord:
         return (self.status & (LOGICALLY_DELETED | PHYSICALLY_DELETED)) != 0
 
     def parse(self, text: List[str]) -> None:
+        """
+        Разбор текстового представления записи (в серверном формате).
+
+        :param text: Список строк
+        :return: None
+        """
+
         if not text:
             return
+
         line = text[0]
         parts = line.split('#')
         self.mfn = int(parts[0])
@@ -1149,6 +1354,7 @@ class MarcRecord:
     def __bool__(self):
         return bool(len(self.fields))
 
+
 ###############################################################################
 
 
@@ -1188,6 +1394,7 @@ class IrbisVersion:
                   str(self.max_clients)]
         return '\n'.join(buffer)
 
+
 ###############################################################################
 
 
@@ -1210,6 +1417,14 @@ class IniLine:
 
 
 def same_key(first: Optional[str], second: Optional[str]) -> bool:
+    """
+    Сравнение двух ключей (с точностью до регистра).
+
+    :param first: Первый ключ (может отсутствовать)
+    :param second: Второй ключ (может отсутствовать)
+    :return: True при совпадении
+    """
+
     if not first or not second:
         return False
     return first.upper() == second.upper()
@@ -1227,16 +1442,36 @@ class IniSection:
         self.lines: List[IniLine] = []
 
     def find(self, key: str) -> Optional[IniLine]:
+        """
+        Нахождение строки с указанным ключом.
+
+        :param key: Искомый ключ
+        :return: Найденная строка или None
+        """
         for line in self.lines:
             if same_key(line.key, key):
                 return line
         return None
 
     def get_value(self, key: str, default: Optional[str] = None) -> Optional[str]:
+        """
+        Получение значения строки с указанным ключом.
+
+        :param key: Искомый ключ
+        :param default: Значение по умолчанию
+        :return: Найденное значение или значение по умолчанию
+        """
         found = self.find(key)
         return found.value if found else default
 
     def set_value(self, key: str, value: str) -> None:
+        """
+        Установка значения строки с указанным ключом.
+
+        :param key: Искомый ключ
+        :param value: Устанавливаемое значение
+        :return: None
+        """
         found = self.find(key)
         if found:
             found.value = value
@@ -1245,6 +1480,12 @@ class IniSection:
             self.lines.append(found)
 
     def remove(self, key: str) -> None:
+        """
+        Удаление строки с указанным ключом.
+
+        :param key: Искомый ключ
+        :return: None
+        """
         found = self.find(key)
         if found:
             self.lines.remove(found)
@@ -1286,6 +1527,12 @@ class IniFile:
         self.sections = []
 
     def find(self, name: str) -> Optional[IniSection]:
+        """
+        Нахождение секции с указанным именем.
+
+        :param name: Имя секции
+        :return: Найденная секция или None
+        """
         for section in self.sections:
             if not name and not section.name:
                 return section
@@ -1294,6 +1541,12 @@ class IniFile:
         return None
 
     def get_or_create(self, name: str) -> IniSection:
+        """
+        Получение или создание при отсутствии секции с указанным именем.
+
+        :param name: Имя секции
+        :return: Найденная или созданная секция
+        """
         result = self.find(name)
         if not result:
             result = IniSection(name)
@@ -1301,19 +1554,41 @@ class IniFile:
         return result
 
     def get_value(self, name: str, key: str, default: Optional[str] = None) -> Optional[str]:
+        """
+        Получение значения строки с указанными именем секции и ключом.
+
+        :param name: Имя секции
+        :param key: Ключ строки в секции
+        :param default: Значение по умолчанию
+        :return: Найденное значение или значение по умолчанию
+        """
         section = self.find(name)
         if section:
             return section.get_value(key, default)
         return default
 
     def set_value(self, name: str, key: str, value: str) -> None:
+        """
+        Установка значения строки с указанными именем секции и ключом.
+
+        :param name: Имя секции
+        :param key: Ключ строки в секции
+        :param value: Устанавливаемое значение
+        :return: None
+        """
         section = self.get_or_create(name)
         if not section:
             section = IniSection(name)
             self.sections.append(section)
         section.set_value(key, value)
 
-    def parse(self, text: List[str]) -> None:
+    def parse(self, text: Iterable[str]) -> None:
+        """
+        Разбор текстового представления INI-файла.
+
+        :param text: Последовательность текстовых строк
+        :return: None
+        """
         section = None
         for line in text:
             line = line.strip()
@@ -1357,6 +1632,7 @@ class IniFile:
 
     def __bool__(self):
         return bool(len(self.sections))
+
 
 ###############################################################################
 
@@ -1419,6 +1695,7 @@ def parse_process_list(response: ServerResponse) -> List[ServerProcess]:
         result.append(process)
 
     return result
+
 
 ###############################################################################
 
@@ -1760,7 +2037,8 @@ class IrbisConnection:
         """
         Получение списка файлов с сервера.
 
-        :param specification: Спецификация или маска имени файла (если нужны файлы, лежащие в папке текущей базы данных)
+        :param specification: Спецификация или маска имени файла
+        (если нужны файлы, лежащие в папке текущей базы данных)
         :return: Список файлов
         """
         query = ClientQuery(self, LIST_FILES)
@@ -1999,9 +2277,10 @@ class IrbisConnection:
 
     def read_text_file(self, specification: Union[FileSpecification, str]) -> str:
         """
-        Получение текстового файла с сервера в виде потока.
+        Получение содержимого текстового файла с сервера.
 
-        :param specification: Спецификация или имя файла (если он находится в папке текущей базы данных).
+        :param specification: Спецификация или имя файла
+        (если он находится в папке текущей базы данных).
         :return: Текст файла или пустая строка, если файл не найден
         """
 
@@ -2011,6 +2290,14 @@ class IrbisConnection:
             return result
 
     def read_text_stream(self, specification: Union[FileSpecification, str]) -> ServerResponse:
+        """
+        Получение текстового файла с сервера в виде потока.
+
+        :param specification: Спецификация или имя файла
+        (если он находится в папке текущей базы данных).
+        :return: ServerResponse, из которого можно считывать строки
+        """
+
         if isinstance(specification, str):
             specification = self.near_master(specification)
 

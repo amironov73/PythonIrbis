@@ -272,7 +272,7 @@ def short_irbis_to_lines(text: str) -> List[str]:
     return text.split(SHORT_DELIMITER)
 
 
-def remove_comments(text: str):
+def remove_comments(text: str) -> str:
     """
     Удаление комментариев из кода.
 
@@ -315,7 +315,7 @@ def remove_comments(text: str):
     return ''.join(result)
 
 
-def prepare_format(text: str):
+def prepare_format(text: str) -> str:
     """
     Подготовка формата к отсылке на сервер.
 
@@ -421,13 +421,18 @@ class IrbisError(Exception):
     Исключнение - ошибка протокола
     """
 
-    __slots__ = 'code'
+    __slots__ = ('code', 'message')
 
-    def __init__(self, code: int = 0) -> None:
+    def __init__(self, code: Union[int, str] = 0) -> None:
         super().__init__(self)
-        self.code = code
+        if isinstance(code, int):
+            self.code: int = code
+        if isinstance(code, str):
+            self.message: str = code
 
     def __str__(self):
+        if self.message is not None:
+            return self.message
         return f'{self.code}: {get_error_description(self.code)}'
 
 
@@ -455,7 +460,7 @@ class ClientQuery:
         self.new_line()
         self.new_line()
 
-    def add(self, number: int):
+    def add(self, number: int) -> 'ClientQuery':
         """
         Добавление целого числа.
 
@@ -464,7 +469,7 @@ class ClientQuery:
         """
         return self.ansi(str(number))
 
-    def ansi(self, text: Optional[str]):
+    def ansi(self, text: Optional[str]) -> 'ClientQuery':
         """
         Добавление строки в кодировке ANSI.
 
@@ -473,7 +478,7 @@ class ClientQuery:
         """
         return self.append(text, ANSI)
 
-    def append(self, text: Optional[str], encoding: str):
+    def append(self, text: Optional[str], encoding: str) -> 'ClientQuery':
         """
         Добавление строки в указанной кодировке.
 
@@ -486,7 +491,7 @@ class ClientQuery:
         self.new_line()
         return self
 
-    def new_line(self):
+    def new_line(self) -> 'ClientQuery':
         """
         Перевод строки.
 
@@ -495,7 +500,7 @@ class ClientQuery:
         self._memory.append(0x0A)
         return self
 
-    def utf(self, text: Optional[str]):
+    def utf(self, text: Optional[str]) -> 'ClientQuery':
         """
         Добавление строки в кодировке UTF-8.
 
@@ -504,7 +509,7 @@ class ClientQuery:
         """
         return self.append(text, UTF)
 
-    def encode(self):
+    def encode(self) -> bytes:
         """
         Выдача, что получилось в итоге.
 
@@ -541,7 +546,7 @@ class FileSpecification:
         self.content: Optional[str] = None
 
     @staticmethod
-    def system(filename: str):
+    def system(filename: str) -> 'FileSpecification':
         """
         Создание спецификации файла, лежащего в системной папке ИРБИС64.
 
@@ -551,7 +556,7 @@ class FileSpecification:
         return FileSpecification(SYSTEM, None, filename)
 
     @staticmethod
-    def parse(text: str):
+    def parse(text: str) -> 'FileSpecification':
         """
         Разбор текстового представления спецификации.
 
@@ -632,7 +637,7 @@ class ServerResponse:
     def ansi_remaining_text(self) -> str:
         return self._memory.decode(ANSI)
 
-    def ansi_remaining_lines(self):
+    def ansi_remaining_lines(self) -> List[str]:
         result = []
         while True:
             line = self.ansi()
@@ -641,7 +646,7 @@ class ServerResponse:
             result.append(line)
         return result
 
-    def check_return_code(self, allowed=None):
+    def check_return_code(self, allowed=None) -> None:
         if allowed is None:
             allowed = []
 
@@ -719,7 +724,7 @@ class ServerResponse:
     def utf_remaining_text(self) -> str:
         return self._memory.decode(UTF)
 
-    def utf_remaining_lines(self):
+    def utf_remaining_lines(self) -> List[str]:
         result = []
         while True:
             line = self.utf()
@@ -782,11 +787,11 @@ class SubField:
         self.code: str = code.lower()
         self.value: Optional[str] = value
 
-    def assign_from(self, other):
+    def assign_from(self, other: 'SubField') -> None:
         self.code = other.code
         self.value = other.value
 
-    def clone(self):
+    def clone(self) -> 'SubField':
         return SubField(self.code, self.value)
 
     def __str__(self):
@@ -825,7 +830,7 @@ class RecordField:
             self.subfields.append(value)
         self.subfields.extend(subfields)
 
-    def add(self, code: str, value: str = ''):
+    def add(self, code: str, value: str = '') -> 'RecordField':
         self.subfields.append(SubField(code, value))
         return self
 
@@ -837,16 +842,16 @@ class RecordField:
         code = code.lower()
         return [sf.value for sf in self.subfields if sf.code == code if sf.value]
 
-    def assign_from(self, other):
+    def assign_from(self, other: 'RecordField') -> None:
         self.value = other.value
         self.subfields = [sf.clone() for sf in other.subfields]
 
-    def clear(self):
+    def clear(self) -> 'RecordField':
         self.value = None
         self.subfields = []
         return self
 
-    def clone(self):
+    def clone(self) -> 'RecordField':
         result = RecordField(self.tag, self.value)
         for sf in self.subfields:
             result.subfields.append(sf.clone())
@@ -985,7 +990,7 @@ class MarcRecord:
         self.fields.extend(fields)
 
     def add(self, tag: int, value: Union[str, SubField] = None,
-            *subfields: SubField):
+            *subfields: SubField) -> 'MarcRecord':
         if isinstance(value, str):
             field = RecordField(tag, value)
         else:
@@ -999,11 +1004,11 @@ class MarcRecord:
     def all(self, tag: int) -> List[RecordField]:
         return [f for f in self.fields if f.tag == tag]
 
-    def clear(self):
+    def clear(self) -> 'MarcRecord':
         self.fields.clear()
         return self
 
-    def clone(self):
+    def clone(self) -> 'MarcRecord':
         result = MarcRecord()
         result.database = self.database
         result.mfn = self.mfn

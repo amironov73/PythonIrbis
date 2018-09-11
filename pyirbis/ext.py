@@ -193,6 +193,7 @@ def read_menu(connection: IrbisConnection,
 
 IrbisConnection.read_menu = read_menu  # type: ignore
 
+
 ###############################################################################
 
 
@@ -333,6 +334,7 @@ def read_par_file(connection: IrbisConnection,
 
 IrbisConnection.read_par_file = read_par_file  # type: ignore
 
+
 ###############################################################################
 
 
@@ -376,6 +378,7 @@ class TermPosting:
     def __repr__(self):
         return self.__str__()
 
+
 ###############################################################################
 
 
@@ -410,6 +413,7 @@ class TermInfo:
 
     def __repr__(self):
         return str(self.count) + '#' + self.text
+
 
 ###############################################################################
 
@@ -467,6 +471,7 @@ def read_terms(connection: IrbisConnection,
 
 
 IrbisConnection.read_terms = read_terms  # type: ignore
+
 
 ###############################################################################
 
@@ -531,6 +536,7 @@ def read_postings(connection: IrbisConnection,
 
 
 IrbisConnection.read_postings = read_postings  # type: ignore
+
 
 ###############################################################################
 
@@ -727,6 +733,7 @@ def read_tree_file(connection: IrbisConnection,
 
 IrbisConnection.read_tree_file = read_tree_file  # type: ignore
 
+
 ###############################################################################
 
 
@@ -819,6 +826,7 @@ def read_search_scenario(connection: IrbisConnection,
 
 IrbisConnection.read_search_scenario = read_search_scenario  # type: ignore
 
+
 ###############################################################################
 
 
@@ -894,12 +902,12 @@ class UserInfo:
         """
 
         return self.name + '\n' + self.password + '\n' \
-            + UserInfo.format_pair('C', self.cataloger, "irbisc.ini") \
-            + UserInfo.format_pair('R', self.reader, "irbisr.ini") \
-            + UserInfo.format_pair('B', self.circulation, "irbisb.ini") \
-            + UserInfo.format_pair('M', self.acquisitions, "irbism.ini") \
-            + UserInfo.format_pair('K', self.provision, "irbisk.ini") \
-            + UserInfo.format_pair('A', self.administrator, "irbisa.ini")
+               + UserInfo.format_pair('C', self.cataloger, "irbisc.ini") \
+               + UserInfo.format_pair('R', self.reader, "irbisr.ini") \
+               + UserInfo.format_pair('B', self.circulation, "irbisb.ini") \
+               + UserInfo.format_pair('M', self.acquisitions, "irbism.ini") \
+               + UserInfo.format_pair('K', self.provision, "irbisk.ini") \
+               + UserInfo.format_pair('A', self.administrator, "irbisa.ini")
 
     def __str__(self):
         buffer = [self.number, self.name, self.password, self.cataloger,
@@ -1130,6 +1138,7 @@ def read_opt_file(connection: IrbisConnection,
 
 IrbisConnection.read_opt_file = read_opt_file  # type: ignore
 
+
 ###############################################################################
 
 
@@ -1139,13 +1148,13 @@ class ClientInfo:
     (не обязательно о текущем)
     """
 
-    __slots__ = ('number', 'ip', 'port', 'name', 'client_id',
+    __slots__ = ('number', 'ip_address', 'port', 'name', 'client_id',
                  'workstation', 'registered', 'acknowledged',
                  'last_command', 'command_number')
 
     def __init__(self):
         self.number: str = None
-        self.ip: str = None
+        self.ip_address: str = None
         self.port: str = None
         self.name: str = None
         self.client_id: str = None
@@ -1156,7 +1165,7 @@ class ClientInfo:
         self.command_number: str = None
 
     def __str__(self):
-        return ' '.join([self.number, self.ip, self.port, self.name,
+        return ' '.join([self.number, self.ip_address, self.port, self.name,
                          self.client_id, self.workstation,
                          self.registered, self.acknowledged,
                          self.last_command, self.command_number])
@@ -1197,7 +1206,7 @@ class ServerStat:
         for _ in range(self.client_count):
             client = ClientInfo()
             client.number = response.ansi()
-            client.ip = response.ansi()
+            client.ip_address = response.ansi()
             client.port = response.ansi()
             client.name = response.ansi()
             client.client_id = response.ansi()
@@ -1230,6 +1239,7 @@ def get_server_stat(connection: IrbisConnection) -> ServerStat:
 
 
 IrbisConnection.get_server_stat = get_server_stat  # type: ignore
+
 
 ###############################################################################
 
@@ -1304,6 +1314,7 @@ def get_database_info(connection: IrbisConnection,
 
 IrbisConnection.get_database_info = get_database_info  # type: ignore
 
+
 ###############################################################################
 
 
@@ -1353,6 +1364,7 @@ def print_table(connection: IrbisConnection,
 
 
 IrbisConnection.print_table = print_table  # type: ignore
+
 
 ###############################################################################
 
@@ -1507,6 +1519,7 @@ def read_alphabet_table(connection: IrbisConnection,
 
 
 IrbisConnection.read_alphabet_table = read_alphabet_table  # type: ignore
+
 
 ###############################################################################
 

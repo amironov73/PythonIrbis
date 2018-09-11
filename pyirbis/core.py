@@ -292,7 +292,7 @@ def remove_comments(text: str) -> str:
     length = len(text)
     while index < length:
         char = text[index]
-        if state == "'" or state == '"' or state == '|':
+        if state in ("'", '"', '|'):
             if char == state:
                 state = ''
             result.append(char)
@@ -301,14 +301,14 @@ def remove_comments(text: str) -> str:
                 if index + 1 < length and text[index + 1] == '*':
                     while index < length:
                         char = text[index]
-                        if char == '\r' or char == '\n':
+                        if char in ('\r', '\n'):
                             result.append(char)
                             break
                         index = index + 1
                 else:
                     result.append(char)
             else:
-                if char == "'" or char == '"' or char == '|':
+                if char in ("'", '"', '|'):
                     state = char
                     result.append(char)
                 else:
@@ -789,7 +789,7 @@ class ServerResponse:
         result = []
         for _ in range(count):
             line = self.utf()
-            if len(line) == 0:
+            if not line:
                 return []
             result.append(line)
         return result
@@ -995,8 +995,8 @@ class RecordField:
         :return: Клон поля
         """
         result = RecordField(self.tag, self.value)
-        for sf in self.subfields:
-            result.subfields.append(sf.clone())
+        for subfield in self.subfields:
+            result.subfields.append(subfield.clone())
         return result
 
     def first(self, code: str) -> Optional[SubField]:
@@ -1040,10 +1040,10 @@ class RecordField:
                     parts = parts[1].split('^')
                 else:
                     parts = line.split('^')
-                for x in parts:
-                    if x:
-                        sub = SubField(x[:1], x[1:])
-                        self.subfields.append(sub)
+                for raw_item in parts:
+                    if raw_item:
+                        subfield = SubField(raw_item[:1], raw_item[1:])
+                        self.subfields.append(subfield)
         else:
             parts = line.split('#', 1)
             self.tag = int(parts[0])
@@ -1056,10 +1056,10 @@ class RecordField:
                     parts = parts[1].split('^')
                 else:
                     parts = parts[1].split('^')
-                for x in parts:
-                    if x:
-                        sub = SubField(x[:1], x[1:])
-                        self.subfields.append(sub)
+                for raw_item in parts:
+                    if raw_item:
+                        subfield = SubField(raw_item[:1], raw_item[1:])
+                        self.subfields.append(subfield)
 
     def __str__(self):
         if not self.tag:
@@ -1219,8 +1219,7 @@ class MarcRecord:
             if field.tag == tag:
                 if code:
                     return field.first_value(code)
-                else:
-                    return field.value
+                return field.value
         return None
 
     def fma(self, tag: int, code: str = '') -> List[str]:
@@ -1642,13 +1641,13 @@ class ServerProcess:
     Информация о запущенном на сервере процессе.
     """
 
-    __slots__ = ('number', 'ip', 'name', 'client_id', 'workstation',
+    __slots__ = ('number', 'ip_address', 'name', 'client_id', 'workstation',
                  'started', 'last_command', 'command_number',
                  'process_id', 'state')
 
     def __init__(self) -> None:
         self.number: str = ''
-        self.ip: str = ''
+        self.ip_address: str = ''
         self.name: str = ''
         self.client_id: str = ''
         self.workstation: str = ''
@@ -1659,7 +1658,7 @@ class ServerProcess:
         self.state: str = ''
 
     def __str__(self):
-        buffer = [self.number, self.ip, self.name, self.client_id,
+        buffer = [self.number, self.ip_address, self.name, self.client_id,
                   self.workstation, self.started, self.last_command,
                   self.command_number, self.process_id, self.state]
         return '\n'.join(x for x in buffer if x)
@@ -1683,7 +1682,7 @@ def parse_process_list(response: ServerResponse) -> List[ServerProcess]:
     for _ in range(process_count):
         process = ServerProcess()
         process.number = response.ansi()
-        process.ip = response.ansi()
+        process.ip_address = response.ansi()
         process.name = response.ansi()
         process.client_id = response.ansi()
         process.workstation = response.ansi()
@@ -1901,8 +1900,8 @@ class IrbisConnection:
         :return: Ответ сервера (не забыть закрыть!)
         """
         query = ClientQuery(self, commands[0])
-        for x in commands[1:]:
-            query.ansi(x)
+        for line in commands[1:]:
+            query.ansi(line)
         return self.execute(query)
 
     def execute_forget(self, query: ClientQuery) -> None:
@@ -1932,7 +1931,7 @@ class IrbisConnection:
             raise ValueError()
 
         assert isinstance(script, str)
-        assert isinstance(record, MarcRecord) or isinstance(record, int)
+        assert isinstance(record, (MarcRecord, int))
 
         script = prepare_format(script)
         if not script:
@@ -2043,15 +2042,15 @@ class IrbisConnection:
         """
         query = ClientQuery(self, LIST_FILES)
 
-        ok = False
+        is_ok = False
         for spec in specification:
             if isinstance(spec, str):
                 spec = self.near_master(spec)
             query.ansi(str(spec))
-            ok = True
+            is_ok = True
 
         result: List[str] = []
-        if not ok:
+        if not is_ok:
             return result
 
         with self.execute(query) as response:
@@ -2509,12 +2508,12 @@ class IrbisConnection:
         :return: None
         """
         query = ClientQuery(self, READ_DOCUMENT)
-        ok = False
+        is_ok = False
         for spec in specification:
             assert isinstance(spec, FileSpecification)
             query.ansi(str(spec))
-            ok = True
-        if not ok:
+            is_ok = True
+        if not is_ok:
             return
 
         with self.execute(query) as response:

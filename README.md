@@ -17,4 +17,9 @@ PythonIrbis currently supports Python 3.6 and IRBIS64 2014 or later.
 [![Issues](https://img.shields.io/github/issues/amironov73/PythonIrbis.svg)](https://github.com/amironov73/PythonIrbis/issues)
 [![Release](https://img.shields.io/github/release/amironov73/PythonIrbis.svg)](https://github.com/amironov73/PythonIrbis/releases)
 [![Build status](https://img.shields.io/appveyor/ci/AlexeyMironov/pythonirbis.svg)](https://ci.appveyor.com/project/AlexeyMironov/pythonirbis/)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Famironov73%2FPythonIrbis.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Famironov73%2FPythonIrbis?ref=badge_shield)
 
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Famironov73%2FPythonIrbis.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Famironov73%2FPythonIrbis?ref=badge_large)

@@ -2373,12 +2373,144 @@ class IrbisConnection:
         query.ansi(parameters.sequential)
         response = self.execute(query)
         response.check_return_code()
-        expected = response.number()
+        _ = response.number() # Число найденных записей
         result = []
-        for _ in range(expected):
+        while 1:
             line = response.ansi()
+            if not line:
+                break
             mfn = int(line)
             result.append(mfn)
+        return result
+
+    def search_all(self, expression: str) -> List:
+        """
+        Поиск всех записей (даже если их окажется больше 32 тыс.).
+        :param expression: Поисковый запрос.
+        :return: Список найденных MFN
+        """
+
+        assert isinstance(expression, str)
+        result: List = []
+        first: int = 1
+        expected: int = 0
+
+        while 1:
+            query = ClientQuery(self, SEARCH)
+            query.ansi(self.database)
+            query.utf(expression)
+            query.add(10000)
+            query.add(first)
+            query.new_line()
+            query.add(0)
+            query.add(0)
+            response = self.execute(query)
+            response.check_return_code()
+            if first == 1:
+                expected = response.number()
+                if expected == 0:
+                    break
+            else:
+                _ = response.number()
+
+            while 1:
+                line = response.ansi()
+                if not line:
+                    break
+                mfn = int(line)
+                result.append(mfn)
+                first = first + 1
+
+            if first >= expected:
+                return result
+
+        return result
+
+    def search_count(self, expression: str) -> int:
+        """
+        Количество найденных записей.
+
+        :param expression: Поисковый запрос.
+        :return: Количество найденных записей.
+        """
+        assert isinstance(expression, str)
+
+        query = ClientQuery(self, SEARCH)
+        query.ansi(self.database)
+        query.utf(expression)
+        query.add(0)
+        query.add(0)
+        response = self.execute(query)
+        response.check_return_code()
+        return response.number()
+
+    def search_format(self, expression: str, format: str, limit: int = 0) -> List[str]:
+
+        assert isinstance(expression, str)
+        assert isinstance(format, str)
+        assert isinstance(limit, int)
+
+        query = ClientQuery(self, SEARCH)
+        query.ansi(self.database)
+        query.utf(expression)
+        query.add(0)
+        query.add(1)
+        # TODO prepare format
+        query.ansi(format)
+        query.add(0)
+        query.add(0)
+        response = self.execute(query)
+        response.check_return_code()
+        _ = response.number()
+        result = []
+        while 1:
+            line = response.utf()
+            if not line:
+                break
+            parts = line.split('#', 2)
+            if len(parts) > 1:
+                text = parts[1]
+                if text:
+                    result.append(text)
+            if limit and len(result) >= limit:
+                break
+
+        return result
+
+    def search_read(self, expression: str, limit: int = 0) -> List[MarcRecord]:
+        """
+        Поиск и считывание записей.
+
+        :param expression: Поисковый запрос.
+        :param limit: Лимит считываемых записей (0 - нет).
+        :return: Список найденных записей.
+        """
+        assert isinstance(expression, str)
+        assert isinstance(limit, int)
+
+        query = ClientQuery(self, SEARCH)
+        query.ansi(self.database)
+        query.utf(expression)
+        query.add(0)
+        query.add(1)
+        query.ansi(ALL)
+        query.add(0)
+        query.add(0)
+        response = self.execute(query)
+        response.check_return_code()
+        _ = response.number()
+        result = []
+        while 1:
+            line = response.utf()
+            if not line:
+                break
+            lines = line.split("\x1F")
+            lines = lines[1:]
+            record = MarcRecord()
+            record.parse(lines)
+            result.append(record)
+            if limit and len(result) >= limit:
+                break
         return result
 
     def to_connection_string(self) -> str:

@@ -372,3 +372,26 @@ class TestConnect(unittest.TestCase):
         self.assertEqual(records[1].mfn, 2)
         self.assertEqual(records[2].mfn, 3)
 
+    def test_38_search_all(self):
+        found = self.connection.search_all('K=б$')
+        print('Search all')
+        print(len(found))
+        print()
+
+    def test_39_search_count(self):
+        found = self.connection.search_count('K=б$')
+        print('Search count')
+        print(found)
+        print()
+
+    def test_40_search_read(self):
+        found = self.connection.search_read('K=бетон', 5)
+        print('Search read')
+        print(len(found))
+        print()
+
+    def test_41_search_format(self):
+        found = self.connection.search_format('K=бетон', '@brief', 5)
+        print('Search format')
+        print('\n'.join(found))
+        print()

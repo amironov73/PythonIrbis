@@ -1595,8 +1595,7 @@ class IniFile:
                 continue
             if line.startswith('['):
                 line = line[1:-1]
-                section = IniSection(line)
-                self.sections.append(section)
+                section = self.get_or_create(name)
             else:
                 parts = line.split('=', 1)
                 key = parts[0]

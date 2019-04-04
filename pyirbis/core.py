@@ -29,8 +29,11 @@ LOGICALLY_DELETED = 1
 PHYSICALLY_DELETED = 2
 ABSENT = 4
 NON_ACTUALIZED = 8
+NEW_RECORD = 16
 LAST = 32
 LOCKED = 64
+AUTOIN_ERROR = 128
+FULL_TEXT_NOT_ACTUALIZED = 256
 
 # Paths
 
@@ -56,6 +59,18 @@ BRIEF = '@brief'
 IBIS = '@ibiskw_h'
 INFORMATIONAL = '@info_w'
 OPTIMIZED = '@'
+
+# Workstation codes
+
+ADMININSTRATOR = 'A'
+CATALOGER = 'C'
+ACQUISITIONS = 'M'
+COMPLECT = 'M'
+READER = 'R'
+CIRCULATION = 'B'
+BOOKLAND = 'B'
+PROVISION = 'K'
+JAVA_APPLET = 'J'
 
 # Command codes
 
@@ -492,6 +507,27 @@ class ClientQuery:
         if text is not None:
             self._memory.extend(text.encode(encoding))
         self.new_line()
+        return self
+
+    def format(self, format: Optional[str]) -> Union['ClientQuery', bool]:
+        """
+        Добавление строки формата, предварительно подготовив её.
+        Также добавляется перевод строки.
+
+        :param format: Добавляемая строка формата. Может быть пустой.
+        :return: Self
+        """
+        if format is None:
+            self.new_line()
+            return False
+
+        prepared = prepare_format(format)
+        if format[0] == '@':
+            self.ansi(prepared)
+        elif format[0] == '!':
+            self.utf(prepared)
+        else:
+            self.utf('!' + prepared)
         return self
 
     def new_line(self) -> 'ClientQuery':
@@ -1914,14 +1950,12 @@ class IrbisConnection:
         with self.execute(query):
             pass
 
-    def format_record(self, script: str, record: Union[MarcRecord, int],
-                      use_utf: bool = False) -> str:
+    def format_record(self, script: str, record: Union[MarcRecord, int]) -> str:
         """
         Форматирование записи с указанным MFN.
 
         :param script: Текст формата
         :param record: MFN записи либо сама запись
-        :param use_utf: Формат содержит символы, не входящие в ANSI
         :return: Результат расформатирования
         """
 
@@ -1932,16 +1966,12 @@ class IrbisConnection:
         assert isinstance(script, str)
         assert isinstance(record, (MarcRecord, int))
 
-        script = prepare_format(script)
         if not script:
             return ''
 
         query = ClientQuery(self, FORMAT_RECORD).ansi(self.database)
 
-        if use_utf:
-            query.utf('!' + script)
-        else:
-            query.ansi(script)
+        query.format(script)
 
         if isinstance(record, int):
             query.add(1).add(record)
@@ -1953,13 +1983,12 @@ class IrbisConnection:
             result = response.utf_remaining_text().strip('\r\n')
             return result
 
-    def format_records(self, script: str, records: List[int], use_utf: bool = False) -> List[str]:
+    def format_records(self, script: str, records: List[int]) -> List[str]:
         """
         Форматирование группы записей по MFN.
 
         :param script: Текст формата
         :param records: Список MFN
-        :param use_utf: Формат содержит символы, не входяшие в ANSI
         :return: Список строк
         """
 
@@ -1971,7 +2000,6 @@ class IrbisConnection:
         assert isinstance(script, str)
         assert isinstance(records, list)
 
-        script = prepare_format(script)
         if not script:
             return [''] * len(records)
 
@@ -1981,12 +2009,7 @@ class IrbisConnection:
             raise IrbisError()
 
         query = ClientQuery(self, FORMAT_RECORD).ansi(self.database)
-
-        if use_utf:
-            query.utf('!' + script)
-        else:
-            query.ansi(script)
-
+        query.format(script)
         query.add(len(records))
         for mfn in records:
             query.add(mfn)

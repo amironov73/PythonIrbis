@@ -8,6 +8,7 @@ import random
 import os
 import os.path
 import unittest
+from sys import platform
 
 from pyirbis.core import SubField, RecordField, MarcRecord, FileSpecification, IrbisConnection, \
     LOGICALLY_DELETED, PHYSICALLY_DELETED, LAST, remove_comments, prepare_format, \
@@ -41,7 +42,14 @@ def random_binary_file():
 
 
 def random_file_name():
-    tempdir = os.environ['TMP']
+    if platform == "linux" or platform == "linux2":
+        tempdir = '/tmp'
+    elif platform == "darwin":
+        tempdir = '/tmp' # ???
+    elif platform == "wi Windows...":
+        tempdir = os.environ['TMP']
+    else:
+        raise Exception('Unknown system')
     filename = str(random.randint(1111111, 9999999))
     result = os.path.join(tempdir, filename)
     return result

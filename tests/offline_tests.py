@@ -42,11 +42,11 @@ def random_binary_file():
 
 
 def random_file_name():
-    if platform == "linux" or platform == "linux2":
+    if platform == 'linux':
         tempdir = '/tmp'
-    elif platform == "darwin":
+    elif platform == 'darwin':
         tempdir = '/tmp' # ???
-    elif platform == "wi Windows...":
+    elif platform == 'win32':
         tempdir = os.environ['TMP']
     else:
         raise Exception('Unknown system')

@@ -636,9 +636,10 @@ class ServerResponse:
     Ответ сервера.
     """
 
-    __slots__ = '_memory', 'command', 'client_id', 'query_id', 'length', 'version', 'return_code'
+    __slots__ = '_memory', 'command', 'client_id', 'query_id', 'length', 'version', 'return_code', '_conn'
 
-    def __init__(self, sock: socket.socket) -> None:
+    def __init__(self, conn: 'IrbisConnection', sock: socket.socket) -> None:
+        self._conn = conn
         self._memory: bytearray = bytearray()
         while sock:
             buffer = sock.recv(4096)
@@ -751,6 +752,8 @@ class ServerResponse:
         """
 
         self.return_code = self.number()
+        if self.return_code < 0:
+            self._conn.last_error = self.return_code
         return self.return_code
 
     def nop(self) -> None:
@@ -1747,7 +1750,7 @@ class IrbisConnection:
 
     __slots__ = ('host', 'port', 'username', 'password', 'database', 'workstation',
                  'client_id', 'query_id', 'connected', '_stack', 'server_version',
-                 'ini_file')
+                 'ini_file', 'last_error')
 
     def __init__(self, host: Optional[str] = None,
                  port: int = 0,
@@ -1767,6 +1770,7 @@ class IrbisConnection:
         self._stack: List[str] = []
         self.server_version: Optional[str] = None
         self.ini_file: IniFile = IniFile()
+        self.last_error = 0
 
     def actualize_record(self, mfn: int, database: Optional[str] = None) -> None:
         """
@@ -1920,11 +1924,12 @@ class IrbisConnection:
         :param query: Запрос
         :return: Ответ сервера (не забыть закрыть!)
         """
+        self.last_error = 0;
         sock = socket.socket()
         sock.connect((self.host, self.port))
         packet = query.encode()
         sock.send(packet)
-        return ServerResponse(sock)
+        return ServerResponse(self, sock)
 
     def execute_ansi(self, *commands) -> ServerResponse:
         """

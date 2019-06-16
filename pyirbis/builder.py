@@ -62,7 +62,7 @@ class Search:
         if text[0] in '"(':
             return False
         for c in text:
-            if c in ' +*()"':
+            if c in ' +*^()"#':
                 return True
         return False
 

@@ -7,7 +7,9 @@
 
 import random
 import socket
-from typing import Union, Optional, SupportsInt, List, Iterable
+from typing import Union, Optional, SupportsInt, List, Iterable, Any
+
+import asyncio
 
 # Max number of postings
 
@@ -433,6 +435,21 @@ def get_error_description(code: int) -> str:
 
 ###############################################################################
 
+irbis_event_loop = None
+
+def init_async():
+    global irbis_event_loop
+    if not irbis_event_loop:
+        irbis_event_loop = asyncio.get_event_loop()
+
+def close_async():
+    global irbis_event_loop
+    if irbis_event_loop:
+        irbis_event_loop.close()
+        irbis_event_loop = None
+
+###############################################################################
+
 
 class IrbisError(Exception):
     """
@@ -638,15 +655,26 @@ class ServerResponse:
 
     __slots__ = '_memory', 'command', 'client_id', 'query_id', 'length', 'version', 'return_code', '_conn'
 
-    def __init__(self, conn: 'IrbisConnection', sock: socket.socket) -> None:
+    def __init__(self, conn: 'IrbisConnection') -> None:
         self._conn = conn
         self._memory: bytearray = bytearray()
+
+    def read_data(self, sock: socket.socket) -> None:
         while sock:
             buffer = sock.recv(4096)
             if not buffer:
                 break
             self._memory.extend(buffer)
         sock.close()
+
+    async def read_data_async(self, sock: Any) -> None:
+        while True:
+            buffer = await sock.read(4096)
+            if not buffer:
+                break
+            self._memory.extend(buffer)
+
+    def initial_parse(self) -> None:
         self.command: str = self.ansi()
         self.client_id: int = self.number()
         self.query_id: int = self.number()
@@ -1832,6 +1860,24 @@ class IrbisConnection:
             self.ini_file = result
             return result
 
+    async def connect_async(self) -> IniFile:
+        self.query_id = 0
+        self.client_id = random.randint(100000, 999999)
+        query = ClientQuery(self, REGISTER_CLIENT).ansi(self.username).ansi(self.password)
+        response = await self.execute_async(query)
+        response.check_return_code()
+        self.server_version = response.version
+        result = IniFile()
+        text = irbis_to_lines(response.ansi_remaining_text())
+        line = text[0]
+        text = line.splitlines()
+        text = text[1:]
+        result.parse(text)
+        self.connected = True
+        self.ini_file = result
+        response.close()
+        return result
+
     def create_database(self, database: Optional[str] = None,
                         description: Optional[str] = None,
                         reader_access: bool = True) -> None:
@@ -1917,6 +1963,17 @@ class IrbisConnection:
         self.execute_forget(query)
         self.connected = False
 
+    async def disconnect_async(self) -> None:
+        if not self.connected:
+            return
+
+        query = ClientQuery(self, UNREGISTER_CLIENT)
+        query.ansi(self.username)
+        response = await self.execute_async(query)
+        response.close()
+        self.connected = False
+
+
     def execute(self, query: ClientQuery) -> ServerResponse:
         """
         Выполнение произвольного запроса к серверу.
@@ -1924,12 +1981,28 @@ class IrbisConnection:
         :param query: Запрос
         :return: Ответ сервера (не забыть закрыть!)
         """
-        self.last_error = 0;
+        self.last_error = 0
         sock = socket.socket()
         sock.connect((self.host, self.port))
         packet = query.encode()
         sock.send(packet)
-        return ServerResponse(self, sock)
+        result = ServerResponse(self)
+        result.read_data(sock)
+        result.initial_parse()
+        return result
+
+    async def execute_async(self, query: ClientQuery) -> ServerResponse:
+        #if not the_loop:
+        #    raise IrbisError()
+        self.last_error = 0
+        reader, writer = await asyncio.open_connection(self.host, self.port, loop=irbis_event_loop)
+        packet = query.encode()
+        writer.write(packet)
+        result = ServerResponse(self)
+        await result.read_data_async(reader)
+        result.initial_parse()
+        writer.close()
+        return result
 
     def execute_ansi(self, *commands) -> ServerResponse:
         """
@@ -1988,6 +2061,30 @@ class IrbisConnection:
             result = response.utf_remaining_text().strip('\r\n')
             return result
 
+    async def format_record_async(self, script: str, record: Union[MarcRecord, int]) -> str:
+        script = script or throw_value_error()
+        if not record:
+            raise ValueError()
+
+        assert isinstance(script, str)
+        assert isinstance(record, (MarcRecord, int))
+
+        if not script:
+            return ''
+
+        query = ClientQuery(self, FORMAT_RECORD).ansi(self.database)
+        query.format(script)
+        if isinstance(record, int):
+            query.add(1).add(record)
+        else:
+            query.add(-2).utf(IRBIS_DELIMITER.join(record.encode()))
+
+        response = await self.execute_async(query)
+        response.check_return_code()
+        result = response.utf_remaining_text().strip('\r\n')
+        response.close()
+        return result
+
     def format_records(self, script: str, records: List[int]) -> List[str]:
         """
         Форматирование группы записей по MFN.
@@ -2041,6 +2138,17 @@ class IrbisConnection:
             response.check_return_code()
             result = response.return_code
             return result
+
+    async def get_max_mfn_async(self, database: Optional[str] = None) -> int:
+        database = database or self.database or throw_value_error()
+        assert isinstance(database, str)
+        query = ClientQuery(self, GET_MAX_MFN)
+        query.ansi(database)
+        response = await self.execute_async(query)
+        response.check_return_code()
+        result = response.return_code
+        response.close()
+        return result
 
     def get_server_version(self) -> IrbisVersion:
         """
@@ -2144,6 +2252,11 @@ class IrbisConnection:
         """
         with self.execute_ansi(NOP):
             pass
+
+    async def nop_async(self) -> None:
+        query = ClientQuery(self, NOP)
+        response = await self.execute_async(query)
+        response.close()
 
     def parse_connection_string(self, text: str) -> None:
         """
@@ -2271,6 +2384,19 @@ class IrbisConnection:
 
         return result
 
+    async def read_record_async(self, mfn: int) -> MarcRecord:
+        mfn = mfn or int(throw_value_error())
+        assert isinstance(mfn, int)
+        query = ClientQuery(self, READ_RECORD).ansi(self.database).add(mfn)
+        response = await self.execute_async(query)
+        response.check_return_code(READ_RECORD_CODES)
+        text = response.utf_remaining_lines()
+        result = MarcRecord()
+        result.database = self.database
+        result.parse(text)
+        response.close()
+        return result
+
     def read_records(self, *mfns: int) -> List[MarcRecord]:
         """
         Чтение записей с указанными MFN с сервера.
@@ -2314,6 +2440,16 @@ class IrbisConnection:
             result = response.ansi_remaining_text()
             result = irbis_to_dos(result)
             return result
+
+    async def read_text_file_async(self, specification: Union[FileSpecification, str]) -> str:
+        if isinstance(specification, str):
+            specification = self.near_master(specification)
+        query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
+        response = await self.execute_async(query)
+        result = response.ansi_remaining_text()
+        result = irbis_to_dos(result)
+        response.close()
+        return result
 
     def read_text_stream(self, specification: Union[FileSpecification, str]) -> ServerResponse:
         """
@@ -2372,6 +2508,11 @@ class IrbisConnection:
 
         with self.execute_ansi(RESTART_SERVER):
             pass
+
+    async def restart_server_async(self) -> None:
+        query = ClientQuery(self, RESTART_SERVER)
+        response = await self.execute_async(query)
+        response.close()
 
     def search(self, parameters: Union[SearchParameters, str]) -> List:
         """
@@ -2453,6 +2594,34 @@ class IrbisConnection:
 
         return result
 
+    async def search_async(self, parameters: Union[SearchParameters, str]) -> List:
+        if isinstance(parameters, str):
+            parameters = SearchParameters(parameters)
+        assert isinstance(parameters, SearchParameters)
+
+        database = parameters.database or self.database or throw_value_error()
+        query = ClientQuery(self, SEARCH)
+        query.ansi(database)
+        query.utf(parameters.expression)
+        query.add(parameters.number)
+        query.add(parameters.first)
+        query.ansi(parameters.format)
+        query.add(parameters.min_mfn)
+        query.add(parameters.max_mfn)
+        query.ansi(parameters.sequential)
+        response = await self.execute_async(query)
+        response.check_return_code()
+        _ = response.number() # Число найденных записей
+        result = []
+        while 1:
+            line = response.ansi()
+            if not line:
+                break
+            mfn = int(line)
+            result.append(mfn)
+        response.close()
+        return result
+
     def search_count(self, expression: str) -> int:
         """
         Количество найденных записей.
@@ -2470,6 +2639,19 @@ class IrbisConnection:
         response = self.execute(query)
         response.check_return_code()
         return response.number()
+
+    async def search_count_async(self, expression: str) -> int:
+        assert isinstance(expression, str)
+        query = ClientQuery(self, SEARCH)
+        query.ansi(self.database)
+        query.utf(expression)
+        query.add(0)
+        query.add(0)
+        response = await self.execute_async(query)
+        response.check_return_code()
+        result = response.number()
+        response.close()
+        return result
 
     def search_format(self, expression: str, format: str, limit: int = 0) -> List[str]:
 
@@ -2659,6 +2841,34 @@ class IrbisConnection:
                 record.parse(text)
             return result
 
+    async def write_record_async(self, record: MarcRecord,
+                     lock: bool = False,
+                     actualize: bool = True,
+                     dont_parse: bool = False) -> int:
+        database = record.database or self.database or throw_value_error()
+        if not record:
+            raise ValueError()
+
+        assert isinstance(record, MarcRecord)
+        assert isinstance(database, str)
+
+        assert isinstance(record, MarcRecord)
+        assert isinstance(database, str)
+
+        query = ClientQuery(self, UPDATE_RECORD).ansi(database).add(int(lock)).add(int(actualize))
+        query.utf(IRBIS_DELIMITER.join(record.encode()))
+        response = await self.execute_async(query)
+        response.check_return_code()
+        result = response.return_code  # Новый максимальный MFN
+        if not dont_parse:
+            first_line = response.utf()
+            text = short_irbis_to_lines(response.utf())
+            text.insert(0, first_line)
+            record.database = database
+            record.parse(text)
+        response.close()
+        return result
+
     def write_text_file(self, *specification: FileSpecification) -> None:
         """
         Сохранение текстового файла на сервере.
@@ -2702,4 +2912,4 @@ __all__ = ['MAX_POSTINGS', 'ANSI', 'STOP_MARKER', 'LOGICALLY_DELETED',
            'IrbisError', 'ClientQuery', 'FileSpecification', 'ServerResponse',
            'SearchParameters', 'SubField', 'RecordField', 'MarcRecord',
            'IrbisVersion', 'IniLine', 'IniSection', 'IniFile', 'ServerProcess',
-           'IrbisConnection']
+           'IrbisConnection', 'init_async', 'close_async', 'irbis_event_loop']

@@ -28,7 +28,7 @@ def do_search():
     if output1.size():
         output1.delete(0, last=output1.size()-1)
 
-    connection = IrbisConnection()
+    connection = Connection()
     connection.host = '127.0.0.1'
     connection.port = 6666
     connection.username = '1'

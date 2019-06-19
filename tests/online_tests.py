@@ -7,14 +7,14 @@ Tests that requires the IRBIS server connection.
 import unittest
 import time
 
-from pyirbis.core import IrbisConnection, SubField, MarcRecord, FileSpecification, BRIEF
+from pyirbis.core import Connection, SubField, MarcRecord, FileSpecification, BRIEF
 from pyirbis.ext import TableDefinition, UserInfo
 
 
 class TestConnect(unittest.TestCase):
 
     def setUp(self):
-        self.connection: IrbisConnection = IrbisConnection()
+        self.connection: Connection = Connection()
         self.connection.parse_connection_string \
             ('host=127.0.0.1;port=6666;user=1;password=1;db=ISTU;arm=A;')
         self.connection.connect()

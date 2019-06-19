@@ -8,7 +8,7 @@ from pyirbis.core import *
 SF = SubField
 
 # Подключаемся к серверу
-client = IrbisConnection()
+client = Connection()
 client.parse_connection_string('host=127.0.0.1;port=6666;database=IBIS;user=1;password=1;')
 client.connect()
 

@@ -25,7 +25,7 @@ class Window(wx.Frame):
     # noinspection PyUnusedLocal
     def on_click(self, event):
         keyword = self.input.GetValue()
-        connection = IrbisConnection()
+        connection = Connection()
         connection.host = '127.0.0.1'
         connection.port = 6666
         connection.username = '1'

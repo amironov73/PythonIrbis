@@ -9,8 +9,8 @@
 from pyirbis.core import *
 
 # Подключаемся к серверу
-client = IrbisConnection()
-client.parse_connection_string('host=127.0.0.1;port=6666;database=IBIS;user=1;password=1;')
+client = Connection()
+client.parse_connection_string('host=127.0.0.1;database=IBIS;user=librarian;password=secret;')
 client.connect()
 
 # Ищем все книги, автором которых является А. С. Пушкин

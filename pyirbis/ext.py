@@ -7,7 +7,7 @@ Infrastructure related extended functionality for IRBIS64 client
 import re
 from typing import List, Tuple, Dict, Iterable, Optional, Union
 
-from pyirbis.core import IrbisConnection, FileSpecification, ClientQuery, ServerResponse, IniFile, \
+from pyirbis.core import Connection, FileSpecification, ClientQuery, ServerResponse, IniFile, \
     safe_str, safe_int, irbis_to_lines, throw_value_error, same_string, \
     ANSI, STOP_MARKER, SYSTEM, DATA, SHORT_DELIMITER, \
     READ_TERMS, READ_TERMS_REVERSE, READ_TERMS_CODES, READ_POSTINGS, GET_USER_LIST, SET_USER_LIST, \
@@ -173,7 +173,7 @@ def load_menu(filename: str) -> MenuFile:
         return result
 
 
-def read_menu(connection: IrbisConnection,
+def read_menu(connection: Connection,
               specification: Union[FileSpecification, str]) -> MenuFile:
     """
     Чтение меню с сервера.
@@ -182,7 +182,7 @@ def read_menu(connection: IrbisConnection,
     :param specification: Спецификация файла
     :return: Меню
     """
-    assert connection and isinstance(connection, IrbisConnection)
+    assert connection and isinstance(connection, Connection)
 
     with connection.read_text_stream(specification) as response:
         result = MenuFile()
@@ -191,7 +191,7 @@ def read_menu(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_menu = read_menu  # type: ignore
+Connection.read_menu = read_menu  # type: ignore
 
 
 ###############################################################################
@@ -311,7 +311,7 @@ def load_par_file(filename: str) -> ParFile:
     return result
 
 
-def read_par_file(connection: IrbisConnection,
+def read_par_file(connection: Connection,
                   specification: Union[FileSpecification, str]) -> ParFile:
     """
     Получение PAR-файла с сервера.
@@ -320,7 +320,7 @@ def read_par_file(connection: IrbisConnection,
     :param specification: Спецификация или имя файла (если он лежит в папке DATA)
     :return: Полученный файл
     """
-    assert connection and isinstance(connection, IrbisConnection)
+    assert connection and isinstance(connection, Connection)
 
     if isinstance(specification, str):
         specification = FileSpecification(DATA, None, specification)
@@ -332,7 +332,7 @@ def read_par_file(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_par_file = read_par_file  # type: ignore
+Connection.read_par_file = read_par_file  # type: ignore
 
 
 ###############################################################################
@@ -436,7 +436,7 @@ class TermParameters:
         return str(self.number) + ' ' + safe_str(self.format)
 
 
-def read_terms(connection: IrbisConnection,
+def read_terms(connection: Connection,
                parameters: Union[TermParameters, str, Tuple[str, int]]) -> List[TermInfo]:
     """
     Получение термов поискового словаря.
@@ -445,7 +445,7 @@ def read_terms(connection: IrbisConnection,
     :param parameters: Параметры термов или терм или кортеж "терм, количество"
     :return: Список термов
     """
-    assert connection and isinstance(connection, IrbisConnection)
+    assert connection and isinstance(connection, Connection)
 
     if isinstance(parameters, tuple):
         parameters2 = TermParameters(parameters[0])
@@ -470,7 +470,7 @@ def read_terms(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_terms = read_terms  # type: ignore
+Connection.read_terms = read_terms  # type: ignore
 
 
 ###############################################################################
@@ -499,7 +499,7 @@ class PostingParameters:
         return str(self.terms)
 
 
-def read_postings(connection: IrbisConnection,
+def read_postings(connection: Connection,
                   parameters: Union[PostingParameters, str],
                   fmt: Optional[str] = None) -> List[TermPosting]:
     """
@@ -510,7 +510,7 @@ def read_postings(connection: IrbisConnection,
     :param fmt: Опциональный формат
     :return: Список постингов
     """
-    assert connection and isinstance(connection, IrbisConnection)
+    assert connection and isinstance(connection, Connection)
 
     if isinstance(parameters, str):
         parameters = PostingParameters(parameters)
@@ -535,7 +535,7 @@ def read_postings(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_postings = read_postings  # type: ignore
+Connection.read_postings = read_postings  # type: ignore
 
 
 ###############################################################################
@@ -711,7 +711,7 @@ def load_tree_file(filename: str) -> TreeFile:
     return result
 
 
-def read_tree_file(connection: IrbisConnection,
+def read_tree_file(connection: Connection,
                    specification: Union[FileSpecification, str]) -> TreeFile:
     """
     Чтение TRE-файла с сервера.
@@ -721,7 +721,7 @@ def read_tree_file(connection: IrbisConnection,
     :return: Дерево
     """
 
-    assert connection and isinstance(connection, IrbisConnection)
+    assert connection and isinstance(connection, Connection)
 
     with connection.read_text_stream(specification) as response:
         text = response.ansi_remaining_text()
@@ -731,7 +731,7 @@ def read_tree_file(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_tree_file = read_tree_file  # type: ignore
+Connection.read_tree_file = read_tree_file  # type: ignore
 
 
 ###############################################################################
@@ -801,7 +801,7 @@ class SearchScenario:
         return safe_str(self.name) + ' ' + safe_str(self.prefix)
 
 
-def read_search_scenario(connection: IrbisConnection,
+def read_search_scenario(connection: Connection,
                          specification: Union[FileSpecification, str]) -> List[SearchScenario]:
     """
     Read search scenario from the server.
@@ -811,7 +811,7 @@ def read_search_scenario(connection: IrbisConnection,
     :return: List of the scenarios (possibly empty)
     """
 
-    assert connection and isinstance(connection, IrbisConnection)
+    assert connection and isinstance(connection, Connection)
 
     if isinstance(specification, str):
         specification = connection.near_master(specification)
@@ -824,7 +824,7 @@ def read_search_scenario(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_search_scenario = read_search_scenario  # type: ignore
+Connection.read_search_scenario = read_search_scenario  # type: ignore
 
 
 ###############################################################################
@@ -916,7 +916,7 @@ class UserInfo:
         return ' '.join(x for x in buffer if x)
 
 
-def get_user_list(connection: IrbisConnection) -> List[UserInfo]:
+def get_user_list(connection: Connection) -> List[UserInfo]:
     """
     Получение списка пользователей с сервера.
 
@@ -924,7 +924,7 @@ def get_user_list(connection: IrbisConnection) -> List[UserInfo]:
     :return: Список пользователей
     """
 
-    assert connection and isinstance(connection, IrbisConnection)
+    assert connection and isinstance(connection, Connection)
 
     query = ClientQuery(connection, GET_USER_LIST)
     with connection.execute(query) as response:
@@ -933,7 +933,7 @@ def get_user_list(connection: IrbisConnection) -> List[UserInfo]:
         return result
 
 
-def update_user_list(connection: IrbisConnection, users: List[UserInfo]) -> None:
+def update_user_list(connection: Connection, users: List[UserInfo]) -> None:
     """
     Обновление списка пользователей на сервере.
 
@@ -941,7 +941,7 @@ def update_user_list(connection: IrbisConnection, users: List[UserInfo]) -> None
     :param users:  Список пользователей
     :return: None
     """
-    assert connection and isinstance(connection, IrbisConnection)
+    assert connection and isinstance(connection, Connection)
     assert isinstance(users, list) and users
 
     query = ClientQuery(connection, SET_USER_LIST)
@@ -950,8 +950,8 @@ def update_user_list(connection: IrbisConnection, users: List[UserInfo]) -> None
     connection.execute_forget(query)
 
 
-IrbisConnection.get_user_list = get_user_list  # type: ignore
-IrbisConnection.update_user_list = update_user_list  # type: ignore
+Connection.get_user_list = get_user_list  # type: ignore
+Connection.update_user_list = update_user_list  # type: ignore
 
 
 ###############################################################################
@@ -1118,7 +1118,7 @@ def load_opt_file(filename: str) -> OptFile:
     return result
 
 
-def read_opt_file(connection: IrbisConnection,
+def read_opt_file(connection: Connection,
                   specification: Union[FileSpecification, str]) -> OptFile:
     """
     Получение файла оптимизации рабочих листов с сервера.
@@ -1127,7 +1127,7 @@ def read_opt_file(connection: IrbisConnection,
     :param specification: Спецификация
     :return: Файл оптимизации
     """
-    assert connection and isinstance(connection, IrbisConnection)
+    assert connection and isinstance(connection, Connection)
 
     with connection.read_text_stream(specification) as response:
         result = OptFile()
@@ -1136,7 +1136,7 @@ def read_opt_file(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_opt_file = read_opt_file  # type: ignore
+Connection.read_opt_file = read_opt_file  # type: ignore
 
 
 ###############################################################################
@@ -1221,14 +1221,14 @@ class ServerStat:
         return str(self.client_count) + ', ' + str(self.total_command_count)
 
 
-def get_server_stat(connection: IrbisConnection) -> ServerStat:
+def get_server_stat(connection: Connection) -> ServerStat:
     """
     Получение статистики с сервера.
 
     :return: Полученная статистика
     """
 
-    assert connection and isinstance(connection, IrbisConnection)
+    assert connection and isinstance(connection, Connection)
 
     query = ClientQuery(connection, GET_SERVER_STAT)
     with connection.execute(query) as response:
@@ -1238,7 +1238,7 @@ def get_server_stat(connection: IrbisConnection) -> ServerStat:
         return result
 
 
-IrbisConnection.get_server_stat = get_server_stat  # type: ignore
+Connection.get_server_stat = get_server_stat  # type: ignore
 
 
 ###############################################################################
@@ -1290,7 +1290,7 @@ class DatabaseInfo:
         return self.name + ' - ' + self.description
 
 
-def get_database_info(connection: IrbisConnection,
+def get_database_info(connection: Connection,
                       database: Optional[str] = None) -> DatabaseInfo:
     """
     Получение информации о базе данных.
@@ -1300,7 +1300,7 @@ def get_database_info(connection: IrbisConnection,
     :return: Информация о базе
     """
 
-    assert connection and isinstance(connection, IrbisConnection)
+    assert connection and isinstance(connection, Connection)
 
     database = database or connection.database or throw_value_error()
     query = ClientQuery(connection, RECORD_LIST).ansi(database)
@@ -1312,7 +1312,7 @@ def get_database_info(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.get_database_info = get_database_info  # type: ignore
+Connection.get_database_info = get_database_info  # type: ignore
 
 
 ###############################################################################
@@ -1338,7 +1338,7 @@ class TableDefinition:
         self.mfn_list: [int] = []
 
 
-def print_table(connection: IrbisConnection,
+def print_table(connection: Connection,
                 definition: TableDefinition) -> str:
     """
     Расформатирование таблицы.
@@ -1348,7 +1348,7 @@ def print_table(connection: IrbisConnection,
     :return: Результат расформатирования
     """
 
-    assert connection and isinstance(connection, IrbisConnection)
+    assert connection and isinstance(connection, Connection)
 
     database = definition.database or connection.database or throw_value_error()
     query = ClientQuery(connection, PRINT)
@@ -1363,7 +1363,7 @@ def print_table(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.print_table = print_table  # type: ignore
+Connection.print_table = print_table  # type: ignore
 
 
 ###############################################################################
@@ -1493,7 +1493,7 @@ def load_alphabet_table(filename: str) -> AlphabetTable:
     return result
 
 
-def read_alphabet_table(connection: IrbisConnection,
+def read_alphabet_table(connection: Connection,
                         specification: Optional[FileSpecification] = None) -> AlphabetTable:
     """
     Чтение алфавитной таблицы с сервера.
@@ -1503,7 +1503,7 @@ def read_alphabet_table(connection: IrbisConnection,
     :return: Таблица
     """
 
-    assert connection and isinstance(connection, IrbisConnection)
+    assert connection and isinstance(connection, Connection)
 
     if specification is None:
         specification = FileSpecification(SYSTEM, None, AlphabetTable.FILENAME)
@@ -1518,7 +1518,7 @@ def read_alphabet_table(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_alphabet_table = read_alphabet_table  # type: ignore
+Connection.read_alphabet_table = read_alphabet_table  # type: ignore
 
 
 ###############################################################################
@@ -1853,7 +1853,7 @@ def load_uppercase_table(filename: str) -> UpperCaseTable:
     return result
 
 
-def read_uppercase_table(connection: IrbisConnection,
+def read_uppercase_table(connection: Connection,
                          specification: Optional[FileSpecification] = None) -> UpperCaseTable:
     """
     Чтение таблицы преобразования в верхний регистр с сервера.
@@ -1863,7 +1863,7 @@ def read_uppercase_table(connection: IrbisConnection,
     :return: Таблица
     """
 
-    assert connection and isinstance(connection, IrbisConnection)
+    assert connection and isinstance(connection, Connection)
 
     if specification is None:
         specification = FileSpecification(SYSTEM, None, UpperCaseTable.FILENAME)
@@ -1878,7 +1878,7 @@ def read_uppercase_table(connection: IrbisConnection,
         return result
 
 
-IrbisConnection.read_uppercase_table = read_uppercase_table  # type: ignore
+Connection.read_uppercase_table = read_uppercase_table  # type: ignore
 
 ###############################################################################
 

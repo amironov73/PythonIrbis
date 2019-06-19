@@ -10,7 +10,7 @@ import os.path
 import unittest
 from sys import platform
 
-from pyirbis.core import SubField, RecordField, MarcRecord, FileSpecification, IrbisConnection, \
+from pyirbis.core import SubField, RecordField, MarcRecord, FileSpecification, Connection, \
     LOGICALLY_DELETED, PHYSICALLY_DELETED, LAST, remove_comments, prepare_format, \
     ANSI, UTF
 from pyirbis.ext import OptLine, OptFile, load_opt_file, MenuFile, load_menu, ParFile, \
@@ -778,7 +778,7 @@ class TestExport(unittest.TestCase):
 class TestIrbisConnection(unittest.TestCase):
 
     def test_init_1(self):
-        connection = IrbisConnection()
+        connection = Connection()
         self.assertEqual(connection.host, 'localhost')
         self.assertEqual(connection.port, 6666)
         self.assertIsNone(connection.username)

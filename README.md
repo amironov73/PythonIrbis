@@ -6,7 +6,7 @@ ManagedIrbis (fully managed client for IRBIS64 library system) ported to Python.
 
 ### Supported environments
 
-PythonIrbis currently supports Python 3.6 and IRBIS64 2014 or later.
+PythonIrbis currently supports Python 3.6 on Windows and Linux and IRBIS64 2014 or later.
 
 ### Links
 
@@ -23,3 +23,11 @@ PythonIrbis currently supports Python 3.6 and IRBIS64 2014 or later.
 
 ## License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Famironov73%2FPythonIrbis.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Famironov73%2FPythonIrbis?ref=badge_large)
+
+#### Documentation (in russian)
+
+* [**Общее описание**](docs/chapter1.md)
+* [**Класс Connection**](docs/chapter2.md)
+* [**Классы MarcRecord, RecordField и SubField**](docs/chapter3.md)
+* [**Прочие (вспомогательные) классы и функции**](docs/chapter4.md)
+

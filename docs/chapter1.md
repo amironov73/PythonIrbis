@@ -121,3 +121,6 @@ for i in range(10):
 # Отключаемся от сервера
 client.disconnect()
 ```
+
+[Следующая глава](chapter2.md)
+

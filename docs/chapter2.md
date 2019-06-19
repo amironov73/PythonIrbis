@@ -1,21 +1,21 @@
-### Класс IrbisConnection
+### Класс Connection
 
-Класс `IrbisConnection` - "рабочая лошадка". Он осуществляет связь с сервером и всю необходимую перепаковку данных из клиентского представления в сетевое.
+Класс `Connection` - "рабочая лошадка". Он осуществляет связь с сервером и всю необходимую перепаковку данных из клиентского представления в сетевое.
 
 Экземпляр клиента создается конструктором:
 
 ```python
-from pyirbis.core import IrbisConnection
+import pyirbis as irbis
 
-client = IrbisConnection()
+client = irbis.Connection()
 ```
 
 При создании клиента можно указать (некоторые) настройки:
 
 ```python
-from pyirbis.core import IrbisConnection
+import pyirbis as irbis
 
-client = IrbisConnection(host='irbis.rsl.ru', port=5555, username='ninja')
+client = irbis.Connection(host='irbis.rsl.ru', port=5555, username='ninja')
 ```
 
 Можно задать те же настройки с помощью полей `host`, `port` и т. д.:
@@ -66,9 +66,9 @@ client.diconnect()
 во-вторых, с помощью контекста, задаваемого блоком `with`:
 
 ```python
-from pyirbis.core import *
+import pyirbis as irbis
 
-with IrbisConnection(host='192.168.1.3') as client:
+with irbis.Connection(host='192.168.1.3') as client:
     client.connect(username='itsme', password='secret')
     
     # Выполняем некие действия.
@@ -159,3 +159,57 @@ found = client.search_read('"A=ПУШКИН$"', 5)
 ```python
 found = client.search_format('"A=ПУШКИН$"', '@brief', 5)
 ```
+
+#### Поддержка асинхронности
+
+```python
+import pyirbis.core as irbis
+
+async def do_async_stuff():
+    result = await connection.connect_async()
+    if not result:
+        print('Failed to connect')
+        return
+
+    print('Connected')
+
+    maxMfn = await connection.get_max_mfn_async()
+    print(f"Max MFN={maxMfn}");
+
+    text = await connection.format_record_async('@brief', 1)
+    print(text)
+
+    await connection.nop_async()
+    print("NOP")
+
+    record = await connection.read_record_async(1)
+    print(record)
+
+    text = await connection.read_text_file_async('dn.mnu')
+    print(text)
+
+    count = await connection.search_count_async('K=бетон')
+    print(f'Count={count}')
+
+    found = await connection.search_async('K=бетон')
+    print(found)
+
+    await connection.disconnect_async()
+    print('Disconnected')
+
+#=============================================
+
+connection = irbis.Connection()
+connection.host = 'localhost'
+connection.username = 'librarian'
+connection.password = 'secret'
+connection.database = 'IBIS'
+
+irbis.init_async()
+
+irbis.irbis_event_loop.run_until_complete(do_async_stuff())
+
+irbis.close_async()
+```
+
+[Предыдущая глава](chapter1.md) [Следующая глава](chapter3.md)

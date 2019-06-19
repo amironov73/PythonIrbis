@@ -34,7 +34,7 @@ async def do_async_stuff():
 
 #=============================================
 
-connection = irbis.IrbisConnection()
+connection = irbis.Connection()
 connection.host = 'localhost'
 connection.username = 'librarian'
 connection.password = 'secret'

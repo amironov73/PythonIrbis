@@ -655,7 +655,7 @@ class ServerResponse:
 
     __slots__ = '_memory', 'command', 'client_id', 'query_id', 'length', 'version', 'return_code', '_conn'
 
-    def __init__(self, conn: 'IrbisConnection') -> None:
+    def __init__(self, conn: 'Connection') -> None:
         self._conn = conn
         self._memory: bytearray = bytearray()
 
@@ -1765,7 +1765,7 @@ def parse_process_list(response: ServerResponse) -> List[ServerProcess]:
 ###############################################################################
 
 
-class IrbisConnection:
+class Connection:
     """
     Подключение к серверу
     """
@@ -1786,11 +1786,11 @@ class IrbisConnection:
                  password: Optional[str] = None,
                  database: Optional[str] = None,
                  workstation: str = 'C') -> None:
-        self.host: str = host or IrbisConnection.DEFAULT_HOST
-        self.port: int = port or IrbisConnection.DEFAULT_PORT
+        self.host: str = host or Connection.DEFAULT_HOST
+        self.port: int = port or Connection.DEFAULT_PORT
         self.username: Optional[str] = username
         self.password: Optional[str] = password
-        self.database: str = database or IrbisConnection.DEFAULT_DATABASE
+        self.database: str = database or Connection.DEFAULT_DATABASE
         self.workstation: str = workstation
         self.client_id: int = 0
         self.query_id: int = 0
@@ -2842,9 +2842,9 @@ class IrbisConnection:
             return result
 
     async def write_record_async(self, record: MarcRecord,
-                     lock: bool = False,
-                     actualize: bool = True,
-                     dont_parse: bool = False) -> int:
+                                lock: bool = False,
+                                actualize: bool = True,
+                                dont_parse: bool = False) -> int:
         database = record.database or self.database or throw_value_error()
         if not record:
             raise ValueError()
@@ -2912,4 +2912,4 @@ __all__ = ['MAX_POSTINGS', 'ANSI', 'STOP_MARKER', 'LOGICALLY_DELETED',
            'IrbisError', 'ClientQuery', 'FileSpecification', 'ServerResponse',
            'SearchParameters', 'SubField', 'RecordField', 'MarcRecord',
            'IrbisVersion', 'IniLine', 'IniSection', 'IniFile', 'ServerProcess',
-           'IrbisConnection', 'init_async', 'close_async', 'irbis_event_loop']
+           'Connection', 'init_async', 'close_async', 'irbis_event_loop']

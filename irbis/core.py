@@ -2842,9 +2842,9 @@ class Connection:
             return result
 
     async def write_record_async(self, record: MarcRecord,
-                                lock: bool = False,
-                                actualize: bool = True,
-                                dont_parse: bool = False) -> int:
+                                 lock: bool = False,
+                                 actualize: bool = True,
+                                 dont_parse: bool = False) -> int:
         database = record.database or self.database or throw_value_error()
         if not record:
             raise ValueError()

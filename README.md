@@ -11,7 +11,7 @@ PythonIrbis currently supports Python 3.6 on 32-bit and 64-bit Windows and Linux
 ### Sample program
 
 ```python
-import irbis
+import irbis.core as irbis
 
 # Connect to the server
 client = irbis.Connection()

@@ -5,7 +5,7 @@
 Экземпляр клиента создается конструктором:
 
 ```python
-import pyirbis as irbis
+import irbis.core as irbis
 
 client = irbis.Connection()
 ```
@@ -13,7 +13,7 @@ client = irbis.Connection()
 При создании клиента можно указать (некоторые) настройки:
 
 ```python
-import pyirbis as irbis
+import irbis.core as irbis
 
 client = irbis.Connection(host='irbis.rsl.ru', port=5555, username='ninja')
 ```
@@ -66,7 +66,7 @@ client.diconnect()
 во-вторых, с помощью контекста, задаваемого блоком `with`:
 
 ```python
-import pyirbis as irbis
+import irbis.core as irbis
 
 with irbis.Connection(host='192.168.1.3') as client:
     client.connect(username='itsme', password='secret')
@@ -108,7 +108,7 @@ client.parse_connection_string('host=192.168.1.4;port=5555;username=itsme;passwo
 
 #### Подтверждение подключения
 
-`pyirbis` самостоятельно не посылает на сервер подтверждений того, что клиент все еще подключен. Этим должно заниматься приложение, например, по таймеру. 
+`irbis` самостоятельно не посылает на сервер подтверждений того, что клиент все еще подключен. Этим должно заниматься приложение, например, по таймеру. 
 
 Подтверждение посылается серверу методом `nop`:
  
@@ -163,7 +163,7 @@ found = client.search_format('"A=ПУШКИН$"', '@brief', 5)
 #### Поддержка асинхронности
 
 ```python
-import pyirbis.core as irbis
+import irbis.core as irbis
 
 async def do_async_stuff():
     result = await connection.connect_async()

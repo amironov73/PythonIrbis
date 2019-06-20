@@ -4,7 +4,7 @@
 Tests for search expression builder.
 """
 
-from pyirbis.builder import Search, keyword, author, title, number
+from irbis.builder import Search, keyword, author, title, number
 
 print(Search.need_wrap(''))
 print(Search.need_wrap('Hello'))

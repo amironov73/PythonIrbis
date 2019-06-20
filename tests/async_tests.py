@@ -1,4 +1,4 @@
-import pyirbis.core as irbis
+import irbis.core as irbis
 
 async def do_async_stuff():
     result = await connection.connect_async()

@@ -7,7 +7,7 @@ Infrastructure related extended functionality for IRBIS64 client
 import re
 from typing import List, Tuple, Dict, Iterable, Optional, Union
 
-from pyirbis.core import Connection, FileSpecification, ClientQuery, ServerResponse, IniFile, \
+from irbis.core import Connection, FileSpecification, ClientQuery, ServerResponse, IniFile, \
     safe_str, safe_int, irbis_to_lines, throw_value_error, same_string, \
     ANSI, STOP_MARKER, SYSTEM, DATA, SHORT_DELIMITER, \
     READ_TERMS, READ_TERMS_REVERSE, READ_TERMS_CODES, READ_POSTINGS, GET_USER_LIST, SET_USER_LIST, \

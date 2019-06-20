@@ -10,15 +10,15 @@ import os.path
 import unittest
 from sys import platform
 
-from pyirbis.core import SubField, RecordField, MarcRecord, FileSpecification, Connection, \
+from irbis.core import SubField, RecordField, MarcRecord, FileSpecification, Connection, \
     LOGICALLY_DELETED, PHYSICALLY_DELETED, LAST, remove_comments, prepare_format, \
     ANSI, UTF
-from pyirbis.ext import OptLine, OptFile, load_opt_file, MenuFile, load_menu, ParFile, \
+from irbis.ext import OptLine, OptFile, load_opt_file, MenuFile, load_menu, ParFile, \
     load_par_file, TreeFile, load_tree_file, AlphabetTable, load_alphabet_table, UpperCaseTable, \
     load_uppercase_table
-from pyirbis.export import read_text_record, write_text_record
+from irbis.export import read_text_record, write_text_record
 
-import pyirbis.iso2709 as iso
+import irbis.iso2709 as iso
 
 
 def script_path():

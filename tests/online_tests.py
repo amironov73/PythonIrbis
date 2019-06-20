@@ -7,8 +7,8 @@ Tests that requires the IRBIS server connection.
 import unittest
 import time
 
-from pyirbis.core import Connection, SubField, MarcRecord, FileSpecification, BRIEF
-from pyirbis.ext import TableDefinition, UserInfo
+from irbis.core import Connection, SubField, MarcRecord, FileSpecification, BRIEF
+from irbis.ext import TableDefinition, UserInfo
 
 
 class TestConnect(unittest.TestCase):

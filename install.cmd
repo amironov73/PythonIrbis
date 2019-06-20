@@ -1,3 +1,3 @@
 @echo off
 
-pip install --index-url https://test.pypi.org/simple/ pyirbis --user
+pip install --index-url https://test.pypi.org/simple/ irbis --user

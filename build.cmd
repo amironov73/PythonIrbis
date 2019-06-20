@@ -13,7 +13,7 @@ if not exist %COVERAGE% (%PIP% install coverage)
 SET PYTHONPATH=%~dp0
 
 if NOT "L%APPVEYOR_BUILD_VERSION%L" == "LL" (
-%PYTHON% utils\patch_version.py pyirbis\__init__.py %APPVEYOR_BUILD_VERSION%
+%PYTHON% utils\patch_version.py irbis\__init__.py %APPVEYOR_BUILD_VERSION%
 %PYTHON% utils\patch_version.py setup.py %APPVEYOR_BUILD_VERSION%
 )
 

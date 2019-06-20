@@ -7,7 +7,7 @@ Reading and writing ISO 2709 records.
 from typing import Iterable, Optional, List
 from typing.io import BinaryIO
 
-from pyirbis.core import ANSI, SubField, RecordField, MarcRecord, \
+from irbis.core import ANSI, SubField, RecordField, MarcRecord, \
     IrbisError, safe_str
 
 # Length of the record marker

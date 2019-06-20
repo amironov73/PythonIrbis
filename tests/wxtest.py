@@ -2,7 +2,7 @@
 
 import wx
 
-from pyirbis.core import *
+from irbis.core import *
 
 
 class Window(wx.Frame):

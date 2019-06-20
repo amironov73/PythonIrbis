@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="pyirbis",
-    version="0.0.51",
+    name="irbis",
+    version="0.0.68",
     author="Alexey Mironov",
     author_email="amironov73@gmail.com",
     description="Framework for client development for popular russian library computer system IRBIS64",

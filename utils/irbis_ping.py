@@ -7,7 +7,7 @@ parent_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), '..', '..
 sys.path.append(parent_dir)
 # print(sys.path)
 
-from pyirbis.core import Connection
+from irbis.core import Connection
 
 if len(sys.argv) != 2:
     print('Usage: irbis_ping <connection-string>')

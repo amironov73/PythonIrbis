@@ -1,8 +1,8 @@
-## Пакет pyirbis
+## Пакет irbis
 
 ### Введение 
 
-Пакет `pyirbis` представляет собой фреймворк для создания клиентских приложений для системы автоматизации библиотек ИРБИС64 на языке Python.
+Пакет `irbis` представляет собой фреймворк для создания клиентских приложений для системы автоматизации библиотек ИРБИС64 на языке Python.
 
 Пакет не содержит неуправляемого кода и не требует irbis64_client.dll. Успешно работает на 32-битных и 64-битных версиях операционных систем Windows и Linux.
 
@@ -25,16 +25,16 @@
 
 ### Установка
 
-`pyirbis` загружен в централизованный репозиторий пакетов PyPI, поэтому можно установить его с помощью стандартного клиента `pip`, входящего в поставку Python:
+`irbis` загружен в централизованный репозиторий пакетов PyPI, поэтому можно установить его с помощью стандартного клиента `pip`, входящего в поставку Python:
 
 ```
-pip install pyirbis --user --upgrade
+pip install irbis --user --upgrade
 ```
 
 или
 
 ```
-python -m pip install pyirbis --user --upgrade
+python -m pip install irbis --user --upgrade
 ```
 
 (оба способа эквивалентны).
@@ -50,10 +50,10 @@ python -m pip install pyirbis --user --upgrade
 Ниже прилагается пример простой программы. Сначала находятся и загружаются 10 первых библиографических записей, в которых автором является А. С. Пушкин. Показано нахождение значения поля с заданным тегом и подполя с заданным кодом. Также показано расформатирование записи в формат brief.
 
 ```python
-from pyirbis.core import *
+import irbis
 
 # Подключаемся к серверу
-client = IrbisConnection()
+client = irbis.Connection()
 client.parse_connection_string('host=127.0.0.1;port=6666;database=IBIS;user=librarian;password=secret;')
 client.connect()
 
@@ -84,18 +84,18 @@ client.disconnect()
 В следующей программе создается и отправляется на сервер 10 записей. Показано добавление в запись полей с подполями.
 
 ```python
-from pyirbis.core import *
+import irbis
 
-SF = SubField
+SF = irbis.SubField
 
 # Подключаемся к серверу
-client = IrbisConnection()
+client = irbis.Connection()
 client.parse_connection_string('host=127.0.0.1;port=6666;database=IBIS;user=1;password=1;')
 client.connect()
 
 for i in range(10):
     # Создаем запись
-    record = MarcRecord()
+    record = irbis.MarcRecord()
 
     # Наполняем её полями: первый автор
     record.add(700, SF('a', 'Миронов'), SF('b', 'А. В.'),

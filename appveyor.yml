@@ -20,16 +20,16 @@ install:
   - IF not "L%APPVEYOR_REPO_BRANCH%L" == "LpypiL" SET TWINE_REPOSITORY_URL=https://test.pypi.org/legacy/
 
 before_build:
-  - python utils\patch_version.py pyirbis\__init__.py %APPVEYOR_BUILD_VERSION%
+  - python utils\patch_version.py irbis\__init__.py %APPVEYOR_BUILD_VERSION%
   - python utils\patch_version.py setup.py %APPVEYOR_BUILD_VERSION%
 
 build_script:
   - cd c:\projects\pythonirbis
-  - python -m mypy pyirbis\core.py
-  - python -m mypy pyirbis\ext.py
-  - rem python -m mypy pyirbis\iso2709.py
-  - rem python -m mypy pyirbis\export.py
-  - call pylint0 pyirbis\core.py pyirbis\ext.py pyirbis\iso2709.py pyirbis\export.py
+  - python -m mypy irbis\core.py
+  - python -m mypy irbis\ext.py
+  - rem python -m mypy irbis\iso2709.py
+  - rem python -m mypy irbis\export.py
+  - call pylint0 irbis\core.py irbis\ext.py irbis\iso2709.py irbis\export.py
 
 after_build:
   - cd c:\projects\pythonirbis

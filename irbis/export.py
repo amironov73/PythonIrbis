@@ -8,7 +8,7 @@ Reading and writing plain text files in IRBIS format.
 from typing import Optional
 from typing.io import TextIO
 
-from pyirbis.core import STOP_MARKER, RecordField, MarcRecord, safe_str
+from irbis.core import STOP_MARKER, RecordField, MarcRecord, safe_str
 
 
 def read_text_record(stream: TextIO) -> Optional[MarcRecord]:

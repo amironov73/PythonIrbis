@@ -6,10 +6,10 @@
 # значения поля с заданным тегом и подполя с заданным кодом.
 # Также показано расформатирование записи в формат brief.
 
-from pyirbis.core import *
+import irbis.core as irbis
 
 # Подключаемся к серверу
-client = Connection()
+client = irbis.Connection()
 client.parse_connection_string('host=127.0.0.1;database=IBIS;user=librarian;password=secret;')
 client.connect()
 

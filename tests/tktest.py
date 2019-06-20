@@ -1,7 +1,7 @@
 # coding: utf-8
 
 from tkinter import *
-from pyirbis.core import *
+from irbis.core import *
 
 root = Tk()
 root.title('Поиск по ЭК')

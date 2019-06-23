@@ -395,3 +395,9 @@ class TestConnect(unittest.TestCase):
         print('Search format')
         print('\n'.join(found))
         print()
+
+    def test_42_get_record_postings(self):
+        postings = self.connection.get_record_postings(2, 'A=$')
+        print('Record postings')
+        print(postings)
+        print()

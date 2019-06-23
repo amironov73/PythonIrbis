@@ -371,12 +371,44 @@ class TermPosting:
             self.text = parts[4]
 
     def __str__(self):
+        subst = ''
+        if self.text:
+            subst = self.text
         return ' '.join([str(self.mfn), str(self.tag),
                          str(self.occurrence), str(self.count),
-                         self.text])
+                         subst])
 
     def __repr__(self):
         return self.__str__()
+
+
+def get_record_postings(connection: Connection, mfn: int, prefix: str) -> List[TermPosting]:
+    """
+    Получение постингов для указанных записи и префикса.
+
+    :param connection: Подключение.
+    :param mfn: MFN записи.
+    :param prefix: Префикс в виде "A=$".
+    :return: Список постингов.
+    """
+    assert connection and isinstance(connection, Connection)
+
+    query = ClientQuery(connection, 'V')
+    query.ansi(connection.database)
+    query.add(mfn)
+    query.utf(prefix)
+    result: List[TermPosting] = []
+    with connection.execute(query) as response:
+        response.check_return_code()
+        lines = response.utf_remaining_lines()
+        for line in lines:
+            one: TermPosting = TermPosting()
+            one.parse(line)
+            result.append(one)
+    return result
+
+
+Connection.get_record_postings = get_record_postings  # type: ignore
 
 
 ###############################################################################
@@ -1153,16 +1185,16 @@ class ClientInfo:
                  'last_command', 'command_number')
 
     def __init__(self):
-        self.number: str = None
-        self.ip_address: str = None
-        self.port: str = None
-        self.name: str = None
-        self.client_id: str = None
-        self.workstation: str = None
-        self.registered: str = None
-        self.acknowledged: str = None
-        self.last_command: str = None
-        self.command_number: str = None
+        self.number: Optional[str] = None
+        self.ip_address: Optional[str] = None
+        self.port: Optional[str] = None
+        self.name: Optional[str] = None
+        self.client_id: Optional[str] = None
+        self.workstation: Optional[str] = None
+        self.registered: Optional[str] = None
+        self.acknowledged: Optional[str] = None
+        self.last_command: Optional[str] = None
+        self.command_number: Optional[str] = None
 
     def __str__(self):
         return ' '.join([self.number, self.ip_address, self.port, self.name,
@@ -1327,14 +1359,14 @@ class TableDefinition:
                  'min_mfn', 'max_mfn', 'sequential', 'mfn_list')
 
     def __init__(self):
-        self.database: str = None
-        self.table: str = None
+        self.database: Optional[str] = None
+        self.table: Optional[str] = None
         self.headers: [str] = []
-        self.mode: str = None
-        self.search: str = None
+        self.mode: Optional[str] = None
+        self.search: Optional[str] = None
         self.min_mfn: int = 0
         self.max_mfn: int = 0
-        self.sequential: str = None
+        self.sequential: Optional[str] = None
         self.mfn_list: [int] = []
 
 
@@ -1813,6 +1845,10 @@ class UpperCaseTable:
         """
 
         parts = re.findall(r'\d+', text)
+        if not parts:
+            # Попалась пустая таблица
+            return
+
         assert len(parts) == 256
         first = bytearray(int(x) for x in parts if x and x.isdigit())
         first = first.replace(b'\x98', b'\x20')  # Этот символ не мапится

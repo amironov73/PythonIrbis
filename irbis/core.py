@@ -2912,4 +2912,7 @@ __all__ = ['MAX_POSTINGS', 'ANSI', 'STOP_MARKER', 'LOGICALLY_DELETED',
            'IrbisError', 'ClientQuery', 'FileSpecification', 'ServerResponse',
            'SearchParameters', 'SubField', 'RecordField', 'MarcRecord',
            'IrbisVersion', 'IniLine', 'IniSection', 'IniFile', 'ServerProcess',
-           'Connection', 'init_async', 'close_async', 'irbis_event_loop']
+           'Connection', 'init_async', 'close_async', 'irbis_event_loop',
+           'READ_TERMS', 'READ_TERMS_REVERSE', 'READ_POSTINGS',
+           'GET_SERVER_STAT', 'GET_USER_LIST', 'SET_USER_LIST',
+           'RECORD_LIST', 'PRINT']

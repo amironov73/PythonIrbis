@@ -2116,7 +2116,7 @@ class ResourceDictionary:
         self.dictionary[name] = Resource(name, content)
         return self
 
-    def all(self) -> [Resource]:
+    def all(self) -> List[Resource]:
         """
         Все зарегистрированные ресурсы в виде массива.
         :return: Массив

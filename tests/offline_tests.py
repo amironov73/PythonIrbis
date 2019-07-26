@@ -10,12 +10,12 @@ import os.path
 import unittest
 from sys import platform
 
-from irbis.core import SubField, RecordField, MarcRecord, FileSpecification, Connection, \
-    LOGICALLY_DELETED, PHYSICALLY_DELETED, LAST, remove_comments, prepare_format, \
-    ANSI, UTF
-from irbis.ext import OptLine, OptFile, load_opt_file, MenuFile, load_menu, ParFile, \
-    load_par_file, TreeFile, load_tree_file, AlphabetTable, load_alphabet_table, UpperCaseTable, \
-    load_uppercase_table
+from irbis.core import SubField, RecordField, MarcRecord, FileSpecification, \
+    Connection, LOGICALLY_DELETED, PHYSICALLY_DELETED, LAST, remove_comments, \
+    prepare_format, ANSI, UTF
+from irbis.ext import OptLine, OptFile, load_opt_file, MenuFile, load_menu, \
+    ParFile, load_par_file, TreeFile, load_tree_file, AlphabetTable, \
+    load_alphabet_table, UpperCaseTable, load_uppercase_table
 from irbis.export import read_text_record, write_text_record
 
 import irbis.iso2709 as iso

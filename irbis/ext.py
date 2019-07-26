@@ -11,7 +11,8 @@ from irbis.core import Connection, FileSpecification, ClientQuery, ServerRespons
     safe_str, safe_int, irbis_to_lines, throw_value_error, same_string, \
     ANSI, STOP_MARKER, SYSTEM, DATA, SHORT_DELIMITER, \
     READ_TERMS, READ_TERMS_REVERSE, READ_TERMS_CODES, READ_POSTINGS, GET_USER_LIST, SET_USER_LIST, \
-    GET_SERVER_STAT, RECORD_LIST, PRINT
+    GET_SERVER_STAT, RECORD_LIST, PRINT, \
+    IrbisError
 
 
 ###############################################################################
@@ -934,12 +935,12 @@ class UserInfo:
         """
 
         return self.name + '\n' + self.password + '\n' \
-               + UserInfo.format_pair('C', self.cataloger, "irbisc.ini") \
-               + UserInfo.format_pair('R', self.reader, "irbisr.ini") \
-               + UserInfo.format_pair('B', self.circulation, "irbisb.ini") \
-               + UserInfo.format_pair('M', self.acquisitions, "irbism.ini") \
-               + UserInfo.format_pair('K', self.provision, "irbisk.ini") \
-               + UserInfo.format_pair('A', self.administrator, "irbisa.ini")
+            + UserInfo.format_pair('C', self.cataloger, "irbisc.ini") \
+            + UserInfo.format_pair('R', self.reader, "irbisr.ini") \
+            + UserInfo.format_pair('B', self.circulation, "irbisb.ini") \
+            + UserInfo.format_pair('M', self.acquisitions, "irbism.ini") \
+            + UserInfo.format_pair('K', self.provision, "irbisk.ini") \
+            + UserInfo.format_pair('A', self.administrator, "irbisa.ini")
 
     def __str__(self):
         buffer = [self.number, self.name, self.password, self.cataloger,
@@ -1916,11 +1917,275 @@ def read_uppercase_table(connection: Connection,
 
 Connection.read_uppercase_table = read_uppercase_table  # type: ignore
 
+
 ###############################################################################
+
+
+class IrbisFileNotFoundError(IrbisError):
+    __slots__ = ('filename',)
+
+    def __init__(self, filename: Union[str, FileSpecification]) -> None:
+        self.filename: str = str(filename)
+
+    def __str__(self):
+        return f'File not found: {self.filename}'
+
+
+def require_alphabet_table(connection: Connection,
+                           specification: Optional[FileSpecification] = None) -> AlphabetTable:
+    """
+    Чтение алфавитной таблицы с сервера.
+
+    :param connection: Подключение
+    :param specification: Спецификация
+    :return: Таблица
+    """
+
+    assert connection and isinstance(connection, Connection)
+
+    if specification is None:
+        specification = FileSpecification(SYSTEM, None, AlphabetTable.FILENAME)
+
+    with connection.read_text_stream(specification) as response:
+        text = response.ansi_remaining_text()
+        if not text:
+            raise IrbisFileNotFoundError(specification)
+        if text:
+            result = AlphabetTable()
+            result.parse(text)
+        else:
+            result = AlphabetTable.get_default()
+        return result
+
+
+Connection.require_alphabet_table = require_alphabet_table  # type: ignore
+
+
+def require_menu(connection: Connection,
+                 specification: Union[FileSpecification, str]) -> MenuFile:
+    """
+    Чтение меню с сервера.
+
+    :param connection: Подключение
+    :param specification: Спецификация файла
+    :return: Меню
+    """
+    assert connection and isinstance(connection, Connection)
+
+    with connection.read_text_stream(specification) as response:
+        result = MenuFile()
+        text = irbis_to_lines(response.ansi_remaining_text())
+        if not text:
+            raise IrbisFileNotFoundError(specification)
+        result.parse(text)
+        return result
+
+
+Connection.require_menu = require_menu  # type: ignore
+
+
+def require_opt_file(connection: Connection,
+                     specification: Union[FileSpecification, str]) -> OptFile:
+    """
+    Получение файла оптимизации рабочих листов с сервера.
+
+    :param connection: Подключение
+    :param specification: Спецификация
+    :return: Файл оптимизации
+    """
+    assert connection and isinstance(connection, Connection)
+
+    with connection.read_text_stream(specification) as response:
+        result = OptFile()
+        text = irbis_to_lines(response.ansi_remaining_text())
+        if not text:
+            raise IrbisFileNotFoundError(specification)
+        result.parse(text)
+        return result
+
+
+Connection.require_opt_file = require_opt_file  # type: ignore
+
+
+def require_par_file(connection: Connection,
+                     specification: Union[FileSpecification, str]) -> ParFile:
+    """
+    Получение PAR-файла с сервера.
+
+    :param connection: Подключение
+    :param specification: Спецификация или имя файла (если он лежит в папке DATA)
+    :return: Полученный файл
+    """
+    assert connection and isinstance(connection, Connection)
+
+    if isinstance(specification, str):
+        specification = FileSpecification(DATA, None, specification)
+
+    with connection.read_text_stream(specification) as response:
+        result = ParFile()
+        text = irbis_to_lines(response.ansi_remaining_text())
+        if not text:
+            raise IrbisFileNotFoundError(specification)
+        result.parse(text)
+        return result
+
+
+Connection.require_par_file = require_par_file  # type: ignore
+
+
+def require_text_file(connection: Connection, specification: FileSpecification) -> str:
+    """
+    Чтение текстового файла с сервера.
+
+    :param connection: Подключение
+    :param specification: Спецификация
+    :return: Содержимое файла
+    """
+
+    assert connection and isinstance(connection, Connection)
+
+    result = connection.read_text_file(specification)
+    if not result:
+        raise IrbisFileNotFoundError(specification)
+
+    return result
+
+
+Connection.require_text_file = require_text_file  # type: ignore
+
+
+def require_tree_file(connection: Connection,
+                      specification: Union[FileSpecification, str]) -> TreeFile:
+    """
+    Чтение TRE-файла с сервера.
+
+    :param connection: Подключение
+    :param specification:  Спецификация
+    :return: Дерево
+    """
+
+    assert connection and isinstance(connection, Connection)
+
+    with connection.read_text_stream(specification) as response:
+        text = response.ansi_remaining_text()
+        if not text:
+            raise IrbisFileNotFoundError(specification)
+        text = [line for line in irbis_to_lines(text) if line]
+        result = TreeFile()
+        result.parse(text)
+        return result
+
+
+Connection.require_tree_file = require_tree_file  # type: ignore
+
+
+###############################################################################
+
+class Resource:
+    """
+    Текстовый файл на сервере.
+    """
+
+    __slots__ = ('name', 'content')
+
+    def __init__(self, name: str, content: str) -> None:
+        self.name: str = name
+        self.content: str = content
+
+    def __str__(self) -> str:
+        return f"{self.name}: {self.content}"
+
+
+class ResourceDictionary:
+    """
+    Словарь текстовых ресурсов.
+    """
+
+    __slots__ = ('dictionary',)
+
+    def __init__(self) -> None:
+        self.dictionary: Dict[str, Resource] = {}
+
+    def add(self, name: str, content: str) -> 'ResourceDictionary':
+        """
+        Регистрация ресурса в словаре.
+        :param name: Имя
+        :param content: Содержимое
+        :return: Словарь
+        """
+        self.dictionary[name] = Resource(name, content)
+        return self
+
+    def all(self) -> List[Resource]:
+        """
+        Все зарегистрированные ресурсы в виде массива.
+        :return: Массив
+        """
+        result = []
+        for item in self.dictionary.values():
+            result.append(item)
+        return result
+
+    def clear(self) -> 'ResourceDictionary':
+        """
+        Очистка словаря.
+        :return: Словарь
+        """
+        self.dictionary.clear()
+        return self
+
+    def count(self) -> int:
+        """
+        Вычисление длины словаря.
+        :return: Число хранимых ресурсов
+        """
+        return len(self.dictionary)
+
+    def get(self, name: str) -> Optional[str]:
+        """
+        Получение ресурса из словаря по имени.
+        :param name: Имя
+        :return: Содержимое ресурса либо None
+        """
+        if name in self.dictionary:
+            return self.dictionary[name].content
+        return None
+
+    def have(self, name: str) -> bool:
+        """
+        Есть ли элемент с указанным именем в словаре?
+        :param name: Имя
+        :return: Наличие в словаре
+        """
+        return name in self.dictionary
+
+    def put(self, name: str, content: str) -> 'ResourceDictionary':
+        """
+        Добавление ресурса в словарь.
+        :param name: Имя
+        :param content: Содержимое
+        :return: Словарь
+        """
+        self.dictionary[name] = Resource(name, content)
+        return self
+
+    def remove(self, name: str) -> 'ResourceDictionary':
+        """
+        Удаление ресурса из словаря.
+        :param name: Имя
+        :return: Словарь
+        """
+        del self.dictionary[name]
+        return self
+
+
+###############################################################################
+
 
 __all__ = ['MenuEntry', 'MenuFile', 'load_menu', 'ParFile', 'load_par_file',
            'TermPosting', 'TermInfo', 'TermParameters', 'PostingParameters',
            'TreeNode', 'TreeFile', 'load_tree_file', 'SearchScenario',
            'UserInfo', 'OptLine', 'OptFile', 'load_opt_file', 'ClientInfo',
            'ServerStat', 'DatabaseInfo', 'TableDefinition', 'AlphabetTable',
-           'load_alphabet_table', 'UpperCaseTable', 'load_uppercase_table']
+           'load_alphabet_table', 'UpperCaseTable', 'load_uppercase_table',
+           'IrbisFileNotFoundError', 'Resource', 'ResourceDictionary']

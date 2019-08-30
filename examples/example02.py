@@ -3,18 +3,18 @@
 # В следующей программе создается и отправляется на сервер 10 записей.
 # Показано добавление в запись полей с подполями.
 
-import irbis.core as irbis
+import irbis.core as bars
 
-SF = irbis.SubField
+SF = bars.SubField
 
 # Подключаемся к серверу
-client = irbis.Connection()
+client = bars.Connection()
 client.parse_connection_string('host=127.0.0.1;port=6666;database=IBIS;user=1;password=1;')
 client.connect()
 
 for i in range(10):
     # Создаем запись
-    record = irbis.MarcRecord()
+    record = bars.MarcRecord()
 
     # Наполняем её полями: первый автор
     record.add(700, SF('a', 'Миронов'), SF('b', 'А. В.'),
@@ -25,7 +25,7 @@ for i in range(10):
                SF('e', 'руководство пользователя'))
 
     # выходные данные
-    record.add(210, SF('a', 'Иркутск'), SubField('c', 'ИРНИТУ'),
+    record.add(210, SF('a', 'Иркутск'), SF('c', 'ИРНИТУ'),
                SF('d', '2018'))
 
     # рабочий лист

@@ -1,20 +1,18 @@
 # PythonIrbis
 
-ManagedIrbis ported to Python 3
-
-ManagedIrbis (fully managed client for IRBIS64 library system) ported to Python.
+`PythonIrbis` package is just [ManagedIrbis](https://github.com/amironov73/ManagedIrbis) package ported from C# to Python 3
 
 ### Supported environments
 
-PythonIrbis currently supports Python 3.6 on 32-bit and 64-bit Windows and Linux and IRBIS64 2014 or later.
+`PythonIrbis` currently supports Python 3.6.x and 3.7.x on 32-bit and 64-bit Windows, Linux, Mac OS X and IRBIS64 server version 2014 or later.
 
 ### Sample program
 
 ```python
-import irbis.core as irbis
+import irbis.core as bars
 
 # Connect to the server
-client = irbis.Connection()
+client = bars.Connection()
 client.parse_connection_string('host=127.0.0.1;database=IBIS;user=librarian;password=secret;')
 client.connect()
 
@@ -32,7 +30,7 @@ for mfn in found[:10]:
     print('Title:', title)
 
     # Format the record by the server
-    description = client.format_record(BRIEF, mfn)
+    description = client.format_record(bars.BRIEF, mfn)
     print('Description:', description)
 
     print()  # Print empty line

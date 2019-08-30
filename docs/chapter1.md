@@ -4,7 +4,7 @@
 
 Пакет `irbis` представляет собой фреймворк для создания клиентских приложений для системы автоматизации библиотек ИРБИС64 на языке Python.
 
-Пакет не содержит неуправляемого кода и не требует irbis64_client.dll. Успешно работает на 32-битных и 64-битных версиях операционных систем Windows и Linux.
+Пакет не содержит неуправляемого кода и не требует irbis64_client.dll. Успешно работает на 32-битных и 64-битных версиях операционных систем Windows, Linux и Mac OS X.
 
 Основные возможности пакета:
 
@@ -50,10 +50,10 @@ python -m pip install irbis --user --upgrade
 Ниже прилагается пример простой программы. Сначала находятся и загружаются 10 первых библиографических записей, в которых автором является А. С. Пушкин. Показано нахождение значения поля с заданным тегом и подполя с заданным кодом. Также показано расформатирование записи в формат brief.
 
 ```python
-import irbis
+import irbis.core as bars
 
 # Подключаемся к серверу
-client = irbis.Connection()
+client = bars.Connection()
 client.parse_connection_string('host=127.0.0.1;port=6666;database=IBIS;user=librarian;password=secret;')
 client.connect()
 
@@ -72,7 +72,7 @@ for mfn in found[:10]:
     print('Заглавие:', title)
     
     # Форматируем запись средствами сервера
-    description = client.format_record(BRIEF, mfn)
+    description = client.format_record(bars.BRIEF, mfn)
     print('Биб. описание:', description)
     
     print()  # Добавляем пустую строку
@@ -84,18 +84,18 @@ client.disconnect()
 В следующей программе создается и отправляется на сервер 10 записей. Показано добавление в запись полей с подполями.
 
 ```python
-import irbis
+import irbis.core as bars
 
-SF = irbis.SubField
+SF = bars.SubField
 
 # Подключаемся к серверу
-client = irbis.Connection()
+client = bars.Connection()
 client.parse_connection_string('host=127.0.0.1;port=6666;database=IBIS;user=1;password=1;')
 client.connect()
 
 for i in range(10):
     # Создаем запись
-    record = irbis.MarcRecord()
+    record = bars.MarcRecord()
 
     # Наполняем её полями: первый автор
     record.add(700, SF('a', 'Миронов'), SF('b', 'А. В.'),
@@ -106,7 +106,7 @@ for i in range(10):
                SF('e', 'руководство пользователя'))
 
     # выходные данные
-    record.add(210, SF('a', 'Иркутск'), SubField('c', 'ИРНИТУ'),
+    record.add(210, SF('a', 'Иркутск'), SF('c', 'ИРНИТУ'),
                SF('d', '2018'))
 
     # рабочий лист

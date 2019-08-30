@@ -60,15 +60,15 @@ client.connect(host='192.168.1.2')
 Отключаться от сервера можно двумя способами: во-первых, с помощью метода `disconnect`:
 
 ```python
-client.diconnect()
+client.disconnect()
 ```
 
 во-вторых, с помощью контекста, задаваемого блоком `with`:
 
 ```python
-import irbis.core as irbis
+import irbis.core as bars
 
-with irbis.Connection(host='192.168.1.3') as client:
+with bars.Connection(host='192.168.1.3') as client:
     client.connect(username='itsme', password='secret')
     
     # Выполняем некие действия.
@@ -163,7 +163,7 @@ found = client.search_format('"A=ПУШКИН$"', '@brief', 5)
 #### Поддержка асинхронности
 
 ```python
-import irbis.core as irbis
+import irbis.core as bars
 
 async def do_async_stuff():
     result = await connection.connect_async()
@@ -173,14 +173,14 @@ async def do_async_stuff():
 
     print('Connected')
 
-    maxMfn = await connection.get_max_mfn_async()
-    print(f"Max MFN={maxMfn}");
+    max_mfn = await connection.get_max_mfn_async()
+    print(f"Max MFN={max_mfn}")
 
     text = await connection.format_record_async('@brief', 1)
     print(text)
 
     await connection.nop_async()
-    print("NOP")
+    print('NOP')
 
     record = await connection.read_record_async(1)
     print(record)
@@ -199,17 +199,17 @@ async def do_async_stuff():
 
 #=============================================
 
-connection = irbis.Connection()
+connection = bars.Connection()
 connection.host = 'localhost'
 connection.username = 'librarian'
 connection.password = 'secret'
 connection.database = 'IBIS'
 
-irbis.init_async()
+bars.init_async()
 
-irbis.irbis_event_loop.run_until_complete(do_async_stuff())
+bars.irbis_event_loop.run_until_complete(do_async_stuff())
 
-irbis.close_async()
+bars.close_async()
 ```
 
 [Предыдущая глава](chapter1.md) [Следующая глава](chapter3.md)

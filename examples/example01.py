@@ -6,10 +6,10 @@
 # значения поля с заданным тегом и подполя с заданным кодом.
 # Также показано расформатирование записи в формат brief.
 
-import irbis.core as irbis
+import irbis.core as bars
 
 # Подключаемся к серверу
-client = irbis.Connection()
+client = bars.Connection()
 client.parse_connection_string('host=127.0.0.1;database=IBIS;user=librarian;password=secret;')
 client.connect()
 
@@ -28,7 +28,7 @@ for mfn in found[:10]:
     print('Заглавие:', title)
 
     # Форматируем запись средствами сервера
-    description = client.format_record(BRIEF, mfn)
+    description = client.format_record(bars.BRIEF, mfn)
     print('Биб. описание:', description)
 
     print()  # Добавляем пустую строку

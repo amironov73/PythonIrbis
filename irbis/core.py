@@ -64,7 +64,7 @@ OPTIMIZED = '@'
 
 # Workstation codes
 
-ADMININSTRATOR = 'A'
+ADMINISTRATOR = 'A'
 CATALOGER = 'C'
 ACQUISITIONS = 'M'
 COMPLECT = 'M'
@@ -437,16 +437,19 @@ def get_error_description(code: int) -> str:
 
 irbis_event_loop = None
 
+
 def init_async():
     global irbis_event_loop
     if not irbis_event_loop:
         irbis_event_loop = asyncio.get_event_loop()
+
 
 def close_async():
     global irbis_event_loop
     if irbis_event_loop:
         irbis_event_loop.close()
         irbis_event_loop = None
+
 
 ###############################################################################
 
@@ -1973,7 +1976,6 @@ class Connection:
         response.close()
         self.connected = False
 
-
     def execute(self, query: ClientQuery) -> ServerResponse:
         """
         Выполнение произвольного запроса к серверу.
@@ -1992,7 +1994,7 @@ class Connection:
         return result
 
     async def execute_async(self, query: ClientQuery) -> ServerResponse:
-        #if not the_loop:
+        # if not the_loop:
         #    raise IrbisError()
         self.last_error = 0
         reader, writer = await asyncio.open_connection(self.host, self.port, loop=irbis_event_loop)
@@ -2514,7 +2516,7 @@ class Connection:
         response = await self.execute_async(query)
         response.close()
 
-    def search(self, parameters: Union[SearchParameters, str]) -> List:
+    def search(self, parameters: Union[SearchParameters, str]) -> List[int]:
         """
         Поиск записей.
 
@@ -2541,7 +2543,7 @@ class Connection:
         query.ansi(parameters.sequential)
         response = self.execute(query)
         response.check_return_code()
-        _ = response.number() # Число найденных записей
+        _ = response.number()  # Число найденных записей
         result = []
         while 1:
             line = response.ansi()
@@ -2551,7 +2553,7 @@ class Connection:
             result.append(mfn)
         return result
 
-    def search_all(self, expression: str) -> List:
+    def search_all(self, expression: str) -> List[int]:
         """
         Поиск всех записей (даже если их окажется больше 32 тыс.).
         :param expression: Поисковый запрос.
@@ -2611,7 +2613,7 @@ class Connection:
         query.ansi(parameters.sequential)
         response = await self.execute_async(query)
         response.check_return_code()
-        _ = response.number() # Число найденных записей
+        _ = response.number()  # Число найденных записей
         result = []
         while 1:
             line = response.ansi()
@@ -2915,4 +2917,6 @@ __all__ = ['MAX_POSTINGS', 'ANSI', 'STOP_MARKER', 'LOGICALLY_DELETED',
            'Connection', 'init_async', 'close_async', 'irbis_event_loop',
            'READ_TERMS', 'READ_TERMS_REVERSE', 'READ_POSTINGS',
            'GET_SERVER_STAT', 'GET_USER_LIST', 'SET_USER_LIST',
-           'RECORD_LIST', 'PRINT']
+           'RECORD_LIST', 'PRINT',
+           'ADMINISTRATOR', 'CATALOGER', 'ACQUISITIONS', 'COMPLECT',
+           'READER', 'CIRCULATION', 'BOOKLAND', 'PROVISION', 'JAVA_APPLET']

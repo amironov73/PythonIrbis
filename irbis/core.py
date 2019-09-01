@@ -684,12 +684,12 @@ class ServerResponse:
             self._memory.extend(buffer)
 
     def initial_parse(self) -> None:
-        self.command: str = self.ansi()
-        self.client_id: int = self.number()
-        self.query_id: int = self.number()
-        self.length: int = self.may_be_number()
-        self.version: str = self.ansi()
-        self.return_code: int = 0
+        self.command = self.ansi()
+        self.client_id = self.number()
+        self.query_id = self.number()
+        self.length = self.may_be_number()
+        self.version = self.ansi()
+        self.return_code = 0
         for _ in range(5):
             self.read()
 

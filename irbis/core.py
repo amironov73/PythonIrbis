@@ -529,22 +529,22 @@ class ClientQuery:
         self.new_line()
         return self
 
-    def format(self, format: Optional[str]) -> Union['ClientQuery', bool]:
+    def format(self, format_specification: Optional[str]) -> Union['ClientQuery', bool]:
         """
         Добавление строки формата, предварительно подготовив её.
         Также добавляется перевод строки.
 
-        :param format: Добавляемая строка формата. Может быть пустой.
+        :param format_specification: Добавляемая строка формата. Может быть пустой.
         :return: Self
         """
-        if format is None:
+        if format_specification is None:
             self.new_line()
             return False
 
-        prepared = prepare_format(format)
-        if format[0] == '@':
+        prepared = prepare_format(format_specification)
+        if format_specification[0] == '@':
             self.ansi(prepared)
-        elif format[0] == '!':
+        elif format_specification[0] == '!':
             self.utf(prepared)
         else:
             self.utf('!' + prepared)
@@ -661,6 +661,12 @@ class ServerResponse:
     def __init__(self, conn: 'Connection') -> None:
         self._conn = conn
         self._memory: bytearray = bytearray()
+        self.command: str = ''
+        self.client_id: int = 0
+        self.query_id: int = 0
+        self.length: int = 0
+        self.version: str = ''
+        self.return_code: int = 0
 
     def read_data(self, sock: socket.socket) -> None:
         while sock:
@@ -925,6 +931,24 @@ class SearchParameters:
 
     def __str__(self):
         return self.expression
+
+
+###############################################################################
+
+
+class FoundLine:
+    """
+    Found item in search answer.
+    """
+
+    __slots__ = ('mfn', 'description')
+
+    def __init__(self) -> None:
+        self.mfn: int = 0
+        self.description: Optional[str] = None
+
+    def __str__(self):
+        return f"{self.mfn}#{self.description}"
 
 
 ###############################################################################
@@ -2655,10 +2679,10 @@ class Connection:
         response.close()
         return result
 
-    def search_format(self, expression: str, format: str, limit: int = 0) -> List[str]:
+    def search_format(self, expression: str, format_specification: str, limit: int = 0) -> List[str]:
 
         assert isinstance(expression, str)
-        assert isinstance(format, str)
+        assert isinstance(format_specification, str)
         assert isinstance(limit, int)
 
         query = ClientQuery(self, SEARCH)
@@ -2667,7 +2691,7 @@ class Connection:
         query.add(0)
         query.add(1)
         # TODO prepare format
-        query.ansi(format)
+        query.ansi(format_specification)
         query.add(0)
         query.add(0)
         response = self.execute(query)
@@ -2752,6 +2776,22 @@ class Connection:
 
         with self.execute_ansi(EMPTY_DATABASE, database):
             pass
+
+    def undelete_record(self, mfn: int) -> None:
+        """
+        Восстановление записи по ее MFN.
+
+        :param mfn: MFN восстанавливаемой записи
+        :return: None
+        """
+
+        assert mfn
+        assert isinstance(mfn, int)
+
+        record = self.read_record(mfn)
+        if record.is_deleted():
+            record.status &= ~LOGICALLY_DELETED
+            self.write_record(record, dont_parse=True)
 
     def unlock_database(self, database: Optional[str] = None) -> None:
         """

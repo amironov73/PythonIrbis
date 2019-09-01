@@ -12,7 +12,7 @@
 import irbis.ext as bars
 
 client = bars.Connection()
-client.connect("host", 6666, "librarian", "secret")
+client.connect('host', 6666, 'librarian', 'secret')
 menu = client.read_menu('3.IBIS.ii.mnu')
 value = menu.get_value('1')
 print(f"Value is {value}")
@@ -29,9 +29,9 @@ INI-файл, состоящий из секций, которые в свою �
 import irbis.core as bars
 
 client = bars.Connection()
-client.connect("host", 6666, "librarian", "secret")
+client.connect('host', 6666, 'librarian', 'secret')
 ini = client.ini_file
-dbnnamecat = ini.get_value("Main", "DBNNAMECAT")
+dbnnamecat = ini.get_value('Main', 'DBNNAMECAT')
 print(f"DBNNAMECAT={dbnnamecat}")
 ```
 
@@ -41,9 +41,9 @@ print(f"DBNNAMECAT={dbnnamecat}")
 import irbis.core as bars
 
 client = bars.Connection()
-client.connect("host", 6666, "librarian", "secret")
+client.connect('host', 6666, 'librarian', 'secret')
 ini = client.read_ini_file('3.RDR.KO.INI')
-number = ini.get_value("SEARCH", "ItemNumb")
+number = ini.get_value('SEARCH', 'ItemNumb')
 print(f"Число элементов={number}")
 client.disconnect()
 ```
@@ -103,7 +103,7 @@ text  | str | Собственно значение термина
 import irbis.ext as bars
 
 client = bars.Connection()
-client.connect("host", 6666, "librarian", "secret")
+client.connect('host', 6666, 'librarian', 'secret')
 terms = client.read_terms("K=БЕТОН")
 for term in terms:
     print(f"{term.text} => {term.count}")
@@ -126,8 +126,8 @@ text       | str | Опциональный результат расформа�
 import irbis.ext as bars
 
 client = bars.Connection()
-client.connect("host", 6666, "librarian", "secret")
-postings = client.read_postings("K=БЕТОН")
+client.connect('host', 6666, 'librarian', 'secret')
+postings = client.read_postings('K=БЕТОН')
 for posting in postings:
     print(f"MFN={posting.mfn}, TAG={posting.tag}, OCC={posting.occurrence}")
 client.disconnect()

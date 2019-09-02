@@ -2,7 +2,14 @@
 
 #### FoundLine
 
-Строка найденной записи, может содержать результат расформатирования найденной записи.
+Строка найденной записи, может содержать результат расформатирования найденной записи. Содержит два поля:
+
+Поле        | Тип    | Значение
+------------|--------|---------
+mfn         | int    | MFN найденной записи
+description | string | Результат расформатирования записи (опционально)
+
+Пример применения см. `SearchParameters`.
 
 #### MenuFile и MenuLine
 
@@ -33,6 +40,7 @@ client.connect('host', 6666, 'librarian', 'secret')
 ini = client.ini_file
 dbnnamecat = ini.get_value('Main', 'DBNNAMECAT')
 print(f"DBNNAMECAT={dbnnamecat}")
+client.disconnect()
 ```
 
 Также можно прочитать произвольный INI-файл с сервера:
@@ -154,22 +162,68 @@ sequential | str | None | Выражение для последовательн
 import irbis.core as bars
 
 client = bars.Connection()
-...
+client.connect('host', 6666, 'librarian', 'secret')
 params = bars.SearchParameters()
 params.database = 'IBIS' # По какой базе ищем
 params.expression = '"A=ПУШКИН$"' # Поиск по словарю
 params.number = 10 # Выдать не больше 10 записей
+params.format = '@brief' # Форматирование найденных записей
 # Последовательнсый поиск среди отобранных по словарю записей
 params.sequential = "if v200^a:'Сказки' then '1' else '0' fi"
-found = client.search()
-for mfn in found:
-    record = client.read_record(mfn)
+found = client.search_ex(params)
+for line in found:
+    record = client.read_record(line.mfn)
     print(record.fm(200, 'a'))
+    # Получаем расформатированную запись
+    print(line.description)
 ```
 
 #### SearchScenario
 
-Сценарий поиска.
+Сценарий поиска. Определён в `irbis.ext`. Содержит следующие поля:
+
+Поле            | Тип  | Значение
+----------------|------|---------
+name            | str  | Наименование поискового атрибута (автор, заглавие и т. п.)
+prefix          | str  | Префикс соответствующих терминов в поисковом словаре (может быть пустым)
+type            | int  | Тип словаря для соответствующего поиска
+menu            | str  | Имя файла справочника (меню)
+old             | str  | Имя формата (без расширения)
+correction      | str  | Способ корректировки по словарю
+truncation      | bool | Исходное положение переключателя "усечение"
+hint            | str  | Текст подсказки/предупреждения
+mod_by_dic_auto | str  | Параметр пока не задействован
+logic           | int  | Применимые логические операторы
+advance         | str  | Правила автоматического расширения поиска на основе авторитетного файла или тезауруса
+format          | str  | Имя формата показа документов
+
+Нестандартные сценарии поиска можно загрузить с сервера с помощью метода `read_search_scenario`:
+
+```python
+import irbis.ext as bars
+
+client = bars.Connection()
+client.connect('host', 6666, 'librarian', 'secret')
+scenarios = client.read_search_scenario('2.IBIS.SEARCH.INI')
+print(f"Всего сценариев поиска: {len(scenarios)}")
+for scenario in scenarios:
+    print(f"{scenario.name} => {scenario.prefix}")
+client.disconnect()
+```
+
+Стандартный сценарий поиска содержится в INI-файле, полученном клиентом с сервера при подключении:
+
+```python
+import irbis.ext as bars
+
+client = bars.Connection()
+client.connect('host', 6666, 'librarian', 'secret')
+scenarios = bars.SearchScenario.parse(client.ini_file) 
+print(f"Всего сценариев поиска: {len(scenarios)}")
+for scenario in scenarios:
+    print(f"{scenario.name} => {scenario.prefix}")
+client.disconnect()
+```
 
 #### ParFile
 

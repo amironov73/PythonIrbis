@@ -325,6 +325,28 @@ for line in found:
 client.disconnect()
 ```
 
+Аналогичного результата можно добиться с помощью метода `search_ex`:
+
+```python
+import irbis.core as bars
+
+client = bars.Connection()
+client.connect('host', 6666, 'librarian', 'secret')
+params = bars.SearchParameters()
+params.database = 'IBIS' # По какой базе ищем
+params.expression = '"A=ПУШКИН$"' # Поиск по словарю
+params.number = 10 # Выдать не больше 10 записей
+params.format = '@brief' # Форматирование найденных записей
+# Последовательнсый поиск среди отобранных по словарю записей
+params.sequential = "if v200^a:'Сказки' then '1' else '0' fi"
+found = client.search_ex(params)
+for line in found:
+    record = client.read_record(line.mfn)
+    print(record.fm(200, 'a'))
+    # Получаем расформатированную запись
+    print(line.description)
+```
+
 #### Работа с текстовыми файлами на сервере
 
 Сначала необходимо упомянуть об используемой сервером ИРБИС64 спецификации имён файлов. Эта спецификация выглядит так:

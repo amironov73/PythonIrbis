@@ -947,6 +947,12 @@ class FoundLine:
         self.mfn: int = 0
         self.description: Optional[str] = None
 
+    def parse_line(self, line: str) -> None:
+        parts = line.split('#', 2)
+        self.mfn = safe_int(parts[0])
+        if len(parts) > 1:
+            self.description = parts[1]
+
     def __str__(self):
         return f"{self.mfn}#{self.description}"
 
@@ -2677,6 +2683,44 @@ class Connection:
         response.check_return_code()
         result = response.number()
         response.close()
+        return result
+
+    def search_ex(self, parameters: Union[SearchParameters, str]) -> List[FoundLine]:
+        """
+        Расширенный поиск записей.
+
+        :param parameters: Параметры поиска (либо поисковый запрос)
+        :return: Список найденных записей
+        """
+        if isinstance(parameters, str):
+            parameters = SearchParameters(parameters)
+
+        assert isinstance(parameters, SearchParameters)
+
+        # TODO support formatting
+        # TODO support long results
+
+        database = parameters.database or self.database or throw_value_error()
+        query = ClientQuery(self, SEARCH)
+        query.ansi(database)
+        query.utf(parameters.expression)
+        query.add(parameters.number)
+        query.add(parameters.first)
+        query.ansi(parameters.format)
+        query.add(parameters.min_mfn)
+        query.add(parameters.max_mfn)
+        query.ansi(parameters.sequential)
+        response = self.execute(query)
+        response.check_return_code()
+        _ = response.number()  # Число найденных записей
+        result = []
+        while 1:
+            line = response.utf()
+            if not line:
+                break
+            item = FoundLine()
+            item.parse_line(line)
+            result.append(item)
         return result
 
     def search_format(self, expression: str, format_specification: str, limit: int = 0) -> List[str]:

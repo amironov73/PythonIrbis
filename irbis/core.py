@@ -833,17 +833,20 @@ class ServerResponse:
         :return: Считанная строка.
         """
         result = bytearray()
+        
         while True:
-            if not self._memory:
-                break
-            char = self._memory.pop(0)
-            if char == 0x0D:
-                if not self._memory:
+            first = self._memory.find(0x0D)
+            if first == -1:
+                result = self._memory
+                self._memory = bytearray()
+                return result
+            result = self._memory[:first]
+            if first + 1 != len(self._memory):
+                if self._memory[first + 1] == 0x0A:
                     break
-                char = self._memory.pop(0)
-                if char == 0x0A:
-                    break
-            result.append(char)
+        else:
+            result = self._memory
+        self._memory = self._memory[first + 2:]
         return result
 
     def utf(self) -> str:
@@ -1226,7 +1229,6 @@ class RecordField:
 class MarcRecord:
     """
     MARC record with MFN, status, version and fields.
-    """
 
     __slots__ = 'database', 'mfn', 'version', 'status', 'fields'
 

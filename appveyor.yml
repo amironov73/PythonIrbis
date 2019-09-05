@@ -25,10 +25,10 @@ before_build:
 
 build_script:
   - cd c:\projects\pythonirbis
-  - python -m mypy irbis\core.py
-  - python -m mypy irbis\ext.py
-  - rem python -m mypy irbis\iso2709.py
-  - rem python -m mypy irbis\export.py
+  - mypy0 irbis\core.py
+  - mypy0 irbis\ext.py
+  - mypy0 irbis\iso2709.py
+  - mypy0 irbis\export.py
   - call pylint0 irbis\core.py irbis\ext.py irbis\iso2709.py irbis\export.py
 
 after_build:

@@ -485,7 +485,7 @@ class ClientQuery:
     __slots__ = ('_memory',)
 
     def __init__(self, connection, command: str) -> None:
-        self._memory = bytearray()
+        self._memory: bytearray = bytearray()
         self.ansi(command)
         self.ansi(connection.workstation)
         self.ansi(command)
@@ -656,11 +656,14 @@ class ServerResponse:
     Ответ сервера.
     """
 
-    __slots__ = '_memory', 'command', 'client_id', 'query_id', 'length', 'version', 'return_code', '_conn'
+    __slots__ = ('_memory', '_view', '_pos', 'command', 'client_id',
+                 'query_id', 'length', 'version', 'return_code', '_conn')
 
     def __init__(self, conn: 'Connection') -> None:
-        self._conn = conn
+        self._conn: 'Connection' = conn
         self._memory: bytearray = bytearray()
+        self._view: memoryview = memoryview(bytearray())
+        self._pos: int = 0  # Текущая позиция при чтении
         self.command: str = ''
         self.client_id: int = 0
         self.query_id: int = 0
@@ -675,6 +678,7 @@ class ServerResponse:
                 break
             self._memory.extend(buffer)
         sock.close()
+        self._view = memoryview(self._memory)
 
     async def read_data_async(self, sock: Any) -> None:
         while True:
@@ -682,6 +686,7 @@ class ServerResponse:
             if not buffer:
                 break
             self._memory.extend(buffer)
+        self._view = memoryview(self._memory)
 
     def initial_parse(self) -> None:
         self.command = self.ansi()
@@ -699,7 +704,8 @@ class ServerResponse:
 
         :return: Строка (возможно, пустая)
         """
-        return self.read().decode(ANSI)
+        # noinspection PyTypeChecker
+        return str(self.read(), ANSI)
 
     def ansi_n(self, count: int) -> List[str]:
         """
@@ -724,8 +730,8 @@ class ServerResponse:
 
         :return: Строка (возможно, пустая)
         """
-
-        return self._memory.decode(ANSI)
+        # noinspection PyTypeChecker
+        return str(self._view[self._pos:], ANSI)
 
     def ansi_remaining_lines(self) -> List[str]:
         """
@@ -826,25 +832,32 @@ class ServerResponse:
         """
         return int(self.ansi())
 
-    def read(self) -> bytearray:
+    def read(self) -> memoryview:
         """
         Считываем строку в сыром виде.
 
-        :return: Считанная строка.
+        :return: memoryview на сырые байты строки.
         """
-        result = bytearray()
+
+        length = len(self._memory)
+        start = self._pos
+        if self._pos >= length:
+            return self._view[0:0]
+
         while True:
-            if not self._memory:
-                break
-            char = self._memory.pop(0)
-            if char == 0x0D:
-                if not self._memory:
-                    break
-                char = self._memory.pop(0)
-                if char == 0x0A:
-                    break
-            result.append(char)
-        return result
+            position = self._memory.find(0x0D, start)
+            if position < 0:
+                result = self._view[self._pos:]
+                self._pos = length
+                return result
+
+            plus1 = position + 1
+            if plus1 < length:
+                if self._memory[plus1] == 0x0A:
+                    result = self._view[self._pos:position]
+                    self._pos = plus1 + 1
+                    return result
+                start = plus1
 
     def utf(self) -> str:
         """
@@ -852,7 +865,8 @@ class ServerResponse:
 
         :return: Строка (возможно, пустая)
         """
-        return self.read().decode(UTF)
+        # noinspection PyTypeChecker
+        return str(self.read(), UTF)
 
     def utf_n(self, count: int) -> List[str]:
         """
@@ -877,7 +891,8 @@ class ServerResponse:
 
         :return: Строка (возможно, пустая)
         """
-        return self._memory.decode(UTF)
+        # noinspection PyTypeChecker
+        return str(self._view[self._pos:], UTF)
 
     def utf_remaining_lines(self) -> List[str]:
         """

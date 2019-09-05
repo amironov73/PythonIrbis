@@ -16,7 +16,7 @@ class TestConnect(unittest.TestCase):
     def setUp(self):
         self.connection: Connection = Connection()
         self.connection.parse_connection_string \
-            ('host=127.0.0.1;port=6666;user=1;password=1;db=ISTU;arm=A;')
+            ('host=10.211.55.3;port=6666;user=1;password=1;db=ISTU;arm=A;')
         self.connection.connect()
 
     def tearDown(self):
@@ -287,8 +287,9 @@ class TestConnect(unittest.TestCase):
         print()
 
     def test_32_create_database(self):
+        pass
 
-        no_such_base = 'NOSUCH'
+        # no_such_base = 'NOSUCH'
 
         # self.connection.create_database(no_such_base, 'Нет такой базы!')
         # print('Create database')

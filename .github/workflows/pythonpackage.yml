@@ -17,7 +17,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install --upgrade setuptools wheel coverage mypy twine pylint flake8 pytest
-    - name: Lint with flake8
-      run: flake8 irbis/ --count --ignore=E261,E302,E501 --show-source --statistics
+    - name: Lint
+      run: |
+        flake8 irbis/ --count --ignore=E261,E302,E501 --show-source --statistics
+        source mypy0 irbis/core.py
+        source pylint0 irbis/core.py
+        source pylint0 irbis/ext.py
     - name: Test with pytest
       run: python -m pytest tests/offline_tests.py

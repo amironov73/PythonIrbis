@@ -1345,7 +1345,33 @@ def get_database_info(connection: Connection,
         return result
 
 
+def list_databases(connection: Connection, specification: str) -> List[DatabaseInfo]:
+    """
+    Получение списка баз данных.
+
+    :param connection: Подключение
+    :param specification: Спецификация файла, например, '1..dbnam2.mnu'
+    :return: Список баз данных
+    """
+
+    assert connection and isinstance(connection, Connection)
+
+    menu = read_menu(connection, specification)
+    result = []
+    for entry in menu.entries:
+        db = DatabaseInfo()
+        db.name = entry.code
+        if db.name[0] == '-':
+            db.name = db.name[1:]
+            db.read_only = True
+        db.description = entry.comment
+        result.append(db)
+
+    return result
+
+
 Connection.get_database_info = get_database_info  # type: ignore
+Connection.list_databases = list_databases  # type: ignore
 
 
 ###############################################################################

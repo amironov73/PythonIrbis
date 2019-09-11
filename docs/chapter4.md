@@ -2,24 +2,24 @@
 
 #### FoundLine
 
-Строка найденной записи, может содержать результат расформатирования найденной записи. Содержит два поля:
+Строка найденной записи, может содержать результат расформатирования найденной записи. Класс определён в `irbis.core`. Содержит два поля:
 
 Поле        | Тип  | Значение
 ------------|------|---------
 mfn         | int  | MFN найденной записи
 description | str  | Результат расформатирования записи (опционально)
 
-Пример применения см. `SearchParameters`.
+Пример применения см. раздел `SearchParameters` в данной главе.
 
 #### MenuFile и MenuLine
 
-Файл меню (справочника) `MenuFile` определён в `irbis.ext`. Состоит из пар строк `MenuLine`.
+Файл меню (справочника) `MenuFile` определён в `irbis.ext`. Состоит из пар строк `MenuLine`, определённых там же.
 
 `MenuLine` содержит следующие поля:
 
 Поле    | Тип | Значение
 --------|-----|---------
-code    | str | Условный код
+code    | str | Условный код (должен быть непустым)
 comment | str | Комментарий к коду (может быть пустым)
 
 `MenuFile` содержит единственное поле `entries` - список элементов типа `MenuLine`. Определены следующие методы:
@@ -53,9 +53,9 @@ client.disconnect()
 
 #### IniFile, IniSection и IniLine
 
-INI-файл, состоящий из секций, которые в свою очередь состоят из строк вида "ключ=значение".
+INI-файл, состоящий из секций, которые в свою очередь состоят из строк вида "ключ=значение". Класс `IniFile` определён в `irbis.core`.
 
-Клиент получает свой INI-файл при подключении к серверу. Он хранится в свойстве `ini_file`.
+Клиент получает свой INI-файл при подключении к серверу. Он хранится в свойстве `ini_file` класса `Connection`.
 
 ```python
 import irbis.core as bars
@@ -68,7 +68,7 @@ print(f"DBNNAMECAT={dbnnamecat}")
 client.disconnect()
 ```
 
-Также можно прочитать произвольный INI-файл с сервера ИРБИС64 с помощью функции `read_ini_file`:
+Также можно прочитать произвольный INI-файл с сервера ИРБИС64 с помощью метода `read_ini_file`:
 
 ```python
 import irbis.core as bars
@@ -81,13 +81,84 @@ print(f"Число элементов={number}")
 client.disconnect()
 ```
 
-#### TreeFile и TreeLine
+#### TreeFile и TreeNode
 
-TRE-файл -- древовидный справочник.
+TRE-файл -- древовидный текстовый справочник. Состоит из узлов, каждый из которых может быть либо узлом самого верхнего уровня, либо дочерним по отношению к узлу более высокого уровня. Уровень узла определяется величиной отступа, с которым соответствующая строка записана в файле справочника. Классы `TreeFile` и `TreeNode` определены в `irbis.ext`.
+
+Класс `TreeNode` соответствует узлу дерева. Содержит следующие поля:
+
+Поле     | Тип  | Назначение
+---------|------|-----------
+children | list | Список дочерних узлов (может быть пустым).
+value    | str  | Текстовое значение узла (не может быть пустым).
+level    | int  | Уровень узла (0 = узел самого верхнего уровня).
+
+Класс `TreeFile` описывает TRE-файл в целом. Содержит следующие поля:
+
+Поле     | Тип  | Назначение
+---------|------|-----------
+roots    | list | Список узлов самого верхнего уровня (корневых).
+
+Прочитать древовидный справочник из текстового файла можно с помощью функции `load_tree_file`:
+
+```python
+import irbis.ext as bars
+
+tree = bars.load_tree_file(r'C:\IRBIS64\Datai\IBIS\ii.tre')
+print(tree.roots[0].value)
+```
+
+Загрузить TRE-файл с сервера ИРБИС64 можно с помощью функции `read_tree_file`:
+
+```python
+import irbis.ext as bars
+
+client = bars.Connection()
+client.connect('host', 6666, 'librarian', 'secret')
+tree = bars.read_tree_file(client, '2.IBIS.II.tre')
+print(tree.roots[0].value)
+client.disconnect()
+```
 
 #### DatabaseInfo
 
-Информация о базе данных ИРБИС.
+Информация о базе данных ИРБИС. Класс определён в `irbis.ext` и содержит следующие поля:
+
+Поле               | Тип  | Назначение
+-------------------|------|-----------
+name               | str  | Имя базы данных (непустое).
+description        | str  | Описание в произвольной форме (может быть пустым).
+max_mfn            | int  | Максимальный MFN.
+logically_deleted  | list | Перечень MFN логически удалённых записей (может быть пустым). 
+physically_deleted | list | Перечень MFN физически удалённых записей (может быть пустым).
+nonactualized      | list | Перечень MFN неактуализированных записей (может быть пустым).
+database_locked    | bool | Флаг: база заблокирована на ввод.
+read_only          | bool | Флаг: база доступна только для чтения.
+
+Получение информации о конкретной базе данных (заполняются только поля `max_mfn`, `logically_deleted`, `physically_deleted`, `nonactualized`, `database_locked`):
+
+```python
+import irbis.ext as bars
+
+client = bars.Connection()
+client.connect('host', 6666, 'librarian', 'secret')
+info = bars.get_database_info(client, 'IBIS')
+print(f"Удалённых записей: {len(info.logically_deleted)}")
+client.disconnect()
+```
+
+Получить список баз данных, доступных для данного АРМ, можно с помощью метода `list_databases` (заполняются только поля `name`, `description`, `read_only`).
+
+```python
+import irbis.ext as bars
+
+client = bars.Connection()
+client.connect('host', 6666, 'librarian', 'secret')
+databases = bars.list_databases(client, '1..dbnam2.mnu')
+for db in databases:
+    print(f"{db.name} => {db.description}")
+client.disconnect()
+```
 
 #### ProcessInfo
 
@@ -103,7 +174,52 @@ TRE-файл -- древовидный справочник.
 
 #### UserInfo
 
-Информация о зарегистрированном пользователе системы (по данным `client_m.mnu`).
+Информация о зарегистрированном пользователе системы (по данным `client_m.mnu`). Класс определён в `irbis.ext`. Определены следующие поля:
+
+Поле          | Тип | Назначение
+--------------|-----|-----------
+number        | str | Номер по порядку в списке.
+name          | str | Логин пользователя.
+password      | str | Пароль.
+cataloger     | str | Доступность АРМ "Каталогизатор".
+reader        | str | Доступность АРМ "Читатель".
+circulation   | str | Доступность АРМ "Книговыдача".
+acquisitions  | str | Доступность АРМ "Комплектатор".
+provision     | str | Доступность АРМ "Книгообеспеченность".
+administrator | str | Доступность АРМ "Администратор".
+
+Если строка доступа к АРМ пустая, то доступ пользователя к соответствующему АРМ запрещен.
+
+Получить список зарегистрированных в системе пользователей можно с помощью метода `get_user_list`:
+
+```python
+import irbis.ext as bars
+
+client = bars.Connection()
+client.connect('host', 6666, 'librarian', 'secret')
+users = bars.get_user_list(client)
+for user in users:
+    print(f"{user.name} => {user.password}")
+client.disconnect()
+```
+
+Обновить список зарегистрированных пользователей можно с помощью метода `update_user_list`:
+
+```python
+import irbis.ext as bars
+
+client = bars.Connection()
+client.connect('host', 6666, 'librarian', 'secret')
+users = bars.get_user_list(client)
+checkhov = bars.UserInfo()
+checkhov.number = str(len(users))
+checkhov.name = 'Чехов'
+checkhov.password = 'Каштанка'
+checkhov.cataloger = 'irbisc_chekhov.ini'
+users.append(checkhov)
+bars.update_user_list(client, users)
+client.disconnect()
+```
 
 #### TableDefinition
 
@@ -222,7 +338,7 @@ client.disconnect()
 
 #### SearchParameters
 
-Параметры для поиска записей (метод `search`). Содержит следующие поля:
+Параметры для поиска записей (методы `search` и `search_ex`). Класс определён в `irbis.core`. Содержит следующие поля:
 
 Поле       | Тип | Значение по умолчанию | Назначение
 -----------|-----|-----------------------|-----------
@@ -309,7 +425,7 @@ client.disconnect()
 PAR-файл -- содержит пути к файлам базы данных ИРБИС. Класс определён в `irbis.ext`. Определены следующие поля:
 
 Поле | Тип | Значение
------|-----|---------
+-----|-----|-----------------
 xrf  | str | Путь к XRF-файлу
 mst  | str | Путь к MST-файлу
 cnt  | str | Путь к CNT-файлу
@@ -349,7 +465,84 @@ client.disconnect()
 
 #### OptFile и OptLine
 
-OPT-файл -- файл оптимизации рабочих листов и форматов показа.
+OPT-файл -- файл оптимизации рабочих листов и форматов показа. Классы `OptLine` и `OptFile` определены в `irbis.core`.
+
+Типичный OPT-файл выглядит так:
+
+```
+920
+5
+PAZK  PAZK42
+PVK   PVK42
+SPEC  SPEC42
+J     !RPJ51
+NJ    !NJ31
+NJP   !NJ31
+NJK   !NJ31
+AUNTD AUNTD42
+ASP   ASP42
+MUSP  MUSP
+SZPRF SZPRF
+BOUNI BOUNI
+IBIS  IBIS
++++++ PAZK42
+*****
+``` 
+
+Класс `OptLine` представляет одну строку в OPT-файле. Содержит следующие поля.
+
+Поле      | Тип | Значение
+----------|-----|-----------------
+pattern   | str | Шаблон для имени рабочего листа (см. ниже).
+worksheet | str | Имя соответствующего WS-файла (без расширения).
+
+Шаблон для имени может содержать символ `+`, означающий «любой символ, в том числе его отсутствие».
+
+Класс `OptFile` представляет OPT-файл в целом. Содержит следующие поля.
+
+Поле      | Тип  | Значение
+----------|------|-----------------
+lines     | list | Список строк (`OptLine`).
+length    | int  | Длина шаблона в символах.
+tag       | int  | Метка поля в записи, хранящего имя рабочиего листа.
+
+Определены следующие методы:
+
+* **def parse(self, text)** -- разбор текстового представления OPT-файла.
+
+* **def resolve_worksheet(self, tag: str) -> Optional\[str\]** -- поиск имени WS-файла для указанного значения (например, "SPEC"). Если соответствующего имени не найдено, возвращается `None`.
+
+* **def save(self, filename)** -- сохранение в текстовый файл с указанным именем.
+
+Прочитать OPT-файл из локального файла можно с помощью функции `load_opt_file`:
+
+```python
+import irbis.ext as bars
+
+client = bars.Connection()
+client.connect('host', 6666, 'librarian', 'secret')
+opt = bars.load_opt_file(r"C:\IRBIS64\Datai\IBIS\WS31.opt")
+record = client.read_record(123)
+worklist = record.fm(opt.tag)
+ws_name = opt.resolve_worksheet(worklist)
+print(f"WS name: {ws_name}")
+client.disconnect()
+```
+
+Загрузить OPT-файл с сервера можно с помощью функции `read_opt_file`:
+
+```python
+import irbis.ext as bars
+
+client = bars.Connection()
+client.connect('host', 6666, 'librarian', 'secret')
+opt = bars.read_opt_file(client, '2.IBIS.WS31.opt')
+record = client.read_record(123)
+worklist = record.fm(opt.tag)
+ws_name = opt.resolve_worksheet(worklist)
+print(f"WS name: {ws_name}")
+client.disconnect()
+``` 
 
 #### GblStatement и GblSettings
 

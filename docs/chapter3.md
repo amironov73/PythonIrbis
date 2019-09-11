@@ -157,4 +157,4 @@ subfield = bars.SubField('a', 'Подполе A')
 print(subfield)
 ```
 
-[Предыдущая глава](chapter2.md) [Следующая глава](chapter4.md)
+[Предыдущая глава](chapter2.md) | [Следующая глава](chapter4.md)

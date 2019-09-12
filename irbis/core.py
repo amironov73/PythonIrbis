@@ -1013,9 +1013,6 @@ class SubField:
             return ''
         return '^' + self.code + (self.value or '')
 
-    def __repr__(self):
-        return self.__str__()
-
     def __bool__(self):
         return self.code != self.DEFAULT_CODE and bool(self.value)
 
@@ -1050,21 +1047,39 @@ class RecordField:
         Добавление подполя с указанным кодом (и, возможно, значением)
         к записи.
 
-        :param code: Код подполя
+        :param code: Код подполя (однобуквенный)
         :param value: Значение подполя (опционально)
         :return: Self
         """
+        assert len(code) == 1
 
         self.subfields.append(SubField(code, value))
+        return self
+
+    def add_non_empty(self, code: str, value: Optional[str]) -> 'RecordField':
+        """
+        Добавление подполя с указанным кодом при условии, что значение поля не пустое.
+
+        :param code: Код подполя (однобуквенный).
+        :param value: Значение подполя (опциональное).
+        :return: Self
+        """
+        assert len(code) == 1
+
+        if value:
+            self.subfields.append(SubField(code, value))
+
         return self
 
     def all(self, code: str) -> List[SubField]:
         """
         Список всех подполей с указанным кодом.
 
-        :param code: Код
-        :return: Список подполей (возможно, пустой)
+        :param code: Код подполя (однобуквенный).
+        :return: Список подполей (возможно, пустой).
         """
+        assert len(code) == 1
+
         code = code.lower()
         return [sf for sf in self.subfields if sf.code == code]
 
@@ -1073,9 +1088,11 @@ class RecordField:
         Список значений всех подполей с указанным кодом.
         Пустые значения подполей в список не включаются.
 
-        :param code: Код
-        :return: Список значений (возможно, пустой)
+        :param code: Код подполя (однобуквенный).
+        :return: Список значений (возможно, пустой).
         """
+        assert len(code) == 1
+
         code = code.lower()
         return [sf.value for sf in self.subfields if sf.code == code if sf.value]
 
@@ -1089,6 +1106,8 @@ class RecordField:
         :param other: Поле-источник
         :return: None
         """
+        assert other
+
         self.value = other.value
         self.subfields = [sf.clone() for sf in other.subfields]
 
@@ -1120,6 +1139,8 @@ class RecordField:
         :param code: Код
         :return: Подполе или None
         """
+        assert len(code) == 1
+
         code = code.lower()
         for subfield in self.subfields:
             if subfield.code == code:
@@ -1132,11 +1153,87 @@ class RecordField:
         :param code: Код
         :return: Значение подполя или None
         """
+        assert len(code) == 1
+
         code = code.lower()
         for subfield in self.subfields:
             if subfield.code == code:
                 return subfield.value
         return None
+
+    def get_embedded_fields(self) -> List['RecordField']:
+        """
+        Получение списка встроенных полей.
+
+        :return: Список встроенных полей.
+        """
+        result: List['RecordField'] = []
+        found: Optional['RecordField'] = None
+
+        for sf in self.subfields:
+            if sf.code == '1':
+                if found:
+                    result.append(found)
+                value = sf.value
+                if not value:
+                    continue
+                tag = int(value[0:3])
+                found = RecordField(tag)
+                if tag < 10 and len(value) > 3:
+                    found.value = value[3:]
+            else:
+                if found:
+                    found.subfields.append(sf)
+
+        if found:
+            result.append(found)
+
+        return result
+
+    def get_value_or_firs_subfield(self) -> Optional[str]:
+        """
+        Выдаёт значение для ^*.
+        :return: Найденное значение
+        """
+
+        result = self.value
+        if (not result) and len(self.subfields):
+            result = self.subfields[0].value
+
+        return result
+
+    def have_subfield(self, code: str) -> bool:
+        """
+        Выясняет, есть ли подполе с указанным кодом.
+
+        :param code: Искомый код подполя (должен быть однобуквенным).
+        :return: True, если есть хотя бы одно подполе с указанным кодом.
+        """
+        assert len(code) == 1
+
+        code = code.lower()
+
+        for sf in self.subfields:
+            if sf.code == code:
+                return True
+
+        return False
+
+    def insert_at(self, index: int, code: str, value: str) -> 'RecordField':
+        """
+        Вставляет подполе в указанную позицию.
+
+        :param index: Позиция для вставки.
+        :param code: Код подполя (обязательно).
+        :param value: Значение подполя (опционально).
+        :return: Self
+        """
+        assert index >= 0
+        assert len(code) == 1
+
+        sf = SubField(code, value)
+        self.subfields.insert(index, sf)
+        return self
 
     def parse(self, line: str) -> None:
         """
@@ -1176,14 +1273,85 @@ class RecordField:
                         subfield = SubField(raw_item[:1], raw_item[1:])
                         self.subfields.append(subfield)
 
+    def remove_at(self, index: int) -> 'RecordField':
+        """
+        Удаляет подполе в указанной позиции.
+
+        :param index: Позиция для удаления
+        :return: Self
+        """
+        assert index >= 0
+
+        self.subfields.remove(self.subfields[index])
+        return self
+
+    def remove_subfield(self, code: str) -> 'RecordField':
+        """
+        Удаляет все подполя с указанным кодом.
+
+        :param code: Код для удаления.
+        :return: Self
+        """
+        assert code
+
+        code = code.lower()
+        index = 0
+        while index < len(self.subfields):
+            sf = self.subfields[index]
+            if sf.code == code:
+                self.subfields.remove(sf)
+            else:
+                index += 1
+
+        return self
+
+    def replace_subfield(self, code: str, old_value: Optional[str],
+                         new_value: Optional[str]) -> 'RecordField':
+        """
+        Заменяет значение подполя с указанным кодом.
+
+        :param code: Код подполя (обязательно).
+        :param old_value: Старое значение.
+        :param new_value: Новое значение.
+        :return: Self.
+        """
+        assert code
+
+        code = code.lower()
+        for sf in self.subfields:
+            if sf.code == code and sf.value == old_value:
+                sf.value = new_value
+
+        return self
+
+    def set_subfield(self, code: str, value: Optional[str]) -> 'RecordField':
+        """
+        Устанавливает значение первого повторения подполя с указанным кодом.
+        Если value==None, подполе удаляется.
+
+        :param code: Код искомого подполя.
+        :param value: Устанавливаемое значение подполя (опционально).
+        :return: Self
+        """
+        assert code
+
+        code = code.lower()
+        if not value:
+            return self.remove_subfield(code)
+
+        found = self.first(code)
+        if not found:
+            found = SubField(code)
+            self.subfields.append(found)
+        found.value = value
+
+        return self
+
     def __str__(self):
         if not self.tag:
             return ''
         buffer = [str(self.tag), '#', self.value or ''] + [str(sf) for sf in self.subfields]
         return ''.join(buffer)
-
-    def __repr__(self):
-        return self.__str__()
 
     def __iter__(self):
         yield from self.subfields

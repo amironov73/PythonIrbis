@@ -830,7 +830,8 @@ class ServerResponse:
 
         :return: Считанное число
         """
-        return int(self.ansi())
+        # noinspection PyTypeChecker
+        return int(self.read())
 
     def read(self) -> memoryview:
         """
@@ -1426,11 +1427,12 @@ class MarcRecord:
         """
         Добавление поля (возможно, с значением и подполями) к записи.
 
-        :param tag: Тег
+        :param tag: Метка поля.
         :param value: Значение поля (опционально)
         :param subfields: Подполя (опционально)
         :return: Self
         """
+        assert tag > 0
 
         if isinstance(value, str):
             field = RecordField(tag, value)
@@ -1443,6 +1445,28 @@ class MarcRecord:
         self.fields.append(field)
         return self
 
+    def add_non_empty(self, tag: int, value: Union[str, SubField]) -> 'MarcRecord':
+        """
+        Добавление поля, если его значение не пустое.
+
+        :param tag: Метка поля.
+        :param value: Значение поля (опционально).
+        :return: Self
+        """
+        assert tag > 0
+
+        if value:
+            if isinstance(value, str):
+                field = RecordField(tag, value)
+            else:
+                field = RecordField(tag)
+                if isinstance(value, SubField):
+                    field.subfields.append(value)
+
+            self.fields.append(field)
+
+        return self
+
     def all(self, tag: int) -> List[RecordField]:
         """
         Список полей с указанной меткой.
@@ -1450,6 +1474,7 @@ class MarcRecord:
         :param tag: Тег
         :return: Список полей (возможно, пустой)
         """
+        assert tag > 0
 
         return [f for f in self.fields if f.tag == tag]
 
@@ -1459,7 +1484,6 @@ class MarcRecord:
 
         :return: Self
         """
-
         self.fields.clear()
         return self
 
@@ -1469,7 +1493,6 @@ class MarcRecord:
 
         :return: Полный клон записи
         """
-
         result = MarcRecord()
         result.database = self.database
         result.mfn = self.mfn
@@ -1484,7 +1507,6 @@ class MarcRecord:
 
         :return: Список строк
         """
-
         result = [str(self.mfn) + '#' + str(self.status),
                   '0#' + str(self.version)]
         for field in self.fields:
@@ -1498,6 +1520,8 @@ class MarcRecord:
         :param code: Код (опционально)
         :return: Текст или None
         """
+        assert tag > 0
+
         for field in self.fields:
             if field.tag == tag:
                 if code:
@@ -1514,6 +1538,8 @@ class MarcRecord:
         :param code: Код (опционально)
         :return: Список с текстами (м. б. пустой)
         """
+        assert tag > 0
+
         result = []
         for field in self.fields:
             if field.tag == tag:
@@ -1534,10 +1560,45 @@ class MarcRecord:
         :param tag: Искомая метка поля
         :return: Поле либо None
         """
+        assert tag > 0
+
         for field in self.fields:
             if field.tag == tag:
                 return field
         return None
+
+    def have_field(self, tag: int) -> bool:
+        """
+        Есть ли в записи поле с указанной меткой?
+
+        :param tag: Искомая метка поля.
+        :return: True или False.
+        """
+        assert tag > 0
+
+        for field in self.fields:
+            if field.tag == tag:
+                return True
+
+        return False
+
+    def insert_at(self, index: int, tag: int, value: Optional[str] = None,
+                  *subfields: List[SubField]) -> RecordField:
+        """
+        Вставка поля в указанной позиции.
+
+        :param index: Позиция для вставки.
+        :param tag: Метка поля.
+        :param value: Значение поля до первого разделитея (опционально).
+        :param subfields: Подполя (опционально).
+        :return: Self
+        """
+        assert 0 <= index < len(self.fields)
+        assert tag > 0
+
+        result = RecordField(tag, value, *subfields)
+        self.fields.insert(index, result)
+        return result
 
     def is_deleted(self) -> bool:
         """
@@ -1571,12 +1632,101 @@ class MarcRecord:
             field.parse(line)
             self.fields.append(field)
 
+    def remove_at(self, index: int) -> 'MarcRecord':
+        """
+        Удаление поля в указанной позиции.
+
+        :param index: Позиция для удаления.
+        :return: Self
+        """
+        assert 0 <= index < len(self.fields)
+
+        self.fields.remove(self.fields[index])
+        return self
+
+    def remove_field(self, tag: int) -> 'MarcRecord':
+        """
+        Удаление полей с указанной меткой.
+
+        :param tag: Метка поля.
+        :return: Self.
+        """
+        assert tag > 0
+
+        index = 0
+        while index < len(self.fields):
+            field = self.fields[index]
+            if field.tag == tag:
+                self.fields.remove(field)
+            else:
+                index += 1
+
+        return self
+
+    def reset(self) -> 'MarcRecord':
+        """
+        Сбрасывает состояние записи, отвязывая её от базы данных.
+        Поля при этом остаются нетронутыми.
+        :return: Self.
+        """
+        self.mfn = 0
+        self.status = 0
+        self.version = 0
+        self.database = None
+        return self
+
+    def set_field(self, tag: int, value: Optional[str],
+                  *subfields: List[SubField]) -> 'MarcRecord':
+        """
+        Устанавливает значение первого повторения указанного поля.
+        Если указанное значение пустое, поле удаляется из записи.
+
+        :param tag: Метка поля.
+        :param value: Значение поля до первого разделителя (может быть None).
+        :param subfields: Подполя.
+        :return: Self.
+        """
+        assert tag > 0
+
+        found = self.first(tag)
+        if value or subfields:
+            if not found:
+                found = RecordField(tag)
+                self.fields.append(found)
+            found.value = value
+            found.subfields.append(subfields)
+        else:
+            if found:
+                self.fields.remove(found)
+
+        return self
+
+    def set_subfield(self, tag: int, code: str, value: Optional[str]) -> 'MarcRecord':
+        """
+        Устанавливает значение подполя в первом повторении указанного поля.
+        Если указанное значение пустое, подполе удаляется из поля.
+
+        :param tag: Метка поля.
+        :param code: Код подполя.
+        :param value: Значение подполя (может быть None).
+        :return: Self.
+        """
+        assert tag > 0
+        assert len(code) == 1
+
+        found = self.first(tag)
+        if value:
+            if not found:
+                found = RecordField(tag)
+                self.fields.append(found)
+        if found:
+            found.set_subfield(code, value)
+
+        return self
+
     def __str__(self):
         result = [str(field) for field in self.fields]
         return '\n'.join(result)
-
-    def __repr__(self):
-        return self.__str__()
 
     def __iter__(self):
         yield from self.fields

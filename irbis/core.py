@@ -3335,6 +3335,6 @@ __all__ = ['MAX_POSTINGS', 'ANSI', 'STOP_MARKER', 'LOGICALLY_DELETED',
            'Connection', 'init_async', 'close_async', 'irbis_event_loop',
            'READ_TERMS', 'READ_TERMS_REVERSE', 'READ_POSTINGS',
            'GET_SERVER_STAT', 'GET_USER_LIST', 'SET_USER_LIST',
-           'RECORD_LIST', 'PRINT',
+           'RECORD_LIST', 'PRINT', 'READ_RECORD', 'READ_RECORD_CODES', 'UPDATE_RECORD',
            'ADMINISTRATOR', 'CATALOGER', 'ACQUISITIONS', 'COMPLECT',
            'READER', 'CIRCULATION', 'BOOKLAND', 'PROVISION', 'JAVA_APPLET']

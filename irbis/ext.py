@@ -4,15 +4,194 @@
 Infrastructure related extended functionality for IRBIS64 client
 """
 
-import re
 from typing import List, Tuple, Dict, Iterable, Optional, Union
 
 from irbis.core import Connection, FileSpecification, ClientQuery, ServerResponse, IniFile, \
     safe_str, safe_int, irbis_to_lines, throw_value_error, same_string, \
-    ANSI, STOP_MARKER, SYSTEM, DATA, SHORT_DELIMITER, \
+    ANSI, STOP_MARKER, SYSTEM, DATA, SHORT_DELIMITER, IRBIS_DELIMITER, \
     READ_TERMS, READ_TERMS_REVERSE, READ_TERMS_CODES, READ_POSTINGS, GET_USER_LIST, SET_USER_LIST, \
-    GET_SERVER_STAT, RECORD_LIST, PRINT, \
-    IrbisError
+    GET_SERVER_STAT, RECORD_LIST, PRINT, LOGICALLY_DELETED, PHYSICALLY_DELETED, \
+    IrbisError, READ_RECORD, READ_RECORD_CODES, UPDATE_RECORD
+
+
+###############################################################################
+
+class RawRecord:
+    """
+    Запись с нераскодированными полями/подполями.
+    """
+
+    __slots__ = 'database', 'mfn', 'status', 'version', 'fields'
+
+    def __init__(self, *fields: str) -> None:
+        self.database: Optional[str] = None
+        self.mfn: int = 0
+        self.version: int = 0
+        self.status: int = 0
+        self.fields: List[str] = []
+        self.fields.extend(fields)
+
+    def clear(self) -> 'RawRecord':
+        """
+        Очистка записи (удаление всех полей).
+
+        :return: Self
+        """
+        self.fields.clear()
+        return self
+
+    def clone(self) -> 'RawRecord':
+        """
+        Клонирование записи.
+
+        :return: Полный клон записи
+        """
+        result = RawRecord()
+        result.database = self.database
+        result.mfn = self.mfn
+        result.status = self.status
+        result.version = self.version
+        result.fields = [field for field in self.fields]
+        return result
+
+    def encode(self) -> List[str]:
+        """
+        Кодирование записи в серверное представление.
+
+        :return: Список строк
+        """
+        result = [str(self.mfn) + '#' + str(self.status),
+                  '0#' + str(self.version)]
+        for field in self.fields:
+            result.append(field)
+        return result
+
+    def is_deleted(self) -> bool:
+        """
+        Удалена ли запись?
+        :return: True для удаленной записи
+        """
+        return (self.status & (LOGICALLY_DELETED | PHYSICALLY_DELETED)) != 0
+
+    def parse(self, text: List[str]) -> None:
+        """
+        Разбор текстового представления записи (в серверном формате).
+
+        :param text: Список строк
+        :return: None
+        """
+
+        if not text:
+            return
+
+        line = text[0]
+        parts = line.split('#')
+        self.mfn = int(parts[0])
+        if len(parts) != 1 and parts[1]:
+            self.status = int(parts[1])
+        line = text[1]
+        parts = line.split('#')
+        self.version = int(parts[1])
+        self.fields.clear()
+        for line in text[2:]:
+            self.fields.append(line)
+
+    def remove_at(self, index: int) -> 'RawRecord':
+        """
+        Удаление поля в указанной позиции.
+
+        :param index: Позиция для удаления.
+        :return: Self
+        """
+        assert 0 <= index < len(self.fields)
+
+        self.fields.remove(self.fields[index])
+        return self
+
+    def reset(self) -> 'RawRecord':
+        """
+        Сбрасывает состояние записи, отвязывая её от базы данных.
+        Поля при этом остаются нетронутыми.
+        :return: Self.
+        """
+        self.mfn = 0
+        self.status = 0
+        self.version = 0
+        self.database = None
+        return self
+
+    def __str__(self):
+        result = [str(field) for field in self.fields]
+        return '\n'.join(result)
+
+    def __iter__(self):
+        yield from self.fields
+
+    def __len__(self):
+        return len(self.fields)
+
+    def __bool__(self):
+        return bool(len(self.fields))
+
+
+def read_raw_record(connection: Connection, mfn: int) -> RawRecord:
+    """
+    Чтение сырой записи с сервера.
+
+    :param connection: Подключение.
+    :param mfn: MFN записи.
+    :return: Загруженная с сервера запись.
+    """
+    assert connection and isinstance(connection, Connection)
+    assert mfn > 0
+
+    mfn = mfn or int(throw_value_error())
+
+    assert isinstance(mfn, int)
+
+    query = ClientQuery(connection, READ_RECORD).ansi(connection.database).add(mfn)
+    with connection.execute(query) as response:
+        response.check_return_code(READ_RECORD_CODES)
+        text = response.utf_remaining_lines()
+        result = RawRecord()
+        result.database = connection.database
+        result.parse(text)
+
+    return result
+
+
+def write_raw_record(connection: Connection,
+                     record: RawRecord,
+                     lock: bool = False,
+                     actualize: bool = True) -> int:
+    """
+    Сохранение записи на сервере.
+
+    :param connection: Подключение к серверу
+    :param record: Запись
+    :param lock: Оставить запись заблокированной?
+    :param actualize: Актуализировать запись?
+    :return: Новый максимальный MFN
+    """
+    assert connection and isinstance(connection, Connection)
+
+    database = record.database or connection.database or throw_value_error()
+    if not record:
+        raise ValueError()
+
+    assert isinstance(record, RawRecord)
+    assert isinstance(database, str)
+
+    assert isinstance(record, RawRecord)
+    assert isinstance(database, str)
+
+    query = ClientQuery(connection, UPDATE_RECORD)
+    query.ansi(database).add(int(lock)).add(int(actualize))
+    query.utf(IRBIS_DELIMITER.join(record.encode()))
+    with connection.execute(query) as response:
+        response.check_return_code()
+        result = response.return_code  # Новый максимальный MFN
+        return result
 
 
 ###############################################################################
@@ -190,9 +369,6 @@ def read_menu(connection: Connection,
         text = irbis_to_lines(response.ansi_remaining_text())
         result.parse(text)
         return result
-
-
-Connection.read_menu = read_menu  # type: ignore
 
 
 ###############################################################################
@@ -884,7 +1060,7 @@ class UserInfo:
         self.administrator: Optional[str] = None
 
     @staticmethod
-    def parse(response: ServerResponse) -> List:
+    def parse(response: ServerResponse) -> List['UserInfo']:
         """
         Parse the server response for the user info.
 
@@ -898,7 +1074,7 @@ class UserInfo:
         if not user_count or not lines_per_user:
             return result
         for _ in range(user_count):
-            user = UserInfo()
+            user: UserInfo = UserInfo()
             user.number = response.ansi()
             user.name = response.ansi()
             user.password = response.ansi()
@@ -935,12 +1111,12 @@ class UserInfo:
         """
 
         return self.name + '\n' + self.password + '\n' \
-            + UserInfo.format_pair('C', self.cataloger, "irbisc.ini") \
-            + UserInfo.format_pair('R', self.reader, "irbisr.ini") \
-            + UserInfo.format_pair('B', self.circulation, "irbisb.ini") \
-            + UserInfo.format_pair('M', self.acquisitions, "irbism.ini") \
-            + UserInfo.format_pair('K', self.provision, "irbisk.ini") \
-            + UserInfo.format_pair('A', self.administrator, "irbisa.ini")
+               + UserInfo.format_pair('C', self.cataloger, "irbisc.ini") \
+               + UserInfo.format_pair('R', self.reader, "irbisr.ini") \
+               + UserInfo.format_pair('B', self.circulation, "irbisb.ini") \
+               + UserInfo.format_pair('M', self.acquisitions, "irbism.ini") \
+               + UserInfo.format_pair('K', self.provision, "irbisk.ini") \
+               + UserInfo.format_pair('A', self.administrator, "irbisa.ini")
 
     def __str__(self):
         buffer = [self.number, self.name, self.password, self.cataloger,
@@ -1008,6 +1184,7 @@ class OptLine:
         :param text: Text to parse
         :return: None
         """
+        import re
 
         parts = re.split(r'\s+', text.strip())
         self.pattern = parts[0]
@@ -1359,13 +1536,13 @@ def list_databases(connection: Connection, specification: str) -> List[DatabaseI
     menu = read_menu(connection, specification)
     result = []
     for entry in menu.entries:
-        db = DatabaseInfo()
-        db.name = entry.code
-        if db.name[0] == '-':
-            db.name = db.name[1:]
-            db.read_only = True
-        db.description = entry.comment
-        result.append(db)
+        db_info = DatabaseInfo()
+        db_info.name = entry.code
+        if db_info.name[0] == '-':
+            db_info.name = db_info.name[1:]
+            db_info.read_only = True
+        db_info.description = entry.comment
+        result.append(db_info)
 
     return result
 
@@ -1495,6 +1672,8 @@ class AlphabetTable:
         :param text: Text to parse
         :return: None
         """
+        import re
+
         parts = re.findall(r'\d+', text)
         array = bytearray(int(x) for x in parts if x and x.isdigit())
         array.remove(0x98)  # Этот символ не мапится
@@ -1870,6 +2049,7 @@ class UpperCaseTable:
         :param text: Text to parse
         :return: None
         """
+        import re
 
         parts = re.findall(r'\d+', text)
         if not parts:
@@ -1948,9 +2128,14 @@ Connection.read_uppercase_table = read_uppercase_table  # type: ignore
 
 
 class IrbisFileNotFoundError(IrbisError):
+    """
+    Файл на сервере не найден.
+    """
+
     __slots__ = ('filename',)
 
     def __init__(self, filename: Union[str, FileSpecification]) -> None:
+        super().__init__()
         self.filename: str = str(filename)
 
     def __str__(self):
@@ -2214,4 +2399,5 @@ __all__ = ['MenuEntry', 'MenuFile', 'load_menu', 'ParFile', 'load_par_file',
            'UserInfo', 'OptLine', 'OptFile', 'load_opt_file', 'ClientInfo',
            'ServerStat', 'DatabaseInfo', 'TableDefinition', 'AlphabetTable',
            'load_alphabet_table', 'UpperCaseTable', 'load_uppercase_table',
-           'IrbisFileNotFoundError', 'Resource', 'ResourceDictionary']
+           'IrbisFileNotFoundError', 'Resource', 'ResourceDictionary',
+           'RawRecord', 'read_raw_record', 'write_raw_record']

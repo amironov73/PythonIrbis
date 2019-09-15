@@ -6,12 +6,14 @@ Infrastructure related extended functionality for IRBIS64 client
 
 from typing import List, Tuple, Dict, Iterable, Optional, Union
 
-from irbis.core import Connection, FileSpecification, ClientQuery, ServerResponse, IniFile, \
-    safe_str, safe_int, irbis_to_lines, throw_value_error, same_string, \
-    ANSI, STOP_MARKER, SYSTEM, DATA, SHORT_DELIMITER, IRBIS_DELIMITER, \
-    READ_TERMS, READ_TERMS_REVERSE, READ_TERMS_CODES, READ_POSTINGS, GET_USER_LIST, SET_USER_LIST, \
-    GET_SERVER_STAT, RECORD_LIST, PRINT, LOGICALLY_DELETED, PHYSICALLY_DELETED, \
-    IrbisError, READ_RECORD, READ_RECORD_CODES, UPDATE_RECORD
+from irbis.core import Connection, FileSpecification, ClientQuery, \
+    ServerResponse, IniFile, safe_str, safe_int, irbis_to_lines, \
+    throw_value_error, same_string, ANSI, STOP_MARKER, SYSTEM, DATA, \
+    SHORT_DELIMITER, IRBIS_DELIMITER, READ_TERMS, READ_TERMS_REVERSE, \
+    READ_TERMS_CODES, READ_POSTINGS, GET_USER_LIST, \
+    SET_USER_LIST, GET_SERVER_STAT, RECORD_LIST, PRINT, LOGICALLY_DELETED, \
+    PHYSICALLY_DELETED, IrbisError, READ_RECORD, READ_RECORD_CODES, \
+    UPDATE_RECORD
 
 
 ###############################################################################
@@ -149,7 +151,8 @@ def read_raw_record(connection: Connection, mfn: int) -> RawRecord:
 
     assert isinstance(mfn, int)
 
-    query = ClientQuery(connection, READ_RECORD).ansi(connection.database).add(mfn)
+    query = ClientQuery(connection, READ_RECORD)
+    query.ansi(connection.database).add(mfn)
     with connection.execute(query) as response:
         response.check_return_code(READ_RECORD_CODES)
         text = response.utf_remaining_lines()
@@ -494,7 +497,7 @@ def read_par_file(connection: Connection,
     Получение PAR-файла с сервера.
 
     :param connection: Подключение
-    :param specification: Спецификация или имя файла (если он лежит в папке DATA)
+    :param specification: Спецификация или имя файла (если он в папке DATA)
     :return: Полученный файл
     """
     assert connection and isinstance(connection, Connection)
@@ -559,7 +562,8 @@ class TermPosting:
         return self.__str__()
 
 
-def get_record_postings(connection: Connection, mfn: int, prefix: str) -> List[TermPosting]:
+def get_record_postings(connection: Connection, mfn: int, prefix: str) \
+        -> List[TermPosting]:
     """
     Получение постингов для указанных записи и префикса.
 
@@ -646,7 +650,8 @@ class TermParameters:
 
 
 def read_terms(connection: Connection,
-               parameters: Union[TermParameters, str, Tuple[str, int]]) -> List[TermInfo]:
+               parameters: Union[TermParameters, str, Tuple[str, int]]) \
+        -> List[TermInfo]:
     """
     Получение термов поискового словаря.
 
@@ -667,7 +672,8 @@ def read_terms(connection: Connection,
 
     assert isinstance(parameters, TermParameters)
 
-    database = parameters.database or connection.database or throw_value_error()
+    database = parameters.database or connection.database \
+        or throw_value_error()
     command = READ_TERMS_REVERSE if parameters.reverse else READ_TERMS
     query = ClientQuery(connection, command)
     query.ansi(database).utf(parameters.start)
@@ -725,7 +731,8 @@ def read_postings(connection: Connection,
         parameters = PostingParameters(parameters)
         parameters.fmt = fmt
 
-    database = parameters.database or connection.database or throw_value_error()
+    database = parameters.database or connection.database \
+        or throw_value_error()
     query = ClientQuery(connection, READ_POSTINGS)
     query.ansi(database).add(parameters.number)
     query.add(parameters.first).ansi(parameters.fmt)
@@ -823,7 +830,8 @@ class TreeFile:
             index = TreeFile._arrange_nodes(nodes, level, index, count)
 
     @staticmethod
-    def _arrange_nodes(nodes: List[TreeNode], level: int, index: int, count: int) -> int:
+    def _arrange_nodes(nodes: List[TreeNode], level: int,
+                       index: int, count: int) -> int:
         nxt = index + 1
         level2 = level + 1
         parent = nodes[index]
@@ -991,14 +999,18 @@ class SearchScenario:
             scenario = SearchScenario(name)
             result.append(scenario)
             scenario.prefix = section.get_value(f'ItemPref{i}') or ''
-            scenario.type = safe_int(safe_str(section.get_value(f'ItemDictionType{i}', '0')))
+            scenario.type = safe_int(safe_str(section.get_value(
+                f'ItemDictionType{i}', '0')))
             scenario.menu = section.get_value(f'ItemMenu{i}')
             scenario.old = None
             scenario.correction = section.get_value(f'ItemModByDic{i}')
-            scenario.truncation = bool(section.get_value(f'ItemTranc{i}', '0'))
+            scenario.truncation = bool(section.get_value(
+                f'ItemTranc{i}', '0'))
             scenario.hint = section.get_value(f'ItemHint{i}')
-            scenario.mod_by_dic_auto = section.get_value(f'ItemModByDicAuto{i}')
-            scenario.logic = safe_int(safe_str(section.get_value(f'ItemLogic{i}', '0')))
+            scenario.mod_by_dic_auto = section.get_value(
+                f'ItemModByDicAuto{i}')
+            scenario.logic = safe_int(safe_str(section.get_value(
+                f'ItemLogic{i}', '0')))
             scenario.advance = section.get_value(f'ItemAdv{i}')
             scenario.format = section.get_value(f'ItemPft{i}')
         return result
@@ -1011,7 +1023,8 @@ class SearchScenario:
 
 
 def read_search_scenario(connection: Connection,
-                         specification: Union[FileSpecification, str]) -> List[SearchScenario]:
+                         specification: Union[FileSpecification, str]) \
+        -> List[SearchScenario]:
     """
     Read search scenario from the server.
 
@@ -1048,7 +1061,8 @@ class UserInfo:
                  'reader', 'circulation', 'acquisitions',
                  'provision', 'administrator')
 
-    def __init__(self, name: Optional[str] = None, password: Optional[str] = None) -> None:
+    def __init__(self, name: Optional[str] = None,
+                 password: Optional[str] = None) -> None:
         self.number: Optional[str] = None
         self.name: Optional[str] = name
         self.password: Optional[str] = password
@@ -1111,12 +1125,12 @@ class UserInfo:
         """
 
         return self.name + '\n' + self.password + '\n' \
-               + UserInfo.format_pair('C', self.cataloger, "irbisc.ini") \
-               + UserInfo.format_pair('R', self.reader, "irbisr.ini") \
-               + UserInfo.format_pair('B', self.circulation, "irbisb.ini") \
-               + UserInfo.format_pair('M', self.acquisitions, "irbism.ini") \
-               + UserInfo.format_pair('K', self.provision, "irbisk.ini") \
-               + UserInfo.format_pair('A', self.administrator, "irbisa.ini")
+            + UserInfo.format_pair('C', self.cataloger, "irbisc.ini") \
+            + UserInfo.format_pair('R', self.reader, "irbisr.ini") \
+            + UserInfo.format_pair('B', self.circulation, "irbisb.ini") \
+            + UserInfo.format_pair('M', self.acquisitions, "irbism.ini") \
+            + UserInfo.format_pair('K', self.provision, "irbisk.ini") \
+            + UserInfo.format_pair('A', self.administrator, "irbisa.ini")
 
     def __str__(self):
         buffer = [self.number, self.name, self.password, self.cataloger,
@@ -1463,7 +1477,8 @@ class DatabaseInfo:
                  'physically_deleted', 'nonactualized', 'locked_records',
                  'database_locked', 'read_only')
 
-    def __init__(self, name: Optional[str] = None, description: Optional[str] = None) -> None:
+    def __init__(self, name: Optional[str] = None,
+                 description: Optional[str] = None) -> None:
         self.name: Optional[str] = name
         self.description: Optional[str] = description
         self.max_mfn: int = 0
@@ -1522,7 +1537,8 @@ def get_database_info(connection: Connection,
         return result
 
 
-def list_databases(connection: Connection, specification: str) -> List[DatabaseInfo]:
+def list_databases(connection: Connection, specification: str) \
+        -> List[DatabaseInfo]:
     """
     Получение списка баз данных.
 
@@ -1586,7 +1602,8 @@ def print_table(connection: Connection,
 
     assert connection and isinstance(connection, Connection)
 
-    database = definition.database or connection.database or throw_value_error()
+    database = definition.database or connection.database \
+        or throw_value_error()
     query = ClientQuery(connection, PRINT)
     query.ansi(database).ansi(definition.table)
     query.ansi('')  # instead of the headers
@@ -1626,32 +1643,37 @@ class AlphabetTable:
         """
         result = AlphabetTable()
         result.characters = [
-            '\u0026', '\u0040', '\u0041', '\u0042', '\u0043', '\u0044', '\u0045',
-            '\u0046', '\u0047', '\u0048', '\u0049', '\u004A', '\u004B', '\u004C',
-            '\u004D', '\u004E', '\u004F', '\u0050', '\u0051', '\u0052', '\u0053',
-            '\u0054', '\u0055', '\u0056', '\u0057', '\u0058', '\u0059', '\u005A',
-            '\u0061', '\u0062', '\u0063', '\u0064', '\u0065', '\u0066', '\u0067',
-            '\u0068', '\u0069', '\u006A', '\u006B', '\u006C', '\u006D', '\u006E',
-            '\u006F', '\u0070', '\u0071', '\u0072', '\u0073', '\u0074', '\u0075',
-            '\u0076', '\u0077', '\u0078', '\u0079', '\u007A', '\u0098', '\u00A0',
-            '\u00A4', '\u00A6', '\u00A7', '\u00A9', '\u00AB', '\u00AC', '\u00AD',
-            '\u00AE', '\u00B0', '\u00B1', '\u00B5', '\u00B6', '\u00B7', '\u00BB',
-            '\u0401', '\u0402', '\u0403', '\u0404', '\u0405', '\u0406', '\u0407',
-            '\u0408', '\u0409', '\u040A', '\u040B', '\u040C', '\u040E', '\u040F',
-            '\u0410', '\u0411', '\u0412', '\u0413', '\u0414', '\u0415', '\u0416',
-            '\u0417', '\u0418', '\u0419', '\u041A', '\u041B', '\u041C', '\u041D',
-            '\u041E', '\u041F', '\u0420', '\u0421', '\u0422', '\u0423', '\u0424',
-            '\u0425', '\u0426', '\u0427', '\u0428', '\u0429', '\u042A', '\u042B',
-            '\u042C', '\u042D', '\u042E', '\u042F', '\u0430', '\u0431', '\u0432',
-            '\u0433', '\u0434', '\u0435', '\u0436', '\u0437', '\u0438', '\u0439',
-            '\u043A', '\u043B', '\u043C', '\u043D', '\u043E', '\u043F', '\u0440',
-            '\u0441', '\u0442', '\u0443', '\u0444', '\u0445', '\u0446', '\u0447',
-            '\u0448', '\u0449', '\u044A', '\u044B', '\u044C', '\u044D', '\u044E',
-            '\u044F', '\u0451', '\u0452', '\u0453', '\u0454', '\u0455', '\u0456',
-            '\u0457', '\u0458', '\u0459', '\u045A', '\u045B', '\u045C', '\u045E',
-            '\u045F', '\u0490', '\u0491', '\u2013', '\u2014', '\u2018', '\u2019',
-            '\u201A', '\u201C', '\u201D', '\u201E', '\u2020', '\u2021', '\u2022',
-            '\u2026', '\u2030', '\u2039', '\u203A', '\u20AC', '\u2116', '\u2122'
+            '\u0026', '\u0040', '\u0041', '\u0042', '\u0043', '\u0044',
+            '\u0045', '\u0046', '\u0047', '\u0048', '\u0049', '\u004A',
+            '\u004B', '\u004C', '\u004D', '\u004E', '\u004F', '\u0050',
+            '\u0051', '\u0052', '\u0053', '\u0054', '\u0055', '\u0056',
+            '\u0057', '\u0058', '\u0059', '\u005A', '\u0061', '\u0062',
+            '\u0063', '\u0064', '\u0065', '\u0066', '\u0067', '\u0068',
+            '\u0069', '\u006A', '\u006B', '\u006C', '\u006D', '\u006E',
+            '\u006F', '\u0070', '\u0071', '\u0072', '\u0073', '\u0074',
+            '\u0075', '\u0076', '\u0077', '\u0078', '\u0079', '\u007A',
+            '\u0098', '\u00A0', '\u00A4', '\u00A6', '\u00A7', '\u00A9',
+            '\u00AB', '\u00AC', '\u00AD', '\u00AE', '\u00B0', '\u00B1',
+            '\u00B5', '\u00B6', '\u00B7', '\u00BB', '\u0401', '\u0402',
+            '\u0403', '\u0404', '\u0405', '\u0406', '\u0407', '\u0408',
+            '\u0409', '\u040A', '\u040B', '\u040C', '\u040E', '\u040F',
+            '\u0410', '\u0411', '\u0412', '\u0413', '\u0414', '\u0415',
+            '\u0416', '\u0417', '\u0418', '\u0419', '\u041A', '\u041B',
+            '\u041C', '\u041D', '\u041E', '\u041F', '\u0420', '\u0421',
+            '\u0422', '\u0423', '\u0424', '\u0425', '\u0426', '\u0427',
+            '\u0428', '\u0429', '\u042A', '\u042B', '\u042C', '\u042D',
+            '\u042E', '\u042F', '\u0430', '\u0431', '\u0432', '\u0433',
+            '\u0434', '\u0435', '\u0436', '\u0437', '\u0438', '\u0439',
+            '\u043A', '\u043B', '\u043C', '\u043D', '\u043E', '\u043F',
+            '\u0440', '\u0441', '\u0442', '\u0443', '\u0444', '\u0445',
+            '\u0446', '\u0447', '\u0448', '\u0449', '\u044A', '\u044B',
+            '\u044C', '\u044D', '\u044E', '\u044F', '\u0451', '\u0452',
+            '\u0453', '\u0454', '\u0455', '\u0456', '\u0457', '\u0458',
+            '\u0459', '\u045A', '\u045B', '\u045C', '\u045E', '\u045F',
+            '\u0490', '\u0491', '\u2013', '\u2014', '\u2018', '\u2019',
+            '\u201A', '\u201C', '\u201D', '\u201E', '\u2020', '\u2021',
+            '\u2022', '\u2026', '\u2030', '\u2039', '\u203A', '\u20AC',
+            '\u2116', '\u2122'
         ]
         return result
 
@@ -1732,7 +1754,8 @@ def load_alphabet_table(filename: str) -> AlphabetTable:
 
 
 def read_alphabet_table(connection: Connection,
-                        specification: Optional[FileSpecification] = None) -> AlphabetTable:
+                        specification: Optional[FileSpecification] = None) \
+        -> AlphabetTable:
     """
     Чтение алфавитной таблицы с сервера.
 
@@ -2097,7 +2120,8 @@ def load_uppercase_table(filename: str) -> UpperCaseTable:
 
 
 def read_uppercase_table(connection: Connection,
-                         specification: Optional[FileSpecification] = None) -> UpperCaseTable:
+                         specification: Optional[FileSpecification] = None) \
+        -> UpperCaseTable:
     """
     Чтение таблицы преобразования в верхний регистр с сервера.
 
@@ -2109,7 +2133,9 @@ def read_uppercase_table(connection: Connection,
     assert connection and isinstance(connection, Connection)
 
     if specification is None:
-        specification = FileSpecification(SYSTEM, None, UpperCaseTable.FILENAME)
+        specification = FileSpecification(SYSTEM,
+                                          None,
+                                          UpperCaseTable.FILENAME)
 
     with connection.read_text_stream(specification) as response:
         text = response.ansi_remaining_text()
@@ -2143,7 +2169,8 @@ class IrbisFileNotFoundError(IrbisError):
 
 
 def require_alphabet_table(connection: Connection,
-                           specification: Optional[FileSpecification] = None) -> AlphabetTable:
+                           specification: Optional[FileSpecification] = None) \
+        -> AlphabetTable:
     """
     Чтение алфавитной таблицы с сервера.
 
@@ -2224,7 +2251,7 @@ def require_par_file(connection: Connection,
     Получение PAR-файла с сервера.
 
     :param connection: Подключение
-    :param specification: Спецификация или имя файла (если он лежит в папке DATA)
+    :param specification: Спецификация или имя файла (если он в папке DATA)
     :return: Полученный файл
     """
     assert connection and isinstance(connection, Connection)
@@ -2244,7 +2271,8 @@ def require_par_file(connection: Connection,
 Connection.require_par_file = require_par_file  # type: ignore
 
 
-def require_text_file(connection: Connection, specification: FileSpecification) -> str:
+def require_text_file(connection: Connection,
+                      specification: FileSpecification) -> str:
     """
     Чтение текстового файла с сервера.
 
@@ -2266,7 +2294,8 @@ Connection.require_text_file = require_text_file  # type: ignore
 
 
 def require_tree_file(connection: Connection,
-                      specification: Union[FileSpecification, str]) -> TreeFile:
+                      specification: Union[FileSpecification, str]) \
+        -> TreeFile:
     """
     Чтение TRE-файла с сервера.
 

@@ -37,7 +37,8 @@ def parse_int(buffer: Iterable):
     return result
 
 
-def encode_int(buffer: bytearray, position: int, length: int, value: int) -> None:
+def encode_int(buffer: bytearray, position: int,
+               length: int, value: int) -> None:
     """
     Encode the integer value.
 
@@ -57,7 +58,8 @@ def encode_int(buffer: bytearray, position: int, length: int, value: int) -> Non
         length -= 1
 
 
-def encode_str(buffer: bytearray, position: int, value: Optional[str], encoding: str) -> int:
+def encode_str(buffer: bytearray, position: int,
+               value: Optional[str], encoding: str) -> int:
     """
     Encode the string value.
 
@@ -117,14 +119,16 @@ def read_record(stream: BinaryIO, charset=ANSI) -> Optional[MarcRecord]:
 
         tag = parse_int(record[directory:directory + 3])
         field_length = parse_int(record[directory + 3:directory + 7])
-        field_offset = parse_int(record[directory + 7:directory + 12]) + base_address
+        field_offset = parse_int(record[directory + 7:directory + 12]) + \
+            base_address
         field = RecordField(tag)
         result.fields.append(field)
 
         if tag < 10:
             # фиксированное поле
             # не может содержать подполей и индикаторов
-            field.value = record[field_offset:field_offset + field_length - 1].decode(charset)
+            field.value = record[field_offset:field_offset +
+                                 field_length - 1].decode(charset)
         else:
             # поле переменной длины
             # содержит два однобайтных индикатора
@@ -224,17 +228,17 @@ def write_record(stream: BinaryIO, record: MarcRecord, encoding: str) -> None:
     encode_int(buffer, 0, 5, record_length)
     encode_int(buffer, 12, 5, base_address)
 
-    buffer[5] = ord('n') # Record status
-    buffer[6] = ord('a') # Record type
-    buffer[7] = ord('m') # Bibligraphical index
+    buffer[5] = ord('n')  # Record status
+    buffer[6] = ord('a')  # Record type
+    buffer[7] = ord('m')  # Bibligraphical index
     buffer[8] = ord('2')
     buffer[10] = ord('2')
     buffer[11] = ord('2')
-    buffer[17] = ord(' ') # Bibliographical level
-    buffer[18] = ord('i') # Cataloging rules
-    buffer[19] = ord(' ') # Related record
-    buffer[20] = ord('4') # Field length
-    buffer[21] = ord('5') # Field offset
+    buffer[17] = ord(' ')  # Bibliographical level
+    buffer[18] = ord('i')  # Cataloging rules
+    buffer[19] = ord(' ')  # Related record
+    buffer[20] = ord('4')  # Field length
+    buffer[21] = ord('5')  # Field offset
     buffer[22] = ord('0')
 
     # Кодируем конец справочника

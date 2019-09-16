@@ -410,8 +410,8 @@ def get_error_description(code: int) -> str:
         -801: 'ERR_GBL_MET',
         -1111: 'Ошибка исполнения сервера (SERVER_EXECUTE_ERROR)',
         -2222: 'Ошибка в протоколе (WRONG_PROTOCOL)',
-        -3333: 'Незарегистрированный клиент (ошибка входа на сервер) '
-               + '(клиент не в списке)',
+        -3333: 'Незарегистрированный клиент (ошибка входа на сервер) ' +
+               '(клиент не в списке)',
         -3334: 'Клиент не выполнил вход на сервер (клиент не используется)',
         -3335: 'Неправильный уникальный идентификатор клиента',
         -3336: 'Нет доступа к командам АРМ',
@@ -419,10 +419,10 @@ def get_error_description(code: int) -> str:
         -3338: 'Недопустимый клиент',
         -4444: 'Неверный пароль',
         -5555: 'Файл не существует',
-        -6666: 'Сервер перегружен. Достигнуто максимальное число '
-               + 'потоков обработки',
-        -7777: 'Не удалось запустить/прервать поток администратора '
-               + '(ошибка процесса)',
+        -6666: 'Сервер перегружен. Достигнуто максимальное число ' +
+               'потоков обработки',
+        -7777: 'Не удалось запустить/прервать поток администратора ' +
+               '(ошибка процесса)',
         -8888: 'Общая ошибка',
     }
 
@@ -710,7 +710,7 @@ class ServerResponse:
         :return: Строка (возможно, пустая)
         """
         # noinspection PyTypeChecker
-        return str(self.read(), ANSI)
+        return str(self.read(), ANSI)  # type: ignore
 
     def ansi_n(self, count: int) -> List[str]:
         """
@@ -736,7 +736,7 @@ class ServerResponse:
         :return: Строка (возможно, пустая)
         """
         # noinspection PyTypeChecker
-        return str(self._view[self._pos:], ANSI)
+        return str(self._view[self._pos:], ANSI)  # type: ignore
 
     def ansi_remaining_lines(self) -> List[str]:
         """
@@ -836,7 +836,7 @@ class ServerResponse:
         :return: Считанное число
         """
         # noinspection PyTypeChecker
-        return int(self.read())
+        return int(self.read())  # type: ignore
 
     def read(self) -> memoryview:
         """
@@ -872,7 +872,7 @@ class ServerResponse:
         :return: Строка (возможно, пустая)
         """
         # noinspection PyTypeChecker
-        return str(self.read(), UTF)
+        return str(self.read(), UTF)  # type: ignore
 
     def utf_n(self, count: int) -> List[str]:
         """
@@ -898,7 +898,7 @@ class ServerResponse:
         :return: Строка (возможно, пустая)
         """
         # noinspection PyTypeChecker
-        return str(self._view[self._pos:], UTF)
+        return str(self._view[self._pos:], UTF)  # type: ignore
 
     def utf_remaining_lines(self) -> List[str]:
         """
@@ -1593,21 +1593,20 @@ class MarcRecord:
 
         return False
 
-    def insert_at(self, index: int, tag: int, value: Optional[str] = None,
-                  *subfields: List[SubField]) -> RecordField:
+    def insert_at(self, index: int, tag: int, value: Optional[str] = None) \
+            -> RecordField:
         """
         Вставка поля в указанной позиции.
 
         :param index: Позиция для вставки.
         :param tag: Метка поля.
         :param value: Значение поля до первого разделитея (опционально).
-        :param subfields: Подполя (опционально).
         :return: Self
         """
         assert 0 <= index < len(self.fields)
         assert tag > 0
 
-        result = RecordField(tag, value, *subfields)
+        result = RecordField(tag, value)
         self.fields.insert(index, result)
         return result
 
@@ -1686,26 +1685,23 @@ class MarcRecord:
         self.database = None
         return self
 
-    def set_field(self, tag: int, value: Optional[str],
-                  *subfields: List[SubField]) -> 'MarcRecord':
+    def set_field(self, tag: int, value: Optional[str]) -> 'MarcRecord':
         """
         Устанавливает значение первого повторения указанного поля.
         Если указанное значение пустое, поле удаляется из записи.
 
         :param tag: Метка поля.
         :param value: Значение поля до первого разделителя (может быть None).
-        :param subfields: Подполя.
         :return: Self.
         """
         assert tag > 0
 
         found = self.first(tag)
-        if value or subfields:
+        if value:
             if not found:
                 found = RecordField(tag)
                 self.fields.append(found)
             found.value = value
-            found.subfields.append(*subfields)
         else:
             if found:
                 self.fields.remove(found)
@@ -2921,20 +2917,17 @@ class Connection:
         response = await self.execute_async(query)
         response.close()
 
-    def search(self, parameters: Union[SearchParameters, str]) -> List[int]:
+    def search(self, parameters: Any) -> List[int]:
         """
         Поиск записей.
 
         :param parameters: Параметры поиска (либо поисковый запрос)
         :return: Список найденных MFN
         """
-        if isinstance(parameters, str):
-            parameters = SearchParameters(parameters)
-
-        assert isinstance(parameters, SearchParameters)
+        if not isinstance(parameters, SearchParameters):
+            parameters = SearchParameters(str(parameters))
 
         # TODO support formatting
-        # TODO support long results
 
         database = parameters.database or self.database or throw_value_error()
         query = ClientQuery(self, SEARCH)
@@ -2958,14 +2951,15 @@ class Connection:
             result.append(mfn)
         return result
 
-    def search_all(self, expression: str) -> List[int]:
+    def search_all(self, expression: Any) -> List[int]:
         """
         Поиск всех записей (даже если их окажется больше 32 тыс.).
         :param expression: Поисковый запрос.
         :return: Список найденных MFN
         """
+        assert expression
+        expression = str(expression)
 
-        assert isinstance(expression, str)
         result: List = []
         first: int = 1
         expected: int = 0
@@ -3001,11 +2995,9 @@ class Connection:
 
         return result
 
-    async def search_async(self, parameters: Union[SearchParameters, str]) \
-            -> List:
-        if isinstance(parameters, str):
-            parameters = SearchParameters(parameters)
-        assert isinstance(parameters, SearchParameters)
+    async def search_async(self, parameters: Any) -> List:
+        if not isinstance(parameters, SearchParameters):
+            parameters = SearchParameters(str(parameters))
 
         database = parameters.database or self.database or throw_value_error()
         query = ClientQuery(self, SEARCH)
@@ -3030,14 +3022,14 @@ class Connection:
         response.close()
         return result
 
-    def search_count(self, expression: str) -> int:
+    def search_count(self, expression: Any) -> int:
         """
         Количество найденных записей.
 
         :param expression: Поисковый запрос.
         :return: Количество найденных записей.
         """
-        assert isinstance(expression, str)
+        expression = str(expression)
 
         query = ClientQuery(self, SEARCH)
         query.ansi(self.database)
@@ -3048,8 +3040,9 @@ class Connection:
         response.check_return_code()
         return response.number()
 
-    async def search_count_async(self, expression: str) -> int:
-        assert isinstance(expression, str)
+    async def search_count_async(self, expression: Any) -> int:
+        expression = str(expression)
+
         query = ClientQuery(self, SEARCH)
         query.ansi(self.database)
         query.utf(expression)
@@ -3061,21 +3054,17 @@ class Connection:
         response.close()
         return result
 
-    def search_ex(self, parameters: Union[SearchParameters, str]) \
-            -> List[FoundLine]:
+    def search_ex(self, parameters: Any) -> List[FoundLine]:
         """
         Расширенный поиск записей.
 
         :param parameters: Параметры поиска (либо поисковый запрос)
         :return: Список найденных записей
         """
-        if isinstance(parameters, str):
-            parameters = SearchParameters(parameters)
-
-        assert isinstance(parameters, SearchParameters)
+        if not isinstance(parameters, SearchParameters):
+            parameters = SearchParameters(str(parameters))
 
         # TODO support formatting
-        # TODO support long results
 
         database = parameters.database or self.database or throw_value_error()
         query = ClientQuery(self, SEARCH)
@@ -3100,12 +3089,13 @@ class Connection:
             result.append(item)
         return result
 
-    def search_format(self, expression: str,
-                      format_specification: str, limit: int = 0) -> List[str]:
+    def search_format(self, expression: Any,
+                      format_specification: Any, limit: int = 0) -> List[str]:
 
-        assert isinstance(expression, str)
-        assert isinstance(format_specification, str)
         assert isinstance(limit, int)
+
+        expression = str(expression)
+        format_specification = str(format_specification)
 
         query = ClientQuery(self, SEARCH)
         query.ansi(self.database)
@@ -3134,7 +3124,7 @@ class Connection:
 
         return result
 
-    def search_read(self, expression: str, limit: int = 0) -> List[MarcRecord]:
+    def search_read(self, expression: Any, limit: int = 0) -> List[MarcRecord]:
         """
         Поиск и считывание записей.
 
@@ -3142,8 +3132,9 @@ class Connection:
         :param limit: Лимит считываемых записей (0 - нет).
         :return: Список найденных записей.
         """
-        assert isinstance(expression, str)
         assert isinstance(limit, int)
+
+        expression = str(expression)
 
         query = ClientQuery(self, SEARCH)
         query.ansi(self.database)

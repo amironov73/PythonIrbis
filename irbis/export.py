@@ -48,8 +48,8 @@ def write_text_record(stream: TextIO, record: MarcRecord) -> None:
     """
     Сохранение записи в файл в текстовом обменном формате ИРБИС.
 
-    :param stream: Файл
-    :param record: Запись
+    :param stream: Текстовый поток, в который разрешена запись.
+    :param record: Библиографическая запись.
     :return: None
     """
 

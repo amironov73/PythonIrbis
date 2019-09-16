@@ -5,7 +5,6 @@
 в т. ч. для манипуляций с записями.
 """
 
-import random
 import socket
 from typing import Union, Optional, SupportsInt, List, Iterable, Any
 
@@ -411,7 +410,8 @@ def get_error_description(code: int) -> str:
         -801: 'ERR_GBL_MET',
         -1111: 'Ошибка исполнения сервера (SERVER_EXECUTE_ERROR)',
         -2222: 'Ошибка в протоколе (WRONG_PROTOCOL)',
-        -3333: 'Незарегистрированный клиент (ошибка входа на сервер) (клиент не в списке)',
+        -3333: 'Незарегистрированный клиент (ошибка входа на сервер) '
+               + '(клиент не в списке)',
         -3334: 'Клиент не выполнил вход на сервер (клиент не используется)',
         -3335: 'Неправильный уникальный идентификатор клиента',
         -3336: 'Нет доступа к командам АРМ',
@@ -419,8 +419,10 @@ def get_error_description(code: int) -> str:
         -3338: 'Недопустимый клиент',
         -4444: 'Неверный пароль',
         -5555: 'Файл не существует',
-        -6666: 'Сервер перегружен. Достигнуто максимальное число потоков обработки',
-        -7777: 'Не удалось запустить/прервать поток администратора (ошибка процесса)',
+        -6666: 'Сервер перегружен. Достигнуто максимальное число '
+               + 'потоков обработки',
+        -7777: 'Не удалось запустить/прервать поток администратора '
+               + '(ошибка процесса)',
         -8888: 'Общая ошибка',
     }
 
@@ -529,12 +531,14 @@ class ClientQuery:
         self.new_line()
         return self
 
-    def format(self, format_specification: Optional[str]) -> Union['ClientQuery', bool]:
+    def format(self, format_specification: Optional[str]) \
+            -> Union['ClientQuery', bool]:
         """
         Добавление строки формата, предварительно подготовив её.
         Также добавляется перевод строки.
 
-        :param format_specification: Добавляемая строка формата. Может быть пустой.
+        :param format_specification: Добавляемая строка формата.
+            Может быть пустой.
         :return: Self
         """
         if format_specification is None:
@@ -597,7 +601,8 @@ class FileSpecification:
 
     __slots__ = 'binary', 'path', 'database', 'filename', 'content'
 
-    def __init__(self, path: int, database: Optional[str], filename: str) -> None:
+    def __init__(self, path: int, database: Optional[str],
+                 filename: str) -> None:
         self.binary: bool = False
         self.path: int = path
         self.database: Optional[str] = database
@@ -933,7 +938,8 @@ class SearchParameters:
     __slots__ = ('database', 'first', 'format', 'max_mfn', 'min_mfn',
                  'number', 'expression', 'sequential', 'filter', 'utf')
 
-    def __init__(self, expression: Optional[str] = None, number: int = 0) -> None:
+    def __init__(self, expression: Optional[str] = None,
+                 number: int = 0) -> None:
         self.database: Optional[str] = None
         self.first: int = 1
         self.format: Optional[str] = None
@@ -985,7 +991,8 @@ class SubField:
 
     __slots__ = 'code', 'value'
 
-    def __init__(self, code: str = DEFAULT_CODE, value: Optional[str] = None) -> None:
+    def __init__(self, code: str = DEFAULT_CODE,
+                 value: Optional[str] = None) -> None:
         code = code or SubField.DEFAULT_CODE
         self.code: str = code.lower()
         self.value: Optional[str] = value
@@ -1059,7 +1066,8 @@ class RecordField:
 
     def add_non_empty(self, code: str, value: Optional[str]) -> 'RecordField':
         """
-        Добавление подполя с указанным кодом при условии, что значение поля не пустое.
+        Добавление подполя с указанным кодом при условии,
+        что значение поля не пустое.
 
         :param code: Код подполя (однобуквенный).
         :param value: Значение подполя (опциональное).
@@ -1095,7 +1103,8 @@ class RecordField:
         assert len(code) == 1
 
         code = code.lower()
-        return [sf.value for sf in self.subfields if sf.code == code if sf.value]
+        return [sf.value for sf in self.subfields
+                if sf.code == code if sf.value]
 
     def assign_from(self, other: 'RecordField') -> None:
         """
@@ -1351,7 +1360,8 @@ class RecordField:
     def __str__(self):
         if not self.tag:
             return ''
-        buffer = [str(self.tag), '#', self.value or ''] + [str(sf) for sf in self.subfields]
+        buffer = [str(self.tag), '#', self.value or ''] \
+            + [str(sf) for sf in self.subfields]
         return ''.join(buffer)
 
     def __iter__(self):
@@ -1445,7 +1455,8 @@ class MarcRecord:
         self.fields.append(field)
         return self
 
-    def add_non_empty(self, tag: int, value: Union[str, SubField]) -> 'MarcRecord':
+    def add_non_empty(self, tag: int,
+                      value: Union[str, SubField]) -> 'MarcRecord':
         """
         Добавление поля, если его значение не пустое.
 
@@ -1694,14 +1705,15 @@ class MarcRecord:
                 found = RecordField(tag)
                 self.fields.append(found)
             found.value = value
-            found.subfields.append(subfields)
+            found.subfields.append(*subfields)
         else:
             if found:
                 self.fields.remove(found)
 
         return self
 
-    def set_subfield(self, tag: int, code: str, value: Optional[str]) -> 'MarcRecord':
+    def set_subfield(self, tag: int, code: str,
+                     value: Optional[str]) -> 'MarcRecord':
         """
         Устанавливает значение подполя в первом повторении указанного поля.
         Если указанное значение пустое, подполе удаляется из поля.
@@ -1751,7 +1763,8 @@ class MarcRecord:
     def __getitem__(self, item: int):
         return self.fm(item)
 
-    def __setitem__(self, key: int, value: Union[RecordField, SubField, str, None]):
+    def __setitem__(self, key: int,
+                    value: Union[RecordField, SubField, str, None]):
         if value is None:
             found: List[RecordField] = self.all(key)
             for fld in found:
@@ -1838,7 +1851,8 @@ class IniLine:
 
     __slots__ = 'key', 'value'
 
-    def __init__(self, key: Optional[str] = None, value: Optional[str] = None) -> None:
+    def __init__(self, key: Optional[str] = None,
+                 value: Optional[str] = None) -> None:
         self.key = key
         self.value = value
 
@@ -1886,7 +1900,8 @@ class IniSection:
                 return line
         return None
 
-    def get_value(self, key: str, default: Optional[str] = None) -> Optional[str]:
+    def get_value(self, key: str,
+                  default: Optional[str] = None) -> Optional[str]:
         """
         Получение значения строки с указанным ключом.
 
@@ -1986,7 +2001,8 @@ class IniFile:
             self.sections.append(result)
         return result
 
-    def get_value(self, name: str, key: str, default: Optional[str] = None) -> Optional[str]:
+    def get_value(self, name: str, key: str,
+                  default: Optional[str] = None) -> Optional[str]:
         """
         Получение значения строки с указанными именем секции и ключом.
 
@@ -2143,9 +2159,9 @@ class Connection:
 
     # TODO Do we need slots here?
 
-    __slots__ = ('host', 'port', 'username', 'password', 'database', 'workstation',
-                 'client_id', 'query_id', 'connected', '_stack', 'server_version',
-                 'ini_file', 'last_error')
+    __slots__ = ('host', 'port', 'username', 'password', 'database',
+                 'workstation', 'client_id', 'query_id', 'connected',
+                 '_stack', 'server_version', 'ini_file', 'last_error')
 
     def __init__(self, host: Optional[str] = None,
                  port: int = 0,
@@ -2167,7 +2183,8 @@ class Connection:
         self.ini_file: IniFile = IniFile()
         self.last_error = 0
 
-    def actualize_record(self, mfn: int, database: Optional[str] = None) -> None:
+    def actualize_record(self, mfn: int,
+                         database: Optional[str] = None) -> None:
         """
         Актуализация записи с указанным MFN.
 
@@ -2209,11 +2226,14 @@ class Connection:
         assert isinstance(self.username, str)
         assert isinstance(self.password, str)
 
+        import random
+
         # TODO Handle -3337
 
         self.query_id = 0
         self.client_id = random.randint(100000, 999999)
-        query = ClientQuery(self, REGISTER_CLIENT).ansi(self.username).ansi(self.password)
+        query = ClientQuery(self, REGISTER_CLIENT)
+        query.ansi(self.username).ansi(self.password)
         with self.execute(query) as response:
             response.check_return_code()
             self.server_version = response.version
@@ -2228,9 +2248,17 @@ class Connection:
             return result
 
     async def connect_async(self) -> IniFile:
+        """
+        Асинхронное подключение к серверу ИРБИС64.
+
+        :return: INI-файл
+        """
+        import random
+
         self.query_id = 0
         self.client_id = random.randint(100000, 999999)
-        query = ClientQuery(self, REGISTER_CLIENT).ansi(self.username).ansi(self.password)
+        query = ClientQuery(self, REGISTER_CLIENT)
+        query.ansi(self.username).ansi(self.password)
         response = await self.execute_async(query)
         response.check_return_code()
         self.server_version = response.version
@@ -2361,7 +2389,9 @@ class Connection:
         # if not the_loop:
         #    raise IrbisError()
         self.last_error = 0
-        reader, writer = await asyncio.open_connection(self.host, self.port, loop=irbis_event_loop)
+        reader, writer = await asyncio.open_connection(self.host,
+                                                       self.port,
+                                                       loop=irbis_event_loop)
         packet = query.encode()
         writer.write(packet)
         result = ServerResponse(self)
@@ -2394,7 +2424,8 @@ class Connection:
         with self.execute(query):
             pass
 
-    def format_record(self, script: str, record: Union[MarcRecord, int]) -> str:
+    def format_record(self, script: str,
+                      record: Union[MarcRecord, int]) -> str:
         """
         Форматирование записи с указанным MFN.
 
@@ -2427,7 +2458,8 @@ class Connection:
             result = response.utf_remaining_text().strip('\r\n')
             return result
 
-    async def format_record_async(self, script: str, record: Union[MarcRecord, int]) -> str:
+    async def format_record_async(self, script: str,
+                                  record: Union[MarcRecord, int]) -> str:
         script = script or throw_value_error()
         if not record:
             raise ValueError()
@@ -2533,7 +2565,8 @@ class Connection:
                 self.server_version = result.version
             return result
 
-    def list_files(self, *specification: Union[FileSpecification, str]) -> List[str]:
+    def list_files(self,
+                   *specification: Union[FileSpecification, str]) -> List[str]:
         """
         Получение списка файлов с сервера.
 
@@ -2588,7 +2621,8 @@ class Connection:
             processes = self.list_processes()
             found = False
             for process in processes:
-                if process.client_id == client_id and process.last_command == operation:
+                if process.client_id == client_id \
+                        and process.last_command == operation:
                     found = True
                     break
             if not found:
@@ -2684,7 +2718,9 @@ class Connection:
         self.database = database
         return result
 
-    def read_binary_file(self, specification: Union[FileSpecification, str]) -> Optional[bytearray]:
+    def read_binary_file(self,
+                         specification: Union[FileSpecification, str]) \
+            -> Optional[bytearray]:
         """
         Чтение двоичного файла с сервера.
 
@@ -2702,7 +2738,8 @@ class Connection:
             result = response.get_binary_file()
             return result
 
-    def read_ini_file(self, specification: Union[FileSpecification, str]) -> IniFile:
+    def read_ini_file(self,
+                      specification: Union[FileSpecification, str]) -> IniFile:
         """
         Чтение INI-файла с сервера.
 
@@ -2793,7 +2830,8 @@ class Connection:
 
         return result
 
-    def read_text_file(self, specification: Union[FileSpecification, str]) -> str:
+    def read_text_file(self,
+                       specification: Union[FileSpecification, str]) -> str:
         """
         Получение содержимого текстового файла с сервера.
 
@@ -2807,7 +2845,9 @@ class Connection:
             result = irbis_to_dos(result)
             return result
 
-    async def read_text_file_async(self, specification: Union[FileSpecification, str]) -> str:
+    async def read_text_file_async(self,
+                                   specification: Union[FileSpecification,
+                                                        str]) -> str:
         if isinstance(specification, str):
             specification = self.near_master(specification)
         query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
@@ -2817,7 +2857,8 @@ class Connection:
         response.close()
         return result
 
-    def read_text_stream(self, specification: Union[FileSpecification, str]) -> ServerResponse:
+    def read_text_stream(self, specification: Union[FileSpecification, str]) \
+            -> ServerResponse:
         """
         Получение текстового файла с сервера в виде потока.
 
@@ -2960,7 +3001,8 @@ class Connection:
 
         return result
 
-    async def search_async(self, parameters: Union[SearchParameters, str]) -> List:
+    async def search_async(self, parameters: Union[SearchParameters, str]) \
+            -> List:
         if isinstance(parameters, str):
             parameters = SearchParameters(parameters)
         assert isinstance(parameters, SearchParameters)
@@ -3019,7 +3061,8 @@ class Connection:
         response.close()
         return result
 
-    def search_ex(self, parameters: Union[SearchParameters, str]) -> List[FoundLine]:
+    def search_ex(self, parameters: Union[SearchParameters, str]) \
+            -> List[FoundLine]:
         """
         Расширенный поиск записей.
 
@@ -3057,7 +3100,8 @@ class Connection:
             result.append(item)
         return result
 
-    def search_format(self, expression: str, format_specification: str, limit: int = 0) -> List[str]:
+    def search_format(self, expression: str,
+                      format_specification: str, limit: int = 0) -> List[str]:
 
         assert isinstance(expression, str)
         assert isinstance(format_specification, str)
@@ -3248,7 +3292,8 @@ class Connection:
         assert isinstance(record, MarcRecord)
         assert isinstance(database, str)
 
-        query = ClientQuery(self, UPDATE_RECORD).ansi(database).add(int(lock)).add(int(actualize))
+        query = ClientQuery(self, UPDATE_RECORD)
+        query.ansi(database).add(int(lock)).add(int(actualize))
         query.utf(IRBIS_DELIMITER.join(record.encode()))
         with self.execute(query) as response:
             response.check_return_code()
@@ -3275,7 +3320,8 @@ class Connection:
         assert isinstance(record, MarcRecord)
         assert isinstance(database, str)
 
-        query = ClientQuery(self, UPDATE_RECORD).ansi(database).add(int(lock)).add(int(actualize))
+        query = ClientQuery(self, UPDATE_RECORD)
+        query.ansi(database).add(int(lock)).add(int(actualize))
         query.utf(IRBIS_DELIMITER.join(record.encode()))
         response = await self.execute_async(query)
         response.check_return_code()
@@ -3323,18 +3369,20 @@ class Connection:
 
 
 __all__ = ['MAX_POSTINGS', 'ANSI', 'STOP_MARKER', 'LOGICALLY_DELETED',
-           'PHYSICALLY_DELETED', 'ABSENT', 'NON_ACTUALIZED', 'LAST', 'LOCKED',
-           'SYSTEM', 'DATA', 'MASTER_FILE', 'INVERTED_FILE', 'PARAMETER_FILE',
-           'FULL_TEXT', 'INTERNAL_RESOURCE', 'IRBIS_DELIMITER', 'SHORT_DELIMITER',
-           'MSDOS_DELIMITER', 'BRIEF', 'READ_TERMS_CODES', 'same_string',
-           'safe_str', 'safe_int', 'throw_value_error', 'irbis_to_lines',
-           'remove_comments', 'prepare_format', 'get_error_description',
-           'IrbisError', 'ClientQuery', 'FileSpecification', 'ServerResponse',
+           'PHYSICALLY_DELETED', 'ABSENT', 'NON_ACTUALIZED', 'LAST',
+           'LOCKED', 'SYSTEM', 'DATA', 'MASTER_FILE', 'INVERTED_FILE',
+           'PARAMETER_FILE', 'FULL_TEXT', 'INTERNAL_RESOURCE',
+           'IRBIS_DELIMITER', 'SHORT_DELIMITER', 'MSDOS_DELIMITER', 'BRIEF',
+           'READ_TERMS_CODES', 'same_string', 'safe_str', 'safe_int',
+           'throw_value_error', 'irbis_to_lines', 'remove_comments',
+           'prepare_format', 'get_error_description', 'IrbisError',
+           'ClientQuery', 'FileSpecification', 'ServerResponse',
            'SearchParameters', 'SubField', 'RecordField', 'MarcRecord',
-           'IrbisVersion', 'IniLine', 'IniSection', 'IniFile', 'ServerProcess',
-           'Connection', 'init_async', 'close_async', 'irbis_event_loop',
-           'READ_TERMS', 'READ_TERMS_REVERSE', 'READ_POSTINGS',
-           'GET_SERVER_STAT', 'GET_USER_LIST', 'SET_USER_LIST',
-           'RECORD_LIST', 'PRINT', 'READ_RECORD', 'READ_RECORD_CODES', 'UPDATE_RECORD',
-           'ADMINISTRATOR', 'CATALOGER', 'ACQUISITIONS', 'COMPLECT',
-           'READER', 'CIRCULATION', 'BOOKLAND', 'PROVISION', 'JAVA_APPLET']
+           'IrbisVersion', 'IniLine', 'IniSection', 'IniFile',
+           'ServerProcess', 'Connection', 'init_async', 'close_async',
+           'irbis_event_loop', 'READ_TERMS', 'READ_TERMS_REVERSE',
+           'READ_POSTINGS', 'GET_SERVER_STAT', 'GET_USER_LIST',
+           'SET_USER_LIST', 'RECORD_LIST', 'PRINT', 'READ_RECORD',
+           'READ_RECORD_CODES', 'UPDATE_RECORD', 'ADMINISTRATOR',
+           'CATALOGER', 'ACQUISITIONS', 'COMPLECT', 'READER', 'CIRCULATION',
+           'BOOKLAND', 'PROVISION', 'JAVA_APPLET']

@@ -49,6 +49,7 @@ client.disconnect()
 [![Release](https://img.shields.io/github/release/amironov73/PythonIrbis.svg)](https://github.com/amironov73/PythonIrbis/releases)
 [![Build status](https://img.shields.io/appveyor/ci/AlexeyMironov/pythonirbis.svg)](https://ci.appveyor.com/project/AlexeyMironov/pythonirbis/)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Famironov73%2FPythonIrbis.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Famironov73%2FPythonIrbis?ref=badge_shield)
+[![GitHub Action](https://github.com/amironov73/PythonIrbis/workflows/Python%20package/badge.svg)](https://github.com/amironov73/PythonIrbis/actions)
 
 ## License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Famironov73%2FPythonIrbis.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Famironov73%2FPythonIrbis?ref=badge_large)
@@ -59,4 +60,5 @@ client.disconnect()
 * [**Connection class**](docs/chapter2.md)
 * [**MarcRecord, RecordField and SubField classes**](docs/chapter3.md)
 * [**Other classes and functions**](docs/chapter4.md)
+* [**Request builder**](docs/chapter5.md)
 

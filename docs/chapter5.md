@@ -42,7 +42,7 @@
 
 ```python
 import irbis.core as bars
-from irbis.builder import *
+from irbis.builder import author, title
 
 client = bars.Connection()
 client.connect('host', 6666, 'librarian', 'secret')
@@ -52,4 +52,4 @@ print(f"Найдено: {found}")
 client.disconnect()
 ```
 
-[Предыдущая глава](chapter4.md)
+[Предыдущая глава](chapter4.md) | [Следующая глава](chapter6.md)

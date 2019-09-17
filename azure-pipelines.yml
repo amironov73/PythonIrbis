@@ -35,5 +35,7 @@ steps:
   
 - script: |
     pip install pytest pytest-azurepipelines
+    PYTHONPATH="$PYTHONPATH:$(pwd)/irbis"
+    echo $PYTHONPATH
     pytest tests/offline_tests.py
   displayName: 'pytest'

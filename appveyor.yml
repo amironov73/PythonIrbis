@@ -1,4 +1,4 @@
-version: 0.0.{build}
+version: 0.1.{build}
 image: Visual Studio 2017
 
 clone_folder: c:\projects\pythonirbis
@@ -25,28 +25,3 @@ before_build:
 
 build_script:
   - cd c:\projects\pythonirbis
-  - mypy0 irbis\core.py
-  - mypy0 irbis\ext.py
-  - mypy0 irbis\iso2709.py
-  - mypy0 irbis\export.py
-  - call pylint0 irbis\core.py irbis\ext.py irbis\iso2709.py irbis\export.py
-
-after_build:
-  - cd c:\projects\pythonirbis
-  - python setup.py sdist bdist_wheel
-
-test_script:
-  - cd c:\projects\pythonirbis
-  - coverage run tests\offline_tests.py
-  - coverage report
-  - coverage html
-
-after_test:
-  - cd c:\projects\pythonirbis
-  - twine upload dist/*
-
-artifacts:
-  - path: htmlcov
-    name: Coverage
-  - path: dist
-    name: dist

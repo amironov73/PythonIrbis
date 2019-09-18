@@ -600,7 +600,7 @@ class MarcRecord:
 
         for field in self.fields:
             if field.tag == tag:
-                return field
+                return field.value
         return None
 
     def have_field(self, tag: int) -> bool:

@@ -16,9 +16,8 @@ from irbis.core import SubField, RecordField, MarcRecord, FileSpecification, \
 from irbis.ext import OptLine, OptFile, load_opt_file, MenuFile, load_menu, \
     ParFile, load_par_file, TreeFile, load_tree_file, AlphabetTable, \
     load_alphabet_table, UpperCaseTable, load_uppercase_table
-from irbis.export import read_text_record, write_text_record
-
-import irbis.iso2709 as iso
+from irbis.export import read_text_record, write_text_record, \
+    read_iso_record, write_iso_record
 
 
 def script_path():
@@ -45,7 +44,7 @@ def random_file_name():
     if platform == 'linux':
         tempdir = '/tmp'
     elif platform == 'darwin':
-        tempdir = '/tmp' # ???
+        tempdir = '/tmp'  # ???
     elif platform == 'win32':
         tempdir = os.environ['TMP']
     else:
@@ -643,17 +642,17 @@ class Iso2709Test(unittest.TestCase):
     def test_read_record(self):
         filename = relative_path('data/test1.iso')
         with open(filename, 'rb') as fh:
-            record = iso.read_record(fh)
+            record = read_iso_record(fh)
             self.assertEqual(len(record.fields), 16)
             self.assertEqual(record.fm(200, 'a'), 'Вып. 13.')
 
-            record = iso.read_record(fh)
+            record = read_iso_record(fh)
             self.assertEqual(len(record.fields), 15)
             self.assertEqual(record.fm(200, 'a'), 'Задачи и этюды')
 
             count = 0
             while True:
-                record = iso.read_record(fh)
+                record = read_iso_record(fh)
                 if record is None:
                     break
                 count += 1
@@ -671,19 +670,19 @@ class Iso2709Test(unittest.TestCase):
                 record.add(210, sf('a', 'Иркутск'), SubField('c', 'ИРНИТУ'),
                            sf('d', '2018'))
                 record.add(920, 'PAZK')
-                iso.write_record(stream, record, ANSI)
+                write_iso_record(stream, record, ANSI)
             self.assertTrue(stream.name)
 
     def test_write_record_000(self):
         with random_binary_file() as stream:
             record = MarcRecord()
-            iso.write_record(stream, record, ANSI)
+            write_iso_record(stream, record, ANSI)
         self.assertTrue(stream.name)
 
     def test_write_record_001(self):
         with random_binary_file() as stream:
             record = MarcRecord()
-            iso.write_record(stream, record, UTF)
+            write_iso_record(stream, record, UTF)
         self.assertTrue(stream.name)
 
     def test_write_record_00(self):
@@ -697,7 +696,7 @@ class Iso2709Test(unittest.TestCase):
             record.add(210, sf('a', 'Иркутск'), SubField('c', 'ИРНИТУ'),
                        sf('d', '2018'))
             record.add(920, 'PAZK')
-            iso.write_record(stream, record, ANSI)
+            write_iso_record(stream, record, ANSI)
         self.assertTrue(stream.name)
 
     def test_write_record_01(self):
@@ -711,7 +710,7 @@ class Iso2709Test(unittest.TestCase):
             record.add(210, sf('a', 'Иркутск'), SubField('c', 'ИРНИТУ'),
                        sf('d', '2018'))
             record.add(920, 'PAZK')
-            iso.write_record(stream, record, UTF)
+            write_iso_record(stream, record, UTF)
         self.assertTrue(stream.name)
 
     def test_write_record_2(self):
@@ -726,13 +725,13 @@ class Iso2709Test(unittest.TestCase):
                 record.add(210, sf('a', 'Иркутск'), SubField('c', 'ИРНИТУ'),
                            sf('d', '2018'))
                 record.add(920, 'PAZK')
-                iso.write_record(stream, record, UTF)
+                write_iso_record(stream, record, UTF)
             filename = stream.name
 
         with open(filename, 'rb') as fh:
             count = 0
             while True:
-                record = iso.read_record(fh, UTF)
+                record = read_iso_record(fh, UTF)
                 if record is None:
                     break
                 self.assertEqual(len(record.fields), 4)

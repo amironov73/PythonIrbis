@@ -25,5 +25,3 @@ jobs:
         source mypy0 irbis/
         pylint --version
         source pylint0 irbis/
-    - name: Test with pytest
-      run: python -m pytest tests/offline_tests.py

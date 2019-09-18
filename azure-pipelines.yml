@@ -8,6 +8,7 @@ trigger:
 
 pool:
   vmImage: 'ubuntu-latest'
+
 strategy:
   matrix:
     Python36:
@@ -27,13 +28,7 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
-    flake8 irbis/ --count --ignore=E261,E302,E501 --show-source --statistics
-    source mypy0 irbis/core.py
-    source pylint0 irbis/core.py
-    source pylint0 irbis/ext.py
+    flake8 irbis/ --ignore=E261,E302,E501
+    mypy irbis/
+    pylint irbis/
   displayName: 'Lint'
-  
-- script: |
-    pip install pytest pytest-azurepipelines
-    PYTHONPATH=$(pwd) pytest tests/offline_tests.py
-  displayName: 'pytest'

@@ -28,7 +28,7 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
-    flake8 irbis/ --ignore=E261,E302,E501
+    flake8 irbis/ --ignore=E261,E302,E501,W503,W504
     mypy irbis/
     pylint irbis/
   displayName: 'Lint'

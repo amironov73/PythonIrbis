@@ -64,8 +64,7 @@ class RecordField:
     __slots__ = 'tag', 'value', 'subfields'
 
     def __init__(self, tag: Optional[int] = DEFAULT_TAG,
-                 value: Union[SubField, str] = None,
-                 *subfields: SubField) -> None:
+                 value: Union[SubField, str] = None) -> None:
         self.tag: int = tag or self.DEFAULT_TAG
         self.value: Optional[str] = None
         if isinstance(value, str):
@@ -73,7 +72,6 @@ class RecordField:
         self.subfields: List[SubField] = []
         if isinstance(value, SubField):
             self.subfields.append(value)
-        self.subfields.extend(subfields)
 
     def add(self, code: str, value: str = '') -> 'RecordField':
         """
@@ -205,11 +203,11 @@ class RecordField:
         result: List['RecordField'] = []
         found: Optional['RecordField'] = None
 
-        for sf in self.subfields:
-            if sf.code == '1':
+        for subfield in self.subfields:
+            if subfield.code == '1':
                 if found:
                     result.append(found)
-                value = sf.value
+                value = subfield.value
                 if not value:
                     continue
                 tag = int(value[0:3])
@@ -218,7 +216,7 @@ class RecordField:
                     found.value = value[3:]
             else:
                 if found:
-                    found.subfields.append(sf)
+                    found.subfields.append(subfield)
 
         if found:
             result.append(found)
@@ -232,7 +230,7 @@ class RecordField:
         """
 
         result = self.value
-        if (not result) and len(self.subfields):
+        if (not result) and self.subfields:
             result = self.subfields[0].value
 
         return result
@@ -248,8 +246,8 @@ class RecordField:
 
         code = code.lower()
 
-        for sf in self.subfields:
-            if sf.code == code:
+        for subfield in self.subfields:
+            if subfield.code == code:
                 return True
 
         return False
@@ -266,8 +264,8 @@ class RecordField:
         assert index >= 0
         assert len(code) == 1
 
-        sf = SubField(code, value)
-        self.subfields.insert(index, sf)
+        subfield = SubField(code, value)
+        self.subfields.insert(index, subfield)
         return self
 
     def parse(self, line: str) -> None:
@@ -332,9 +330,9 @@ class RecordField:
         code = code.lower()
         index = 0
         while index < len(self.subfields):
-            sf = self.subfields[index]
-            if sf.code == code:
-                self.subfields.remove(sf)
+            subfield = self.subfields[index]
+            if subfield.code == code:
+                self.subfields.remove(subfield)
             else:
                 index += 1
 
@@ -353,9 +351,9 @@ class RecordField:
         assert code
 
         code = code.lower()
-        for sf in self.subfields:
-            if sf.code == code and sf.value == old_value:
-                sf.value = new_value
+        for subfield in self.subfields:
+            if subfield.code == code and subfield.value == old_value:
+                subfield.value = new_value
 
         return self
 
@@ -436,7 +434,7 @@ class RecordField:
         return len(self.subfields)
 
     def __bool__(self):
-        return bool(self.tag) and bool(self.value) or bool(self.subfields)
+        return bool(self.value) if bool(self.tag) else bool(self.subfields)
 
 
 #############################################################################
@@ -457,14 +455,13 @@ class MarcRecord:
         self.fields: List[RecordField] = []
         self.fields.extend(fields)
 
-    def add(self, tag: int, value: Union[str, SubField] = None,
-            *subfields: SubField) -> 'MarcRecord':
+    def add(self, tag: int, value: Union[str, SubField] = None) \
+            -> 'MarcRecord':
         """
         Добавление поля (возможно, с значением и подполями) к записи.
 
         :param tag: Метка поля.
         :param value: Значение поля (опционально)
-        :param subfields: Подполя (опционально)
         :return: Self
         """
         assert tag > 0
@@ -476,7 +473,6 @@ class MarcRecord:
             if isinstance(value, SubField):
                 field.subfields.append(value)
 
-        field.subfields.extend(subfields)
         self.fields.append(field)
         return self
 
@@ -819,7 +815,7 @@ class MarcRecord:
         return len(self.fields)
 
     def __bool__(self):
-        return bool(len(self.fields))
+        return bool(self.fields)
 
 
 __all__ = ['MarcRecord', 'RecordField', 'SubField']

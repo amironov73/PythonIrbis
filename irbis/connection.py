@@ -5,12 +5,14 @@
 """
 
 import socket
-from typing import Any, List, Optional
+from typing import List, Optional
+from ._common import ObjectWithError
+from .ini import IniFile
 from .query import ClientQuery
 from .response import ServerResponse
 
 
-class Connection:
+class Connection(ObjectWithError):
     """
     Подключение к серверу
     """
@@ -19,11 +21,9 @@ class Connection:
     DEFAULT_PORT = 6666
     DEFAULT_DATABASE = 'IBIS'
 
-    # TODO Do we need slots here?
-
     __slots__ = ('host', 'port', 'username', 'password', 'database',
                  'workstation', 'client_id', 'query_id', 'connected',
-                 '_stack', 'server_version', 'ini_file', 'last_error')
+                 '_stack', 'server_version', 'ini_file')
 
     def __init__(self, host: Optional[str] = None,
                  port: int = 0,
@@ -31,6 +31,7 @@ class Connection:
                  password: Optional[str] = None,
                  database: Optional[str] = None,
                  workstation: str = 'C') -> None:
+        super().__init__()
         self.host: str = host or Connection.DEFAULT_HOST
         self.port: int = port or Connection.DEFAULT_PORT
         self.username: Optional[str] = username
@@ -42,8 +43,7 @@ class Connection:
         self.connected: bool = False
         self._stack: List[str] = []
         self.server_version: Optional[str] = None
-        self.ini_file: Any = None
-        # self.ini_file: IniFile = IniFile()
+        self.ini_file: IniFile = IniFile()
         self.last_error = 0
 
     def execute(self, query: ClientQuery) -> ServerResponse:

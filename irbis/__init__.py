@@ -11,10 +11,13 @@
 
 from .record import MarcRecord, RecordField, SubField
 from .error import IrbisError
+from .ini import IniFile, IniLine, IniSection
 from .query import ClientQuery
-from .connection import Connection
-from .response import ServerResponse
 from .specification import FileSpecification
+from .response import ServerResponse
+from .search import FoundLine, SearchParameters
+from .version import ServerVersion
+from .connection import Connection
 
 __version__ = '0.1.100'
 __author__ = 'Alexey Mironov'
@@ -29,4 +32,6 @@ __license__ = 'MIT License'
 __copyright__ = 'Copyright 2018-2019 Alexey Mironov'
 
 __all__ = ['ClientQuery', 'Connection', 'IrbisError', 'FileSpecification',
-           'MarcRecord', 'RecordField', 'ServerResponse', 'SubField']
+           'FoundLine', 'IniFile', 'IniLine', 'IniSection', 'MarcRecord',
+           'RecordField', 'SearchParameters', 'ServerResponse',
+           'ServerVersion', 'SubField']

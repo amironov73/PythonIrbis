@@ -6,8 +6,7 @@
 
 import socket
 from typing import Any, List, Optional
-from ._common import ANSI, UTF
-from .connection import Connection
+from ._common import ANSI, ObjectWithError, UTF
 from .error import IrbisError
 
 
@@ -19,8 +18,8 @@ class ServerResponse:
     __slots__ = ('_memory', '_view', '_pos', 'command', 'client_id',
                  'query_id', 'length', 'version', 'return_code', '_conn')
 
-    def __init__(self, conn: 'Connection') -> None:
-        self._conn: 'Connection' = conn
+    def __init__(self, conn: ObjectWithError) -> None:
+        self._conn: ObjectWithError = conn
         self._memory: bytearray = bytearray()
         self._view: memoryview = memoryview(bytearray())
         self._pos: int = 0  # Текущая позиция при чтении
@@ -149,7 +148,6 @@ class ServerResponse:
         """
 
         # Пока ничего не делаем
-        pass
 
     def get_binary_file(self) -> Optional[bytearray]:
         """
@@ -182,7 +180,6 @@ class ServerResponse:
 
         :return: None
         """
-        pass
 
     def may_be_number(self) -> int:
         """

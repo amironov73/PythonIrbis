@@ -362,3 +362,47 @@ def prepare_format(text: str) -> str:
             result.append(char)
 
     return ''.join(result)
+
+
+##############################################################################
+
+# pylint: disable=invalid-name
+irbis_event_loop = None
+
+
+def init_async() -> None:
+    """
+    Инициализация асинхронной обработки цикла сообщений.
+
+    :return: None.
+    """
+    global irbis_event_loop  # pylint: disable=global-statement
+    if not irbis_event_loop:
+        import asyncio
+        irbis_event_loop = asyncio.get_event_loop()
+
+
+def close_async() -> None:
+    """
+    Завершение асинхронной обработки цикла сообщений.
+
+    :return: None.
+    """
+    global irbis_event_loop  # pylint: disable=global-statement
+    if irbis_event_loop:
+        irbis_event_loop.close()
+        irbis_event_loop = None
+
+
+##############################################################################
+
+
+class ObjectWithError:
+    """
+    Объект, хранящий код последней ошибки.
+    """
+
+    __slots__ = ('last_error',)
+
+    def __init__(self):
+        self.last_error: int = 0

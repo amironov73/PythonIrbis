@@ -9,6 +9,7 @@
 # Python supported: 3.6 and higher
 # IRBIS64 supported: 2014 and higher
 
+from ._common import BRIEF
 from .record import MarcRecord, RecordField, SubField
 from .error import IrbisError
 from .ini import IniFile, IniLine, IniSection
@@ -31,7 +32,7 @@ __uri__ = 'http://arsmagna.ru'
 __license__ = 'MIT License'
 __copyright__ = 'Copyright 2018-2019 Alexey Mironov'
 
-__all__ = ['ClientQuery', 'Connection', 'IrbisError', 'FileSpecification',
-           'FoundLine', 'IniFile', 'IniLine', 'IniSection', 'MarcRecord',
-           'RecordField', 'SearchParameters', 'ServerResponse',
-           'ServerVersion', 'SubField']
+__all__ = ['BRIEF', 'ClientQuery', 'Connection', 'IrbisError',
+           'FileSpecification', 'FoundLine', 'IniFile', 'IniLine',
+           'IniSection', 'MarcRecord', 'RecordField', 'SearchParameters',
+           'ServerResponse', 'ServerVersion', 'SubField']

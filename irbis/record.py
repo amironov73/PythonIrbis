@@ -252,6 +252,27 @@ class RecordField:
 
         return False
 
+    def headless_parse(self, line: str) -> None:
+        """
+        Разбор текстового представления поля (без метки поля).
+
+        :param line: Строка с текстовым представлением.
+        :return: None.
+        """
+        if '^' not in line:
+            self.value = line
+        else:
+            if line[0] != '^':
+                parts = line.split('^', 1)
+                self.value = parts[0]
+                parts = parts[1].split('^')
+            else:
+                parts = line.split('^')
+            for raw_item in parts:
+                if raw_item:
+                    subfield = SubField(raw_item[:1], raw_item[1:])
+                    self.subfields.append(subfield)
+
     def insert_at(self, index: int, code: str, value: str) -> 'RecordField':
         """
         Вставляет подполе в указанную позицию.
@@ -272,39 +293,24 @@ class RecordField:
         """
         Разбор текстового представления поля (в серверном формате).
 
-        :param line: Строка с текстовым представлением
-        :return: None
+        :param line: Строка с текстовым представлением.
+        :return: None.
         """
-        if '#' not in line:
-            if '^' not in line:
-                self.value = line
-            else:
-                if line[0] != '^':
-                    parts = line.split('^', 1)
-                    self.value = parts[0]
-                    parts = parts[1].split('^')
-                else:
-                    parts = line.split('^')
-                for raw_item in parts:
-                    if raw_item:
-                        subfield = SubField(raw_item[:1], raw_item[1:])
-                        self.subfields.append(subfield)
+        parts = line.split('#', 1)
+        self.tag = int(parts[0])
+        if '^' not in parts[1]:
+            self.value = parts[1]
         else:
-            parts = line.split('#', 1)
-            self.tag = int(parts[0])
-            if '^' not in parts[1]:
-                self.value = parts[1]
+            if parts[1][0] != '^':
+                parts = parts[1].split('^', 1)
+                self.value = parts[0]
+                parts = parts[1].split('^')
             else:
-                if parts[1][0] != '^':
-                    parts = parts[1].split('^', 1)
-                    self.value = parts[0]
-                    parts = parts[1].split('^')
-                else:
-                    parts = parts[1].split('^')
-                for raw_item in parts:
-                    if raw_item:
-                        subfield = SubField(raw_item[:1], raw_item[1:])
-                        self.subfields.append(subfield)
+                parts = parts[1].split('^')
+            for raw_item in parts:
+                if raw_item:
+                    subfield = SubField(raw_item[:1], raw_item[1:])
+                    self.subfields.append(subfield)
 
     def remove_at(self, index: int) -> 'RecordField':
         """
@@ -795,8 +801,7 @@ class MarcRecord:
                 self.fields.append(field)
             else:
                 field.clear()
-                # TODO need headless_parse() method
-                field.parse(value)
+                field.headless_parse(value)
 
         if isinstance(value, RecordField):
             if field is None:

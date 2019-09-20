@@ -8,17 +8,20 @@ import asyncio
 import socket
 from typing import Any, List, Optional, Union
 
-from ._common import GET_MAX_MFN, FORMAT_RECORD, IRBIS_DELIMITER, \
-    irbis_to_lines, irbis_event_loop, NOP, ObjectWithError, READ_RECORD, \
-    READ_RECORD_CODES, REGISTER_CLIENT, safe_str, SEARCH, SERVER_INFO, \
-    throw_value_error, UNREGISTER_CLIENT, UNLOCK_RECORDS
+from ._common import ACTUALIZE_RECORD, CREATE_DATABASE, CREATE_DICTIONARY, \
+    DELETE_DATABASE, GET_MAX_MFN, FORMAT_RECORD, IRBIS_DELIMITER, \
+    irbis_to_lines, irbis_event_loop, LIST_FILES, LOGICALLY_DELETED, \
+    MASTER_FILE, NOP, ObjectWithError, READ_RECORD, READ_RECORD_CODES, \
+    REGISTER_CLIENT, safe_str, SEARCH, SERVER_INFO, short_irbis_to_lines, \
+    throw_value_error, UNREGISTER_CLIENT, UNLOCK_RECORDS, UPDATE_RECORD
 
 from .ini import IniFile
 from .query import ClientQuery
 from .response import ServerResponse
 from .version import ServerVersion
-from .record import MarcRecord
+from .record import Record
 from .search import SearchParameters
+from .specification import FileSpecification
 
 
 class Connection(ObjectWithError):
@@ -54,6 +57,25 @@ class Connection(ObjectWithError):
         self.server_version: Optional[str] = None
         self.ini_file: IniFile = IniFile()
         self.last_error = 0
+
+    def actualize_record(self, mfn: int,
+                         database: Optional[str] = None) -> None:
+        """
+        Актуализация записи с указанным MFN.
+
+        :param mfn: MFN записи
+        :param database: База данных
+        :return: None
+        """
+
+        database = database or self.database or throw_value_error()
+
+        assert isinstance(mfn, int)
+        assert isinstance(database, str)
+
+        query = ClientQuery(self, ACTUALIZE_RECORD).ansi(database).add(mfn)
+        with self.execute(query) as response:
+            response.check_return_code()
 
     def _connect(self, response: ServerResponse) -> IniFile:
         self.server_version = response.version
@@ -125,6 +147,76 @@ class Connection(ObjectWithError):
             result = self._connect(response)
             response.close()
             return result
+
+    def create_database(self, database: Optional[str] = None,
+                        description: Optional[str] = None,
+                        reader_access: bool = True) -> None:
+        """
+        Создание базы данных.
+
+        :param database: Имя создаваемой базы
+        :param description: Описание в свободной форме
+        :param reader_access: Читатель будет иметь доступ?
+        :return: None
+        """
+
+        database = database or self.database or throw_value_error()
+        description = description or ''
+
+        assert isinstance(database, str)
+        assert isinstance(description, str)
+
+        query = ClientQuery(self, CREATE_DATABASE)
+        query.ansi(database).ansi(description).add(int(reader_access))
+        with self.execute(query) as response:
+            response.check_return_code()
+
+    def create_dictionary(self, database: Optional[str] = None) -> None:
+        """
+        Создание словаря в базе данных.
+
+        :param database: База данных
+        :return: None
+        """
+
+        database = database or self.database or throw_value_error()
+
+        assert isinstance(database, str)
+
+        query = ClientQuery(self, CREATE_DICTIONARY).ansi(database)
+        with self.execute(query) as response:
+            response.check_return_code()
+
+    def delete_database(self, database: Optional[str] = None) -> None:
+        """
+        Удаление базы данных.
+
+        :param database: Имя удаляемой базы
+        :return: None
+        """
+
+        assert isinstance(database, str)
+
+        database = database or self.database or throw_value_error()
+        query = ClientQuery(self, DELETE_DATABASE).ansi(database)
+        with self.execute(query) as response:
+            response.check_return_code()
+
+    def delete_record(self, mfn: int) -> None:
+        """
+        Удаление записи по ее MFN.
+
+        :param mfn: MFN удаляемой записи
+        :return: None
+        """
+
+        assert mfn
+        assert isinstance(mfn, int)
+
+        record = self.read_record(mfn)
+        if not record.is_deleted():
+            record.status |= LOGICALLY_DELETED
+            self.write_record(record, dont_parse=True)
 
     def disconnect(self) -> None:
         """
@@ -268,7 +360,7 @@ class Connection(ObjectWithError):
             return result
 
     def format_record(self, script: str,
-                      record: Union[MarcRecord, int]) -> str:
+                      record: Union[Record, int]) -> str:
         """
         Форматирование записи с указанным MFN.
 
@@ -282,7 +374,7 @@ class Connection(ObjectWithError):
             raise ValueError()
 
         assert isinstance(script, str)
-        assert isinstance(record, (MarcRecord, int))
+        assert isinstance(record, (Record, int))
 
         if not script:
             return ''
@@ -300,6 +392,45 @@ class Connection(ObjectWithError):
             response.check_return_code()
             result = response.utf_remaining_text().strip('\r\n')
             return result
+
+    def list_files(self,
+                   *specification: Union[FileSpecification, str]) -> List[str]:
+        """
+        Получение списка файлов с сервера.
+
+        :param specification: Спецификация или маска имени файла
+        (если нужны файлы, лежащие в папке текущей базы данных)
+        :return: Список файлов
+        """
+        query = ClientQuery(self, LIST_FILES)
+
+        is_ok = False
+        for spec in specification:
+            if isinstance(spec, str):
+                spec = self.near_master(spec)
+            query.ansi(str(spec))
+            is_ok = True
+
+        result: List[str] = []
+        if not is_ok:
+            return result
+
+        with self.execute(query) as response:
+            lines = response.ansi_remaining_lines()
+            lines = [line for line in lines if line]
+            for line in lines:
+                result.extend(one for one in irbis_to_lines(line) if one)
+        return result
+
+    def near_master(self, filename: str) -> FileSpecification:
+        """
+        Файл рядом с мастер-файлом текущей базы данных.
+
+        :param filename: Имя файла
+        :return: Спецификация файла
+        """
+
+        return FileSpecification(MASTER_FILE, self.database, filename)
 
     def nop(self) -> None:
         """
@@ -381,7 +512,7 @@ class Connection(ObjectWithError):
         self.database = database
         return result
 
-    def read_record(self, mfn: int, version: int = 0) -> MarcRecord:
+    def read_record(self, mfn: int, version: int = 0) -> Record:
         """
         Чтение записи с указанным MFN с сервера.
 
@@ -400,7 +531,7 @@ class Connection(ObjectWithError):
         with self.execute(query) as response:
             response.check_return_code(READ_RECORD_CODES)
             text = response.utf_remaining_lines()
-            result = MarcRecord()
+            result = Record()
             result.database = self.database
             result.parse(text)
 
@@ -409,7 +540,7 @@ class Connection(ObjectWithError):
 
         return result
 
-    async def read_record_async(self, mfn: int) -> MarcRecord:
+    async def read_record_async(self, mfn: int) -> Record:
         """
         Асинхронное чтение записи.
 
@@ -422,7 +553,7 @@ class Connection(ObjectWithError):
         response = await self.execute_async(query)
         response.check_return_code(READ_RECORD_CODES)
         text = response.utf_remaining_lines()
-        result = MarcRecord()
+        result = Record()
         result.database = self.database
         result.parse(text)
         response.close()
@@ -514,6 +645,44 @@ class Connection(ObjectWithError):
             query.add(mfn)
         with self.execute(query) as response:
             response.check_return_code()
+
+    def write_record(self, record: Record,
+                     lock: bool = False,
+                     actualize: bool = True,
+                     dont_parse: bool = False) -> int:
+        """
+        Сохранение записи на сервере.
+
+        :param record: Запись
+        :param lock: Оставить запись заблокированной?
+        :param actualize: Актуализировать запись?
+        :param dont_parse: Не разбирать ответ сервера?
+        :return: Новый максимальный MFN
+        """
+
+        database = record.database or self.database or throw_value_error()
+        if not record:
+            raise ValueError()
+
+        assert isinstance(record, Record)
+        assert isinstance(database, str)
+
+        assert isinstance(record, Record)
+        assert isinstance(database, str)
+
+        query = ClientQuery(self, UPDATE_RECORD)
+        query.ansi(database).add(int(lock)).add(int(actualize))
+        query.utf(IRBIS_DELIMITER.join(record.encode()))
+        with self.execute(query) as response:
+            response.check_return_code()
+            result = response.return_code  # Новый максимальный MFN
+            if not dont_parse:
+                first_line = response.utf()
+                text = short_irbis_to_lines(response.utf())
+                text.insert(0, first_line)
+                record.database = database
+                record.parse(text)
+            return result
 
 
 __all__ = ['Connection']

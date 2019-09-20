@@ -9,8 +9,9 @@
 # Python supported: 3.6 and higher
 # IRBIS64 supported: 2014 and higher
 
-from ._common import BRIEF
-from .record import MarcRecord, RecordField, SubField
+from ._common import ADMINISTRATOR, BRIEF, close_async, init_async, \
+    irbis_event_loop
+from .record import Field, Record, SubField
 from .error import IrbisError
 from .ini import IniFile, IniLine, IniSection
 from .query import ClientQuery
@@ -32,7 +33,8 @@ __uri__ = 'http://arsmagna.ru'
 __license__ = 'MIT License'
 __copyright__ = 'Copyright 2018-2019 Alexey Mironov'
 
-__all__ = ['BRIEF', 'ClientQuery', 'Connection', 'IrbisError',
+__all__ = ['ADMINISTRATOR', 'BRIEF', 'ClientQuery', 'Connection',
+           'close_async', 'irbis_event_loop', 'IrbisError', 'Field',
            'FileSpecification', 'FoundLine', 'IniFile', 'IniLine',
-           'IniSection', 'MarcRecord', 'RecordField', 'SearchParameters',
+           'IniSection', 'init_async', 'Record', 'SearchParameters',
            'ServerResponse', 'ServerVersion', 'SubField']

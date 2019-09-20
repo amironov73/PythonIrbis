@@ -53,7 +53,7 @@ class SubField:
 
 ##############################################################################
 
-class RecordField:
+class Field:
     """
     MARC record field with tag, value (up to the first delimiter)
     and subfields.
@@ -73,7 +73,7 @@ class RecordField:
         if isinstance(value, SubField):
             self.subfields.append(value)
 
-    def add(self, code: str, value: str = '') -> 'RecordField':
+    def add(self, code: str, value: str = '') -> 'Field':
         """
         Добавление подполя с указанным кодом (и, возможно, значением)
         к записи.
@@ -87,7 +87,7 @@ class RecordField:
         self.subfields.append(SubField(code, value))
         return self
 
-    def add_non_empty(self, code: str, value: Optional[str]) -> 'RecordField':
+    def add_non_empty(self, code: str, value: Optional[str]) -> 'Field':
         """
         Добавление подполя с указанным кодом при условии,
         что значение поля не пустое.
@@ -129,7 +129,7 @@ class RecordField:
         return [sf.value for sf in self.subfields
                 if sf.code == code if sf.value]
 
-    def assign_from(self, other: 'RecordField') -> None:
+    def assign_from(self, other: 'Field') -> None:
         """
         Присваивание от другого поля.
         1. Значение данного поля становится равным значению другого поля.
@@ -144,7 +144,7 @@ class RecordField:
         self.value = other.value
         self.subfields = [sf.clone() for sf in other.subfields]
 
-    def clear(self) -> 'RecordField':
+    def clear(self) -> 'Field':
         """
         Очистка поля. Удаляются все подполя и значение до первого разделителя.
 
@@ -155,13 +155,13 @@ class RecordField:
         self.subfields = []
         return self
 
-    def clone(self) -> 'RecordField':
+    def clone(self) -> 'Field':
         """
         Создание полного клона поля.
 
         :return: Клон поля
         """
-        result = RecordField(self.tag, self.value)
+        result = Field(self.tag, self.value)
         for subfield in self.subfields:
             result.subfields.append(subfield.clone())
         return result
@@ -194,14 +194,14 @@ class RecordField:
                 return subfield.value
         return None
 
-    def get_embedded_fields(self) -> List['RecordField']:
+    def get_embedded_fields(self) -> List['Field']:
         """
         Получение списка встроенных полей.
 
         :return: Список встроенных полей.
         """
-        result: List['RecordField'] = []
-        found: Optional['RecordField'] = None
+        result: List['Field'] = []
+        found: Optional['Field'] = None
 
         for subfield in self.subfields:
             if subfield.code == '1':
@@ -211,7 +211,7 @@ class RecordField:
                 if not value:
                     continue
                 tag = int(value[0:3])
-                found = RecordField(tag)
+                found = Field(tag)
                 if tag < 10 and len(value) > 3:
                     found.value = value[3:]
             else:
@@ -273,7 +273,7 @@ class RecordField:
                     subfield = SubField(raw_item[:1], raw_item[1:])
                     self.subfields.append(subfield)
 
-    def insert_at(self, index: int, code: str, value: str) -> 'RecordField':
+    def insert_at(self, index: int, code: str, value: str) -> 'Field':
         """
         Вставляет подполе в указанную позицию.
 
@@ -312,7 +312,7 @@ class RecordField:
                     subfield = SubField(raw_item[:1], raw_item[1:])
                     self.subfields.append(subfield)
 
-    def remove_at(self, index: int) -> 'RecordField':
+    def remove_at(self, index: int) -> 'Field':
         """
         Удаляет подполе в указанной позиции.
 
@@ -324,7 +324,7 @@ class RecordField:
         self.subfields.remove(self.subfields[index])
         return self
 
-    def remove_subfield(self, code: str) -> 'RecordField':
+    def remove_subfield(self, code: str) -> 'Field':
         """
         Удаляет все подполя с указанным кодом.
 
@@ -345,7 +345,7 @@ class RecordField:
         return self
 
     def replace_subfield(self, code: str, old_value: Optional[str],
-                         new_value: Optional[str]) -> 'RecordField':
+                         new_value: Optional[str]) -> 'Field':
         """
         Заменяет значение подполя с указанным кодом.
 
@@ -363,7 +363,7 @@ class RecordField:
 
         return self
 
-    def set_subfield(self, code: str, value: Optional[str]) -> 'RecordField':
+    def set_subfield(self, code: str, value: Optional[str]) -> 'Field':
         """
         Устанавливает значение первого повторения подполя с указанным кодом.
         Если value==None, подполе удаляется.
@@ -446,44 +446,44 @@ class RecordField:
 #############################################################################
 
 
-class MarcRecord:
+class Record:
     """
     MARC record with MFN, status, version and fields.
     """
 
     __slots__ = 'database', 'mfn', 'version', 'status', 'fields'
 
-    def __init__(self, *fields: RecordField) -> None:
+    def __init__(self, *fields: Field) -> None:
         self.database: Optional[str] = None
         self.mfn: int = 0
         self.version: int = 0
         self.status: int = 0
-        self.fields: List[RecordField] = []
+        self.fields: List[Field] = []
         self.fields.extend(fields)
 
     def add(self, tag: int, value: Union[str, SubField] = None) \
-            -> 'MarcRecord':
+            -> 'Field':
         """
         Добавление поля (возможно, с значением и подполями) к записи.
 
         :param tag: Метка поля.
         :param value: Значение поля (опционально)
-        :return: Self
+        :return: Свежедобавленное поле
         """
         assert tag > 0
 
         if isinstance(value, str):
-            field = RecordField(tag, value)
+            result = Field(tag, value)
         else:
-            field = RecordField(tag)
+            result = Field(tag)
             if isinstance(value, SubField):
-                field.subfields.append(value)
+                result.subfields.append(value)
 
-        self.fields.append(field)
-        return self
+        self.fields.append(result)
+        return result
 
     def add_non_empty(self, tag: int,
-                      value: Union[str, SubField]) -> 'MarcRecord':
+                      value: Union[str, SubField]) -> 'Record':
         """
         Добавление поля, если его значение не пустое.
 
@@ -495,9 +495,9 @@ class MarcRecord:
 
         if value:
             if isinstance(value, str):
-                field = RecordField(tag, value)
+                field = Field(tag, value)
             else:
-                field = RecordField(tag)
+                field = Field(tag)
                 if isinstance(value, SubField):
                     field.subfields.append(value)
 
@@ -505,7 +505,7 @@ class MarcRecord:
 
         return self
 
-    def all(self, tag: int) -> List[RecordField]:
+    def all(self, tag: int) -> List[Field]:
         """
         Список полей с указанной меткой.
 
@@ -516,7 +516,7 @@ class MarcRecord:
 
         return [f for f in self.fields if f.tag == tag]
 
-    def clear(self) -> 'MarcRecord':
+    def clear(self) -> 'Record':
         """
         Очистка записи (удаление всех полей).
 
@@ -525,13 +525,13 @@ class MarcRecord:
         self.fields.clear()
         return self
 
-    def clone(self) -> 'MarcRecord':
+    def clone(self) -> 'Record':
         """
         Клонирование записи.
 
         :return: Полный клон записи
         """
-        result = MarcRecord()
+        result = Record()
         result.database = self.database
         result.mfn = self.mfn
         result.status = self.status
@@ -591,7 +591,7 @@ class MarcRecord:
                         result.append(one)
         return result
 
-    def first(self, tag: int) -> Optional[RecordField]:
+    def first(self, tag: int) -> Optional[Field]:
         """
         Первое из полей с указанной меткой.
 
@@ -621,7 +621,7 @@ class MarcRecord:
         return False
 
     def insert_at(self, index: int, tag: int, value: Optional[str] = None) \
-            -> RecordField:
+            -> Field:
         """
         Вставка поля в указанной позиции.
 
@@ -633,7 +633,7 @@ class MarcRecord:
         assert 0 <= index < len(self.fields)
         assert tag > 0
 
-        result = RecordField(tag, value)
+        result = Field(tag, value)
         self.fields.insert(index, result)
         return result
 
@@ -665,11 +665,11 @@ class MarcRecord:
         self.version = int(parts[1])
         self.fields.clear()
         for line in text[2:]:
-            field = RecordField()
+            field = Field()
             field.parse(line)
             self.fields.append(field)
 
-    def remove_at(self, index: int) -> 'MarcRecord':
+    def remove_at(self, index: int) -> 'Record':
         """
         Удаление поля в указанной позиции.
 
@@ -681,7 +681,7 @@ class MarcRecord:
         self.fields.remove(self.fields[index])
         return self
 
-    def remove_field(self, tag: int) -> 'MarcRecord':
+    def remove_field(self, tag: int) -> 'Record':
         """
         Удаление полей с указанной меткой.
 
@@ -700,7 +700,7 @@ class MarcRecord:
 
         return self
 
-    def reset(self) -> 'MarcRecord':
+    def reset(self) -> 'Record':
         """
         Сбрасывает состояние записи, отвязывая её от базы данных.
         Поля при этом остаются нетронутыми.
@@ -712,7 +712,7 @@ class MarcRecord:
         self.database = None
         return self
 
-    def set_field(self, tag: int, value: Optional[str]) -> 'MarcRecord':
+    def set_field(self, tag: int, value: Optional[str]) -> 'Record':
         """
         Устанавливает значение первого повторения указанного поля.
         Если указанное значение пустое, поле удаляется из записи.
@@ -726,7 +726,7 @@ class MarcRecord:
         found = self.first(tag)
         if value:
             if not found:
-                found = RecordField(tag)
+                found = Field(tag)
                 self.fields.append(found)
             found.value = value
         else:
@@ -736,7 +736,7 @@ class MarcRecord:
         return self
 
     def set_subfield(self, tag: int, code: str,
-                     value: Optional[str]) -> 'MarcRecord':
+                     value: Optional[str]) -> 'Record':
         """
         Устанавливает значение подполя в первом повторении указанного поля.
         Если указанное значение пустое, подполе удаляется из поля.
@@ -752,7 +752,7 @@ class MarcRecord:
         found = self.first(tag)
         if value:
             if not found:
-                found = RecordField(tag)
+                found = Field(tag)
                 self.fields.append(found)
         if found:
             found.set_subfield(code, value)
@@ -766,15 +766,15 @@ class MarcRecord:
     def __iter__(self):
         yield from self.fields
 
-    def __iadd__(self, other: Union[RecordField, Iterable[RecordField]]):
-        if isinstance(other, RecordField):
+    def __iadd__(self, other: Union[Field, Iterable[Field]]):
+        if isinstance(other, Field):
             self.fields.append(other)
         else:
             self.fields.extend(other)
         return self
 
-    def __isub__(self, other: Union[RecordField, Iterable[RecordField]]):
-        if isinstance(other, RecordField):
+    def __isub__(self, other: Union[Field, Iterable[Field]]):
+        if isinstance(other, Field):
             if other in self.fields:
                 self.fields.remove(other)
         else:
@@ -787,31 +787,31 @@ class MarcRecord:
         return self.fm(item)
 
     def __setitem__(self, key: int,
-                    value: Union[RecordField, SubField, str, None]):
+                    value: Union[Field, SubField, str, None]):
         if value is None:
-            found: List[RecordField] = self.all(key)
+            found: List[Field] = self.all(key)
             for fld in found:
                 self.fields.remove(fld)
             return
 
-        field: Optional[RecordField] = self.first(key)
+        field: Optional[Field] = self.first(key)
         if isinstance(value, str):
             if field is None:
-                field = RecordField(key, value)
+                field = Field(key, value)
                 self.fields.append(field)
             else:
                 field.clear()
                 field.headless_parse(value)
 
-        if isinstance(value, RecordField):
+        if isinstance(value, Field):
             if field is None:
-                field = RecordField(key)
+                field = Field(key)
                 self.fields.append(field)
             field.assign_from(value)
 
         if isinstance(value, SubField):
             if field is None:
-                field = RecordField(key)
+                field = Field(key)
                 self.fields.append(field)
             field.clear()
             field.subfields.append(value)
@@ -823,4 +823,4 @@ class MarcRecord:
         return bool(self.fields)
 
 
-__all__ = ['MarcRecord', 'RecordField', 'SubField']
+__all__ = ['Record', 'Field', 'SubField']

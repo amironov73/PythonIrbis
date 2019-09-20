@@ -9,19 +9,24 @@ import socket
 from typing import Any, List, Optional, Union
 
 from ._common import ACTUALIZE_RECORD, CREATE_DATABASE, CREATE_DICTIONARY, \
-    DELETE_DATABASE, GET_MAX_MFN, FORMAT_RECORD, IRBIS_DELIMITER, \
-    irbis_to_lines, irbis_event_loop, LIST_FILES, LOGICALLY_DELETED, \
-    MASTER_FILE, NOP, ObjectWithError, READ_RECORD, READ_RECORD_CODES, \
-    REGISTER_CLIENT, safe_str, SEARCH, SERVER_INFO, short_irbis_to_lines, \
-    throw_value_error, UNREGISTER_CLIENT, UNLOCK_RECORDS, UPDATE_RECORD
+    DELETE_DATABASE, EMPTY_DATABASE, FORMAT_RECORD, GET_MAX_MFN, \
+    GET_PROCESS_LIST, IRBIS_DELIMITER, irbis_to_dos, irbis_to_lines, \
+    irbis_event_loop, LIST_FILES, LOGICALLY_DELETED, MASTER_FILE, NOP, \
+    ObjectWithError, READ_RECORD, READ_RECORD_CODES, READ_DOCUMENT, \
+    REGISTER_CLIENT, RELOAD_DICTIONARY, RELOAD_MASTER_FILE, RESTART_SERVER, \
+    safe_str, SEARCH, SERVER_INFO, short_irbis_to_lines, throw_value_error, \
+    UNREGISTER_CLIENT, UNLOCK_DATABASE, UNLOCK_RECORDS, UPDATE_INI_FILE, \
+    UPDATE_RECORD
 
 from .ini import IniFile
+from .menus import MenuFile
+from .process import Process
 from .query import ClientQuery
-from .response import ServerResponse
-from .version import ServerVersion
 from .record import Record
+from .response import ServerResponse
 from .search import SearchParameters
 from .specification import FileSpecification
+from .version import ServerVersion
 
 
 class Connection(ObjectWithError):
@@ -422,6 +427,39 @@ class Connection(ObjectWithError):
                 result.extend(one for one in irbis_to_lines(line) if one)
         return result
 
+    def list_processes(self) -> List[Process]:
+        """
+        Получение списка серверных процессов.
+
+        :return: Список процессов
+        """
+
+        query = ClientQuery(self, GET_PROCESS_LIST)
+        with self.execute(query) as response:
+            response.check_return_code()
+            result: List[Process] = []
+            process_count = response.number()
+            lines_per_process = response.number()
+
+            if not process_count or not lines_per_process:
+                return result
+
+            for _ in range(process_count):
+                process = Process()
+                process.number = response.ansi()
+                process.ip_address = response.ansi()
+                process.name = response.ansi()
+                process.client_id = response.ansi()
+                process.workstation = response.ansi()
+                process.started = response.ansi()
+                process.last_command = response.ansi()
+                process.command_number = response.ansi()
+                process.process_id = response.ansi()
+                process.state = response.ansi()
+                result.append(process)
+
+            return result
+
     def near_master(self, filename: str) -> FileSpecification:
         """
         Файл рядом с мастер-файлом текущей базы данных.
@@ -512,6 +550,94 @@ class Connection(ObjectWithError):
         self.database = database
         return result
 
+    def read_binary_file(self, specification: Union[FileSpecification, str]) \
+            -> Optional[bytearray]:
+        """
+        Чтение двоичного файла с сервера.
+
+        :param specification: Спецификация
+        :return: Массив байт или None
+        """
+        if isinstance(specification, str):
+            specification = self.near_master(specification)
+
+        assert isinstance(specification, FileSpecification)
+
+        specification.binary = True
+        query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
+        with self.execute(query) as response:
+            result = response.get_binary_file()
+            return result
+
+    def read_ini_file(self, specification: Union[FileSpecification, str]) \
+            -> IniFile:
+        """
+        Чтение INI-файла с сервера.
+
+        :param specification: Спецификация
+        :return: INI-файл
+        """
+        if isinstance(specification, str):
+            specification = self.near_master(specification)
+
+        assert isinstance(specification, FileSpecification)
+
+        query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
+        with self.execute(query) as response:
+            result = IniFile()
+            text = irbis_to_lines(response.ansi_remaining_text())
+            result.parse(text)
+            return result
+
+    def read_menu(self, specification: Union[FileSpecification, str]) \
+            -> MenuFile:
+        """
+        Чтение меню с сервера.
+
+        :param specification: Спецификация файла
+        :return: Меню
+        """
+
+        with self.read_text_stream(specification) as response:
+            result = MenuFile()
+            text = irbis_to_lines(response.ansi_remaining_text())
+            result.parse(text)
+            return result
+
+    def read_text_file(self, specification: Union[FileSpecification, str]) \
+            -> str:
+        """
+        Получение содержимого текстового файла с сервера.
+
+        :param specification: Спецификация или имя файла
+        (если он находится в папке текущей базы данных).
+        :return: Текст файла или пустая строка, если файл не найден
+        """
+
+        with self.read_text_stream(specification) as response:
+            result = response.ansi_remaining_text()
+            result = irbis_to_dos(result)
+            return result
+
+    def read_text_stream(self, specification: Union[FileSpecification, str]) \
+            -> ServerResponse:
+        """
+        Получение текстового файла с сервера в виде потока.
+
+        :param specification: Спецификация или имя файла
+        (если он находится в папке текущей базы данных).
+        :return: ServerResponse, из которого можно считывать строки
+        """
+
+        if isinstance(specification, str):
+            specification = self.near_master(specification)
+
+        assert isinstance(specification, FileSpecification)
+
+        query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
+        result = self.execute(query)
+        return result
+
     def read_record(self, mfn: int, version: int = 0) -> Record:
         """
         Чтение записи с указанным MFN с сервера.
@@ -558,6 +684,46 @@ class Connection(ObjectWithError):
         result.parse(text)
         response.close()
         return result
+
+    def reload_dictionary(self, database: Optional[str] = None) -> None:
+        """
+        Пересоздание словаря.
+
+        :param database: База данных
+        :return: None
+        """
+
+        database = database or self.database or throw_value_error()
+
+        assert isinstance(database, str)
+
+        with self.execute_ansi(RELOAD_DICTIONARY, database):
+            pass
+
+    def reload_master_file(self, database: Optional[str] = None) -> None:
+        """
+        Пересоздание мастер-файла.
+
+        :param database: База данных
+        :return: None
+        """
+
+        database = database or self.database or throw_value_error()
+
+        assert isinstance(database, str)
+
+        with self.execute_ansi(RELOAD_MASTER_FILE, database):
+            pass
+
+    def restart_server(self) -> None:
+        """
+        Перезапуск сервера (без утери подключенных клиентов).
+
+        :return: None
+        """
+
+        with self.execute_ansi(RESTART_SERVER):
+            pass
 
     def search(self, parameters: Any) -> List[int]:
         """
@@ -623,6 +789,52 @@ class Connection(ObjectWithError):
                ';database=' + safe_str(self.database) + \
                ';workstation=' + safe_str(self.workstation) + ';'
 
+    def truncate_database(self, database: Optional[str] = None) -> None:
+        """
+        Опустошение базы данных.
+
+        :param database: База данных
+        :return: None
+        """
+
+        database = database or self.database or throw_value_error()
+
+        assert isinstance(database, str)
+
+        with self.execute_ansi(EMPTY_DATABASE, database):
+            pass
+
+    def undelete_record(self, mfn: int) -> None:
+        """
+        Восстановление записи по ее MFN.
+
+        :param mfn: MFN восстанавливаемой записи
+        :return: None
+        """
+
+        assert mfn
+        assert isinstance(mfn, int)
+
+        record = self.read_record(mfn)
+        if record.is_deleted():
+            record.status &= ~LOGICALLY_DELETED
+            self.write_record(record, dont_parse=True)
+
+    def unlock_database(self, database: Optional[str] = None) -> None:
+        """
+        Разблокирование базы данных.
+
+        :param database: Имя базы
+        :return: None
+        """
+
+        database = database or self.database or throw_value_error()
+
+        assert isinstance(database, str)
+
+        with self.execute_ansi(UNLOCK_DATABASE, database):
+            pass
+
     def unlock_records(self, records: List[int],
                        database: Optional[str] = None) -> None:
         """
@@ -645,6 +857,21 @@ class Connection(ObjectWithError):
             query.add(mfn)
         with self.execute(query) as response:
             response.check_return_code()
+
+    def update_ini_file(self, lines: List[str]) -> None:
+        """
+        Обновление строк серверного INI-файла.
+
+        :param lines: Измененные строки
+        :return: None
+        """
+        if not lines:
+            return
+
+        query = ClientQuery(self, UPDATE_INI_FILE)
+        for line in lines:
+            query.ansi(line)
+        self.execute_forget(query)
 
     def write_record(self, record: Record,
                      lock: bool = False,
@@ -683,6 +910,35 @@ class Connection(ObjectWithError):
                 record.database = database
                 record.parse(text)
             return result
+
+    def write_text_file(self, *specification: FileSpecification) -> None:
+        """
+        Сохранение текстового файла на сервере.
+
+        :param specification: Спецификация (включая текст для сохранения)
+        :return: None
+        """
+        query = ClientQuery(self, READ_DOCUMENT)
+        is_ok = False
+        for spec in specification:
+            assert isinstance(spec, FileSpecification)
+            query.ansi(str(spec))
+            is_ok = True
+        if not is_ok:
+            return
+
+        with self.execute(query) as response:
+            response.check_return_code()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.disconnect()
+        return exc_type is None
+
+    def __bool__(self):
+        return self.connected
 
 
 __all__ = ['Connection']

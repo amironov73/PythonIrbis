@@ -59,7 +59,7 @@ client.disconnect()
 
 * [**Introduction**](docs/chapter1.md)
 * [**Connection class**](docs/chapter2.md)
-* [**MarcRecord, RecordField and SubField classes**](docs/chapter3.md)
+* [**Record, Field and SubField classes**](docs/chapter3.md)
 * [**Other classes and functions**](docs/chapter4.md)
 * [**Request builder**](docs/chapter5.md)
 * [**Import/export**](docs/chapter6.md)

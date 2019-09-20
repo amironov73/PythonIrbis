@@ -6,26 +6,31 @@
 
 import asyncio
 import socket
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Tuple, Union
 
 from ._common import ACTUALIZE_RECORD, CREATE_DATABASE, CREATE_DICTIONARY, \
-    DELETE_DATABASE, EMPTY_DATABASE, FORMAT_RECORD, GET_MAX_MFN, \
+    DATA, DELETE_DATABASE, EMPTY_DATABASE, FORMAT_RECORD, GET_MAX_MFN, \
     GET_PROCESS_LIST, IRBIS_DELIMITER, irbis_to_dos, irbis_to_lines, \
     irbis_event_loop, LIST_FILES, LOGICALLY_DELETED, MASTER_FILE, NOP, \
     ObjectWithError, READ_RECORD, READ_RECORD_CODES, READ_DOCUMENT, \
+    READ_POSTINGS, READ_TERMS, READ_TERMS_REVERSE, READ_TERMS_CODES, \
     REGISTER_CLIENT, RELOAD_DICTIONARY, RELOAD_MASTER_FILE, RESTART_SERVER, \
-    safe_str, SEARCH, SERVER_INFO, short_irbis_to_lines, throw_value_error, \
-    UNREGISTER_CLIENT, UNLOCK_DATABASE, UNLOCK_RECORDS, UPDATE_INI_FILE, \
-    UPDATE_RECORD
+    safe_str, SEARCH, SERVER_INFO, short_irbis_to_lines, SYSTEM, \
+    throw_value_error, UNREGISTER_CLIENT, UNLOCK_DATABASE, UNLOCK_RECORDS,\
+    UPDATE_INI_FILE, UPDATE_RECORD
 
+from .alphabet import AlphabetTable, UpperCaseTable
 from .ini import IniFile
 from .menus import MenuFile
+from .opt import OptFile
+from .par import ParFile
 from .process import Process
 from .query import ClientQuery
 from .record import Record
 from .response import ServerResponse
-from .search import SearchParameters
+from .search import SearchParameters, SearchScenario
 from .specification import FileSpecification
+from .terms import PostingParameters, TermInfo, TermPosting, TermParameters
 from .version import ServerVersion
 
 
@@ -550,6 +555,29 @@ class Connection(ObjectWithError):
         self.database = database
         return result
 
+    def read_alphabet_table(self,
+                            specification: Optional[FileSpecification] =
+                            None) \
+            -> AlphabetTable:
+        """
+        Чтение алфавитной таблицы с сервера.
+
+        :param specification: Спецификация
+        :return: Таблица
+        """
+        if specification is None:
+            specification = FileSpecification(SYSTEM, None,
+                                              AlphabetTable.FILENAME)
+
+        with self.read_text_stream(specification) as response:
+            text = response.ansi_remaining_text()
+            if text:
+                result = AlphabetTable()
+                result.parse(text)
+            else:
+                result = AlphabetTable.get_default()
+            return result
+
     def read_binary_file(self, specification: Union[FileSpecification, str]) \
             -> Optional[bytearray]:
         """
@@ -604,39 +632,67 @@ class Connection(ObjectWithError):
             result.parse(text)
             return result
 
-    def read_text_file(self, specification: Union[FileSpecification, str]) \
-            -> str:
+    def read_opt_file(self, specification: Union[FileSpecification, str]) \
+            -> OptFile:
         """
-        Получение содержимого текстового файла с сервера.
+        Получение файла оптимизации рабочих листов с сервера.
 
-        :param specification: Спецификация или имя файла
-        (если он находится в папке текущей базы данных).
-        :return: Текст файла или пустая строка, если файл не найден
+        :param specification: Спецификация
+        :return: Файл оптимизации
         """
-
         with self.read_text_stream(specification) as response:
-            result = response.ansi_remaining_text()
-            result = irbis_to_dos(result)
+            result = OptFile()
+            text = irbis_to_lines(response.ansi_remaining_text())
+            result.parse(text)
             return result
 
-    def read_text_stream(self, specification: Union[FileSpecification, str]) \
-            -> ServerResponse:
+    def read_par_file(self, specification: Union[FileSpecification, str]) \
+            -> ParFile:
         """
-        Получение текстового файла с сервера в виде потока.
+        Получение PAR-файла с сервера.
 
-        :param specification: Спецификация или имя файла
-        (если он находится в папке текущей базы данных).
-        :return: ServerResponse, из которого можно считывать строки
+        :param specification: Спецификация или имя файла (если он в папке DATA)
+        :return: Полученный файл
         """
-
         if isinstance(specification, str):
-            specification = self.near_master(specification)
+            specification = FileSpecification(DATA, None, specification)
 
-        assert isinstance(specification, FileSpecification)
+        with self.read_text_stream(specification) as response:
+            result = ParFile()
+            text = irbis_to_lines(response.ansi_remaining_text())
+            result.parse(text)
+            return result
 
-        query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
-        result = self.execute(query)
-        return result
+    def read_postings(self, parameters: Union[PostingParameters, str],
+                      fmt: Optional[str] = None) -> List[TermPosting]:
+        """
+        Считывание постингов для указанных термов из поискового словаря.
+
+        :param parameters: Параметры постингов или терм
+        :param fmt: Опциональный формат
+        :return: Список постингов
+        """
+        if isinstance(parameters, str):
+            parameters = PostingParameters(parameters)
+            parameters.fmt = fmt
+
+        database = parameters.database or self.database or throw_value_error()
+        query = ClientQuery(self, READ_POSTINGS)
+        query.ansi(database).add(parameters.number)
+        query.add(parameters.first).ansi(parameters.fmt)
+        for term in parameters.terms:
+            query.utf(term)
+        with self.execute(query) as response:
+            response.check_return_code(READ_TERMS_CODES)
+            result = []
+            while True:
+                line = response.utf()
+                if not line:
+                    break
+                posting = TermPosting()
+                posting.parse(line)
+                result.append(posting)
+            return result
 
     def read_record(self, mfn: int, version: int = 0) -> Record:
         """
@@ -684,6 +740,137 @@ class Connection(ObjectWithError):
         result.parse(text)
         response.close()
         return result
+
+    def read_record_postings(self, mfn: int, prefix: str) -> List[TermPosting]:
+        """
+        Получение постингов для указанных записи и префикса.
+
+        :param mfn: MFN записи.
+        :param prefix: Префикс в виде "A=$".
+        :return: Список постингов.
+        """
+        assert mfn > 0
+
+        query = ClientQuery(self, 'V')
+        query.ansi(self.database).add(mfn).utf(prefix)
+        result: List[TermPosting] = []
+        with self.execute(query) as response:
+            response.check_return_code()
+            lines = response.utf_remaining_lines()
+            for line in lines:
+                one: TermPosting = TermPosting()
+                one.parse(line)
+                result.append(one)
+        return result
+
+    def read_search_scenario(self,
+                             specification: Union[FileSpecification, str]) \
+            -> List[SearchScenario]:
+        """
+        Read search scenario from the server.
+
+        :param specification: File which contains the scenario
+        :return: List of the scenarios (possibly empty)
+        """
+        if isinstance(specification, str):
+            specification = self.near_master(specification)
+
+        with self.read_text_stream(specification) as response:
+            ini = IniFile()
+            text = irbis_to_lines(response.ansi_remaining_text())
+            ini.parse(text)
+            result = SearchScenario.parse(ini)
+            return result
+
+    def read_terms(self,
+                   parameters: Union[TermParameters, str, Tuple[str, int]]) \
+            -> List[TermInfo]:
+        """
+        Получение термов поискового словаря.
+
+        :param parameters: Параметры термов или терм
+            или кортеж "терм, количество"
+        :return: Список термов
+        """
+        if isinstance(parameters, tuple):
+            parameters2 = TermParameters(parameters[0])
+            parameters2.number = parameters[1]
+            parameters = parameters2
+
+        if isinstance(parameters, str):
+            parameters = TermParameters(parameters)
+            parameters.number = 10
+
+        assert isinstance(parameters, TermParameters)
+
+        database = parameters.database or self.database or throw_value_error()
+        command = READ_TERMS_REVERSE if parameters.reverse else READ_TERMS
+        query = ClientQuery(self, command)
+        query.ansi(database).utf(parameters.start)
+        query.add(parameters.number).ansi(parameters.format)
+        with self.execute(query) as response:
+            response.check_return_code(READ_TERMS_CODES)
+            lines = response.utf_remaining_lines()
+            result = TermInfo.parse(lines)
+            return result
+
+    def read_text_file(self, specification: Union[FileSpecification, str]) \
+            -> str:
+        """
+        Получение содержимого текстового файла с сервера.
+
+        :param specification: Спецификация или имя файла
+        (если он находится в папке текущей базы данных).
+        :return: Текст файла или пустая строка, если файл не найден
+        """
+
+        with self.read_text_stream(specification) as response:
+            result = response.ansi_remaining_text()
+            result = irbis_to_dos(result)
+            return result
+
+    def read_text_stream(self, specification: Union[FileSpecification, str]) \
+            -> ServerResponse:
+        """
+        Получение текстового файла с сервера в виде потока.
+
+        :param specification: Спецификация или имя файла
+        (если он находится в папке текущей базы данных).
+        :return: ServerResponse, из которого можно считывать строки
+        """
+
+        if isinstance(specification, str):
+            specification = self.near_master(specification)
+
+        assert isinstance(specification, FileSpecification)
+
+        query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
+        result = self.execute(query)
+        return result
+
+    def read_uppercase_table(self,
+                             specification: Optional[FileSpecification] =
+                             None) \
+            -> UpperCaseTable:
+        """
+        Чтение таблицы преобразования в верхний регистр с сервера.
+
+        :param specification: Спецификация
+        :return: Таблица
+        """
+        if specification is None:
+            specification = FileSpecification(SYSTEM,
+                                              None,
+                                              UpperCaseTable.FILENAME)
+
+        with self.read_text_stream(specification) as response:
+            text = response.ansi_remaining_text()
+            if text:
+                result = UpperCaseTable()
+                result.parse(text)
+            else:
+                result = UpperCaseTable.get_default()
+            return result
 
     def reload_dictionary(self, database: Optional[str] = None) -> None:
         """

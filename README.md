@@ -12,8 +12,8 @@
 import irbis
 
 # Connect to the server
-client = irbis.Connection()
-client.parse_connection_string('host=127.0.0.1;database=IBIS;' + \
+client = irbis.Connection()  # pylint:disable=invalid-name
+client.parse_connection_string('host=127.0.0.1;database=IBIS;' +
     'user=librarian;password=secret;')
 client.connect()
 

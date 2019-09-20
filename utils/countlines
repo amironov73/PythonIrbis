@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+find irbis/ -name '*.py' | wc -l
+find irbis/ -name '*.py' -exec cat {} \; | wc -l
+find irbis/ -name '*.py' -exec cat {} \; | wc -c

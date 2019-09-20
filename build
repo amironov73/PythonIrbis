@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+PYTHON=python3
+
+${PYTHON} --version
+${PYTHON} -m pip install --upgrade pip setuptools wheel coverage mypy twine flake8 pylint
+
+${PYTHON} -m flake8 --version
+${PYTHON} -m mypy --version
+${PYTHON} -m pylint --version
+${PYTHON} -m coverage --version
+
+${PYTHON} -m flake8 irbis/
+${PYTHON} -m mypy irbis/
+${PYTHON} -m pylint irbis/
+
+PYTHONPATH=$(pwd) ${PYTHON} -m coverage run tests/offline_tests.py
+${PYTHON} -m coverage report
+${PYTHON} -m coverage html
+
+echo ALL DONE

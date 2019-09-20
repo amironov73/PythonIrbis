@@ -11,14 +11,18 @@
 
 from ._common import ADMINISTRATOR, BRIEF, close_async, init_async, \
     irbis_event_loop
-from .record import Field, Record, SubField
+
 from .error import IrbisError
 from .ini import IniFile, IniLine, IniSection
+from .menus import load_menu, MenuEntry, MenuFile
+from .process import Process
 from .query import ClientQuery
-from .specification import FileSpecification
+from .record import Field, Record, SubField
 from .response import ServerResponse
 from .search import FoundLine, SearchParameters
+from .specification import FileSpecification
 from .version import ServerVersion
+
 from .connection import Connection
 
 __version__ = '0.1.100'
@@ -36,5 +40,6 @@ __copyright__ = 'Copyright 2018-2019 Alexey Mironov'
 __all__ = ['ADMINISTRATOR', 'BRIEF', 'ClientQuery', 'Connection',
            'close_async', 'irbis_event_loop', 'IrbisError', 'Field',
            'FileSpecification', 'FoundLine', 'IniFile', 'IniLine',
-           'IniSection', 'init_async', 'Record', 'SearchParameters',
+           'IniSection', 'init_async', 'load_menu', 'MenuEntry',
+           'MenuFile', 'Process', 'Record', 'SearchParameters',
            'ServerResponse', 'ServerVersion', 'SubField']

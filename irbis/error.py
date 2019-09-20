@@ -5,6 +5,7 @@
 """
 
 from typing import Union
+from .specification import FileSpecification
 
 
 def get_error_description(code: int) -> str:
@@ -95,4 +96,19 @@ class IrbisError(Exception):
         return f'{self.code}: {get_error_description(self.code)}'
 
 
-__all__ = ['IrbisError']
+class IrbisFileNotFoundError(IrbisError):
+    """
+    Файл на сервере не найден.
+    """
+
+    __slots__ = ('filename',)
+
+    def __init__(self, filename: Union[str, FileSpecification]) -> None:
+        super().__init__()
+        self.filename: str = str(filename)
+
+    def __str__(self):
+        return f'File not found: {self.filename}'
+
+
+__all__ = ['IrbisError', 'IrbisFileNotFoundError']

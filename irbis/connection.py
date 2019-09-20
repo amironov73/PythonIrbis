@@ -14,12 +14,14 @@ from ._common import ACTUALIZE_RECORD, CREATE_DATABASE, CREATE_DICTIONARY, \
     irbis_event_loop, LIST_FILES, LOGICALLY_DELETED, MASTER_FILE, NOP, \
     ObjectWithError, READ_RECORD, READ_RECORD_CODES, READ_DOCUMENT, \
     READ_POSTINGS, READ_TERMS, READ_TERMS_REVERSE, READ_TERMS_CODES, \
-    REGISTER_CLIENT, RELOAD_DICTIONARY, RELOAD_MASTER_FILE, RESTART_SERVER, \
-    safe_str, SEARCH, SERVER_INFO, short_irbis_to_lines, SYSTEM, \
-    throw_value_error, UNREGISTER_CLIENT, UNLOCK_DATABASE, UNLOCK_RECORDS,\
-    UPDATE_INI_FILE, UPDATE_RECORD
+    RECORD_LIST, REGISTER_CLIENT, RELOAD_DICTIONARY, RELOAD_MASTER_FILE,\
+    RESTART_SERVER, safe_str, SEARCH, SERVER_INFO, short_irbis_to_lines, \
+    SYSTEM, throw_value_error, UNREGISTER_CLIENT, UNLOCK_DATABASE, \
+    UNLOCK_RECORDS, UPDATE_INI_FILE, UPDATE_RECORD
 
 from .alphabet import AlphabetTable, UpperCaseTable
+from .database import DatabaseInfo
+from .error import IrbisFileNotFoundError
 from .ini import IniFile
 from .menus import MenuFile
 from .opt import OptFile
@@ -319,6 +321,23 @@ class Connection(ObjectWithError):
         with self.execute(query):
             pass
 
+    def get_database_info(self, database: Optional[str] = None) \
+            -> DatabaseInfo:
+        """
+        Получение информации о базе данных.
+
+        :param database: Имя базы
+        :return: Информация о базе
+        """
+        database = database or self.database or throw_value_error()
+        query = ClientQuery(self, RECORD_LIST).ansi(database)
+        with self.execute(query) as response:
+            response.check_return_code()
+            result = DatabaseInfo()
+            result.parse(response)
+            result.name = database
+            return result
+
     def get_max_mfn(self, database: Optional[str] = None) -> int:
         """
         Получение максимального MFN для указанной базы данных.
@@ -402,6 +421,27 @@ class Connection(ObjectWithError):
             response.check_return_code()
             result = response.utf_remaining_text().strip('\r\n')
             return result
+
+    def list_databases(self, specification: str) \
+            -> List[DatabaseInfo]:
+        """
+        Получение списка баз данных.
+
+        :param specification: Спецификация файла, например, '1..dbnam2.mnu'
+        :return: Список баз данных
+        """
+        menu = self.read_menu(specification)
+        result: List[DatabaseInfo] = []
+        for entry in menu.entries:
+            db_info: DatabaseInfo = DatabaseInfo()
+            db_info.name = entry.code
+            if db_info.name[0] == '-':
+                db_info.name = db_info.name[1:]
+                db_info.read_only = True
+            db_info.description = entry.comment
+            result.append(db_info)
+
+        return result
 
     def list_files(self,
                    *specification: Union[FileSpecification, str]) -> List[str]:
@@ -911,6 +951,98 @@ class Connection(ObjectWithError):
 
         with self.execute_ansi(RESTART_SERVER):
             pass
+
+    def require_alphabet_table(self,
+                               specification: Optional[FileSpecification] =
+                               None) \
+            -> AlphabetTable:
+        """
+        Чтение алфавитной таблицы с сервера.
+        :param specification: Спецификация
+        :return: Таблица
+        """
+        if specification is None:
+            specification = FileSpecification(SYSTEM,
+                                              None,
+                                              AlphabetTable.FILENAME)
+
+        with self.read_text_stream(specification) as response:
+            text = response.ansi_remaining_text()
+            if not text:
+                raise IrbisFileNotFoundError(specification)
+            if text:
+                result = AlphabetTable()
+                result.parse(text)
+            else:
+                result = AlphabetTable.get_default()
+            return result
+
+    def require_menu(self,
+                     specification: Union[FileSpecification, str]) -> MenuFile:
+        """
+        Чтение меню с сервера.
+
+        :param specification: Спецификация файла
+        :return: Меню
+        """
+        with self.read_text_stream(specification) as response:
+            result = MenuFile()
+            text = irbis_to_lines(response.ansi_remaining_text())
+            if not text:
+                raise IrbisFileNotFoundError(specification)
+            result.parse(text)
+            return result
+
+    def require_opt_file(self,
+                         specification: Union[FileSpecification, str]) \
+            -> OptFile:
+        """
+        Получение файла оптимизации рабочих листов с сервера.
+
+        :param specification: Спецификация
+        :return: Файл оптимизации
+        """
+        with self.read_text_stream(specification) as response:
+            result = OptFile()
+            text = irbis_to_lines(response.ansi_remaining_text())
+            if not text:
+                raise IrbisFileNotFoundError(specification)
+            result.parse(text)
+            return result
+
+    def require_par_file(self,
+                         specification: Union[FileSpecification, str]) \
+            -> ParFile:
+        """
+        Получение PAR-файла с сервера.
+
+        :param specification: Спецификация или имя файла (если он в папке DATA)
+        :return: Полученный файл
+        """
+        if isinstance(specification, str):
+            specification = FileSpecification(DATA, None, specification)
+
+        with self.read_text_stream(specification) as response:
+            result = ParFile()
+            text = irbis_to_lines(response.ansi_remaining_text())
+            if not text:
+                raise IrbisFileNotFoundError(specification)
+            result.parse(text)
+            return result
+
+    def require_text_file(self,
+                          specification: FileSpecification) -> str:
+        """
+        Чтение текстового файла с сервера.
+
+        :param specification: Спецификация
+        :return: Содержимое файла
+        """
+        result = self.read_text_file(specification)
+        if not result:
+            raise IrbisFileNotFoundError(specification)
+
+        return result
 
     def search(self, parameters: Any) -> List[int]:
         """

@@ -22,6 +22,6 @@ jobs:
         flake8 --version
         flake8 irbis/ --ignore=E261,E302,W503,W504 --show-source --statistics
         mypy --version
-        source mypy0 irbis/
+        mypy irbis/
         pylint --version
-        source pylint0 irbis/
+        pylint irbis/

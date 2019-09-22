@@ -651,7 +651,6 @@ class Record:
         :param text: Список строк
         :return: None
         """
-
         if not text:
             return
 
@@ -823,4 +822,122 @@ class Record:
         return bool(self.fields)
 
 
-__all__ = ['Record', 'Field', 'SubField']
+class RawRecord:
+    """
+    Запись с нераскодированными полями/подполями.
+    """
+
+    __slots__ = 'database', 'mfn', 'status', 'version', 'fields'
+
+    def __init__(self, *fields: str) -> None:
+        self.database: Optional[str] = None
+        self.mfn: int = 0
+        self.version: int = 0
+        self.status: int = 0
+        self.fields: List[str] = []
+        self.fields.extend(fields)
+
+    def clear(self) -> 'RawRecord':
+        """
+        Очистка записи (удаление всех полей).
+
+        :return: Self
+        """
+        self.fields.clear()
+        return self
+
+    def clone(self) -> 'RawRecord':
+        """
+        Клонирование записи.
+
+        :return: Полный клон записи
+        """
+        result = RawRecord()
+        result.database = self.database
+        result.mfn = self.mfn
+        result.status = self.status
+        result.version = self.version
+        result.fields = [field for field in self.fields]
+        return result
+
+    def encode(self) -> List[str]:
+        """
+        Кодирование записи в серверное представление.
+
+        :return: Список строк
+        """
+        result = [str(self.mfn) + '#' + str(self.status),
+                  '0#' + str(self.version)]
+        for field in self.fields:
+            result.append(field)
+        return result
+
+    def is_deleted(self) -> bool:
+        """
+        Удалена ли запись?
+        :return: True для удаленной записи
+        """
+        return (self.status & (LOGICALLY_DELETED | PHYSICALLY_DELETED)) != 0
+
+    def parse(self, text: List[str]) -> None:
+        """
+        Разбор текстового представления записи (в серверном формате).
+
+        :param text: Список строк
+        :return: None
+        """
+
+        if not text:
+            return
+
+        line = text[0]
+        parts = line.split('#')
+        self.mfn = int(parts[0])
+        if len(parts) != 1 and parts[1]:
+            self.status = int(parts[1])
+        line = text[1]
+        parts = line.split('#')
+        self.version = int(parts[1])
+        self.fields.clear()
+        for line in text[2:]:
+            self.fields.append(line)
+
+    def remove_at(self, index: int) -> 'RawRecord':
+        """
+        Удаление поля в указанной позиции.
+
+        :param index: Позиция для удаления.
+        :return: Self
+        """
+        assert 0 <= index < len(self.fields)
+
+        self.fields.remove(self.fields[index])
+        return self
+
+    def reset(self) -> 'RawRecord':
+        """
+        Сбрасывает состояние записи, отвязывая её от базы данных.
+        Поля при этом остаются нетронутыми.
+        :return: Self.
+        """
+        self.mfn = 0
+        self.status = 0
+        self.version = 0
+        self.database = None
+        return self
+
+    def __str__(self):
+        result = [str(field) for field in self.fields]
+        return '\n'.join(result)
+
+    def __iter__(self):
+        yield from self.fields
+
+    def __len__(self):
+        return len(self.fields)
+
+    def __bool__(self):
+        return bool(len(self.fields))
+
+
+__all__ = ['Field', 'RawRecord', 'Record', 'SubField']

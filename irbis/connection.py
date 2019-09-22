@@ -10,14 +10,15 @@ from typing import Any, List, Optional, Tuple, Union
 
 from ._common import ACTUALIZE_RECORD, CREATE_DATABASE, CREATE_DICTIONARY, \
     DATA, DELETE_DATABASE, EMPTY_DATABASE, FORMAT_RECORD, GET_MAX_MFN, \
-    GET_PROCESS_LIST, IRBIS_DELIMITER, irbis_to_dos, irbis_to_lines, \
-    irbis_event_loop, LIST_FILES, LOGICALLY_DELETED, MASTER_FILE, NOP, \
-    ObjectWithError, READ_RECORD, READ_RECORD_CODES, READ_DOCUMENT, \
-    READ_POSTINGS, READ_TERMS, READ_TERMS_REVERSE, READ_TERMS_CODES, \
-    RECORD_LIST, REGISTER_CLIENT, RELOAD_DICTIONARY, RELOAD_MASTER_FILE,\
-    RESTART_SERVER, safe_str, SEARCH, SERVER_INFO, short_irbis_to_lines, \
-    SYSTEM, throw_value_error, UNREGISTER_CLIENT, UNLOCK_DATABASE, \
-    UNLOCK_RECORDS, UPDATE_INI_FILE, UPDATE_RECORD
+    GET_PROCESS_LIST, GET_USER_LIST, IRBIS_DELIMITER, irbis_to_dos, \
+    irbis_to_lines, irbis_event_loop, LIST_FILES, LOGICALLY_DELETED, \
+    MASTER_FILE, NOP, ObjectWithError, READ_RECORD, READ_RECORD_CODES, \
+    READ_DOCUMENT, READ_POSTINGS, READ_TERMS, READ_TERMS_REVERSE, \
+    READ_TERMS_CODES, RECORD_LIST, REGISTER_CLIENT, RELOAD_DICTIONARY, \
+    RELOAD_MASTER_FILE, RESTART_SERVER, safe_str, SEARCH, SERVER_INFO, \
+    SET_USER_LIST, short_irbis_to_lines, SYSTEM, throw_value_error, \
+    UNREGISTER_CLIENT, UNLOCK_DATABASE, UNLOCK_RECORDS, UPDATE_INI_FILE, \
+    UPDATE_RECORD
 
 from .alphabet import AlphabetTable, UpperCaseTable
 from .database import DatabaseInfo
@@ -28,12 +29,14 @@ from .opt import OptFile
 from .par import ParFile
 from .process import Process
 from .query import ClientQuery
-from .record import Record
+from .record import RawRecord, Record
 from .response import ServerResponse
 from .search import SearchParameters, SearchScenario
 from .specification import FileSpecification
 from .terms import PostingParameters, TermInfo, TermPosting, TermParameters
+from .tree import TreeFile
 from .version import ServerVersion
+from .user import UserInfo
 
 
 class Connection(ObjectWithError):
@@ -472,13 +475,13 @@ class Connection(ObjectWithError):
                 result.extend(one for one in irbis_to_lines(line) if one)
         return result
 
+    # noinspection DuplicatedCode
     def list_processes(self) -> List[Process]:
         """
         Получение списка серверных процессов.
 
         :return: Список процессов
         """
-
         query = ClientQuery(self, GET_PROCESS_LIST)
         with self.execute(query) as response:
             response.check_return_code()
@@ -503,6 +506,18 @@ class Connection(ObjectWithError):
                 process.state = response.ansi()
                 result.append(process)
 
+            return result
+
+    def list_users(self) -> List[UserInfo]:
+        """
+        Получение списка пользователей с сервера.
+
+        :return: Список пользователей
+        """
+        query = ClientQuery(self, GET_USER_LIST)
+        with self.execute(query) as response:
+            response.check_return_code()
+            result = UserInfo.parse(response)
             return result
 
     def near_master(self, filename: str) -> FileSpecification:
@@ -734,6 +749,26 @@ class Connection(ObjectWithError):
                 result.append(posting)
             return result
 
+    def read_raw_record(self, mfn: int) -> RawRecord:
+        """
+        Чтение сырой записи с сервера.
+
+        :param mfn: MFN записи.
+        :return: Загруженная с сервера запись.
+        """
+        mfn = mfn or int(throw_value_error())
+
+        query = ClientQuery(self, READ_RECORD)
+        query.ansi(self.database).add(mfn)
+        with self.execute(query) as response:
+            response.check_return_code(READ_RECORD_CODES)
+            text = response.utf_remaining_lines()
+            result = RawRecord()
+            result.database = self.database
+            result.parse(text)
+
+        return result
+
     def read_record(self, mfn: int, version: int = 0) -> Record:
         """
         Чтение записи с указанным MFN с сервера.
@@ -887,6 +922,21 @@ class Connection(ObjectWithError):
         query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
         result = self.execute(query)
         return result
+
+    def read_tree_file(self, specification: Union[FileSpecification, str]) \
+            -> TreeFile:
+        """
+        Чтение TRE-файла с сервера.
+
+        :param specification:  Спецификация
+        :return: Дерево
+        """
+        with self.read_text_stream(specification) as response:
+            text = response.ansi_remaining_text()
+            text = [line for line in irbis_to_lines(text) if line]
+            result = TreeFile()
+            result.parse(text)
+            return result
 
     def read_uppercase_table(self,
                              specification: Optional[FileSpecification] =
@@ -1191,6 +1241,49 @@ class Connection(ObjectWithError):
         for line in lines:
             query.ansi(line)
         self.execute_forget(query)
+
+    def update_user_list(self, users: List[UserInfo]) -> None:
+        """
+        Обновление списка пользователей на сервере.
+
+        :param users:  Список пользователей
+        :return: None
+        """
+        assert isinstance(users, list) and users
+
+        query = ClientQuery(self, SET_USER_LIST)
+        for user in users:
+            query.ansi(user.encode())
+        self.execute_forget(query)
+
+    def write_raw_record(self, record: RawRecord,
+                         lock: bool = False,
+                         actualize: bool = True) -> int:
+        """
+        Сохранение записи на сервере.
+
+        :param record: Запись
+        :param lock: Оставить запись заблокированной?
+        :param actualize: Актуализировать запись?
+        :return: Новый максимальный MFN
+        """
+        database = record.database or self.database or throw_value_error()
+        if not record:
+            raise ValueError()
+
+        assert isinstance(record, RawRecord)
+        assert isinstance(database, str)
+
+        assert isinstance(record, RawRecord)
+        assert isinstance(database, str)
+
+        query = ClientQuery(self, UPDATE_RECORD)
+        query.ansi(database).add(int(lock)).add(int(actualize))
+        query.utf(IRBIS_DELIMITER.join(record.encode()))
+        with self.execute(query) as response:
+            response.check_return_code()
+            result = response.return_code  # Новый максимальный MFN
+            return result
 
     def write_record(self, record: Record,
                      lock: bool = False,

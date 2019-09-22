@@ -22,11 +22,12 @@ from .opt import load_opt_file, OptFile
 from .par import load_par_file, ParFile
 from .process import Process
 from .query import ClientQuery
-from .record import Field, Record, SubField
+from .record import Field, RawRecord, Record, SubField
 from .response import ServerResponse
 from .search import FoundLine, SearchParameters, SearchScenario
 from .specification import FileSpecification
 from .terms import PostingParameters, TermInfo, TermParameters, TermPosting
+from .tree import load_tree_file, TreeFile, TreeNode
 from .version import ServerVersion
 
 from .connection import Connection
@@ -47,8 +48,10 @@ __all__ = ['ADMINISTRATOR', 'AlphabetTable', 'BRIEF', 'ClientQuery',
            'IrbisError', 'IrbisFileNotFoundError', 'Field',
            'FileSpecification', 'FoundLine', 'IniFile', 'IniLine',
            'IniSection', 'init_async', 'load_alphabet_table', 'load_menu',
-           'load_opt_file', 'load_par_file', 'load_uppercase_table',
-           'MenuEntry', 'MenuFile', 'OptFile', 'ParFile',
-           'PostingParameters', 'Process', 'Record', 'SearchParameters',
-           'SearchScenario', 'ServerResponse', 'ServerVersion', 'SubField',
-           'TermInfo', 'TermParameters', 'TermPosting', 'UpperCaseTable']
+           'load_opt_file', 'load_par_file', 'load_tree_file',
+           'load_uppercase_table', 'MenuEntry', 'MenuFile', 'OptFile',
+           'ParFile', 'PostingParameters', 'Process', 'RawRecord',
+           'Record', 'SearchParameters', 'SearchScenario',
+           'ServerResponse', 'ServerVersion', 'SubField', 'TermInfo',
+           'TermParameters', 'TermPosting', 'TreeFile', 'TreeNode',
+           'UpperCaseTable']

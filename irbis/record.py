@@ -644,6 +644,7 @@ class Record:
         """
         return (self.status & (LOGICALLY_DELETED | PHYSICALLY_DELETED)) != 0
 
+    # noinspection DuplicatedCode
     def parse(self, text: List[str]) -> None:
         """
         Разбор текстового представления записи (в серверном формате).
@@ -879,6 +880,7 @@ class RawRecord:
         """
         return (self.status & (LOGICALLY_DELETED | PHYSICALLY_DELETED)) != 0
 
+    # noinspection DuplicatedCode
     def parse(self, text: List[str]) -> None:
         """
         Разбор текстового представления записи (в серверном формате).

@@ -8,21 +8,23 @@ import asyncio
 import socket
 from typing import Any, List, Optional, Tuple, Union
 
-from ._common import ACTUALIZE_RECORD, CREATE_DATABASE, CREATE_DICTIONARY, \
-    DATA, DELETE_DATABASE, EMPTY_DATABASE, FORMAT_RECORD, GET_MAX_MFN, \
-    GET_PROCESS_LIST, GET_USER_LIST, IRBIS_DELIMITER, irbis_to_dos, \
+from ._common import ACTUALIZE_RECORD, ALL, CREATE_DATABASE, \
+    CREATE_DICTIONARY, DATA, DELETE_DATABASE, EMPTY_DATABASE, FORMAT_RECORD, \
+    GET_MAX_MFN, GET_PROCESS_LIST, GET_USER_LIST, IRBIS_DELIMITER, \
+    irbis_to_dos, \
     irbis_to_lines, irbis_event_loop, LIST_FILES, LOGICALLY_DELETED, \
-    MASTER_FILE, NOP, ObjectWithError, READ_RECORD, READ_RECORD_CODES, \
-    READ_DOCUMENT, READ_POSTINGS, READ_TERMS, READ_TERMS_REVERSE, \
-    READ_TERMS_CODES, RECORD_LIST, REGISTER_CLIENT, RELOAD_DICTIONARY, \
-    RELOAD_MASTER_FILE, RESTART_SERVER, safe_str, SEARCH, SERVER_INFO, \
-    SET_USER_LIST, short_irbis_to_lines, SYSTEM, throw_value_error, \
-    UNREGISTER_CLIENT, UNLOCK_DATABASE, UNLOCK_RECORDS, UPDATE_INI_FILE, \
-    UPDATE_RECORD
+    MASTER_FILE, MAX_POSTINGS, NOP, ObjectWithError, OTHER_DELIMITER, \
+    READ_RECORD, \
+    READ_RECORD_CODES, READ_DOCUMENT, READ_POSTINGS, READ_TERMS, \
+    READ_TERMS_REVERSE, READ_TERMS_CODES, RECORD_LIST, REGISTER_CLIENT, \
+    RELOAD_DICTIONARY, RELOAD_MASTER_FILE, RESTART_SERVER, safe_str, SEARCH, \
+    SERVER_INFO, SET_USER_LIST, short_irbis_to_lines, SYSTEM, \
+    throw_value_error, UNREGISTER_CLIENT, UNLOCK_DATABASE, UNLOCK_RECORDS, \
+    UPDATE_INI_FILE, UPDATE_RECORD
 
 from .alphabet import AlphabetTable, UpperCaseTable
 from .database import DatabaseInfo
-from .error import IrbisFileNotFoundError
+from .error import IrbisError, IrbisFileNotFoundError
 from .ini import IniFile
 from .menus import MenuFile
 from .opt import OptFile
@@ -324,6 +326,106 @@ class Connection(ObjectWithError):
         with self.execute(query):
             pass
 
+    # noinspection DuplicatedCode
+    def format_record(self, script: str, record: Union[Record, int]) -> str:
+        """
+        Форматирование записи с указанным MFN.
+
+        :param script: Текст формата
+        :param record: MFN записи либо сама запись
+        :return: Результат расформатирования
+        """
+        script = script or throw_value_error()
+        if not record:
+            raise ValueError()
+
+        assert isinstance(script, str)
+        assert isinstance(record, (Record, int))
+
+        if not script:
+            return ''
+
+        query = ClientQuery(self, FORMAT_RECORD).ansi(self.database)
+
+        query.format(script)
+
+        if isinstance(record, int):
+            query.add(1).add(record)
+        else:
+            query.add(-2).utf(IRBIS_DELIMITER.join(record.encode()))
+
+        with self.execute(query) as response:
+            response.check_return_code()
+            result = response.utf_remaining_text().strip('\r\n')
+            return result
+
+    # noinspection DuplicatedCode
+    async def format_record_async(self, script: str,
+                                  record: Union[Record, int]) -> str:
+        """
+        Асинхронное форматирование записи с указанным MFN.
+
+        :param script: Текст формата
+        :param record: MFN записи либо сама запись
+        :return: Результат расформатирования
+        """
+        script = script or throw_value_error()
+        if not record:
+            raise ValueError()
+
+        assert isinstance(script, str)
+        assert isinstance(record, (Record, int))
+
+        if not script:
+            return ''
+
+        query = ClientQuery(self, FORMAT_RECORD).ansi(self.database)
+        query.format(script)
+        if isinstance(record, int):
+            query.add(1).add(record)
+        else:
+            query.add(-2).utf(IRBIS_DELIMITER.join(record.encode()))
+
+        response = await self.execute_async(query)
+        response.check_return_code()
+        result = response.utf_remaining_text().strip('\r\n')
+        response.close()
+        return result
+
+    def format_records(self, script: str, records: List[int]) -> List[str]:
+        """
+        Форматирование группы записей по MFN.
+
+        :param script: Текст формата
+        :param records: Список MFN
+        :return: Список строк
+        """
+        if not records:
+            return []
+
+        script = script or throw_value_error()
+
+        assert isinstance(script, str)
+        assert isinstance(records, list)
+
+        if not script:
+            return [''] * len(records)
+
+        if len(records) > MAX_POSTINGS:
+            raise IrbisError()
+
+        query = ClientQuery(self, FORMAT_RECORD).ansi(self.database)
+        query.format(script)
+        query.add(len(records))
+        for mfn in records:
+            query.add(mfn)
+
+        with self.execute(query) as response:
+            response.check_return_code()
+            result = response.utf_remaining_lines()
+            result = [line.split('#', 1)[1] for line in result]
+            return result
+
     def get_database_info(self, database: Optional[str] = None) \
             -> DatabaseInfo:
         """
@@ -389,40 +491,6 @@ class Connection(ObjectWithError):
             result.parse(lines)
             if not self.server_version:
                 self.server_version = result.version
-            return result
-
-    def format_record(self, script: str,
-                      record: Union[Record, int]) -> str:
-        """
-        Форматирование записи с указанным MFN.
-
-        :param script: Текст формата
-        :param record: MFN записи либо сама запись
-        :return: Результат расформатирования
-        """
-
-        script = script or throw_value_error()
-        if not record:
-            raise ValueError()
-
-        assert isinstance(script, str)
-        assert isinstance(record, (Record, int))
-
-        if not script:
-            return ''
-
-        query = ClientQuery(self, FORMAT_RECORD).ansi(self.database)
-
-        query.format(script)
-
-        if isinstance(record, int):
-            query.add(1).add(record)
-        else:
-            query.add(-2).utf(IRBIS_DELIMITER.join(record.encode()))
-
-        with self.execute(query) as response:
-            response.check_return_code()
-            result = response.utf_remaining_text().strip('\r\n')
             return result
 
     def list_databases(self, specification: str) \
@@ -838,6 +906,36 @@ class Connection(ObjectWithError):
                 result.append(one)
         return result
 
+    def read_records(self, *mfns: int) -> List[Record]:
+        """
+        Чтение записей с указанными MFN с сервера.
+
+        :param mfns: Перечень MFN
+        :return: Список записей
+        """
+
+        array = list(mfns)
+
+        if not array:
+            return []
+
+        if len(array) == 1:
+            return [self.read_record(array[0])]
+
+        lines = self.format_records(ALL, array)
+        result = []
+        for line in lines:
+            parts = line.split(OTHER_DELIMITER)
+            if parts:
+                parts = [x for x in parts[1:] if x]
+                record = Record()
+                record.parse(parts)
+                if record:
+                    record.database = self.database
+                    result.append(record)
+
+        return result
+
     def read_search_scenario(self,
                              specification: Union[FileSpecification, str]) \
             -> List[SearchScenario]:
@@ -903,6 +1001,25 @@ class Connection(ObjectWithError):
             result = response.ansi_remaining_text()
             result = irbis_to_dos(result)
             return result
+
+    async def read_text_file_async(self,
+                                   specification: Union[FileSpecification,
+                                                        str]) -> str:
+        """
+        Асинхронное получение содержимого текстового файла с сервера.
+
+        :param specification: Спецификация или имя файла
+            (если он находится в папке текущей базы данных).
+        :return: Текст файла или пустая строка, если файл не найден
+        """
+        if isinstance(specification, str):
+            specification = self.near_master(specification)
+        query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
+        response = await self.execute_async(query)
+        result = response.ansi_remaining_text()
+        result = irbis_to_dos(result)
+        response.close()
+        return result
 
     def read_text_stream(self, specification: Union[FileSpecification, str]) \
             -> ServerResponse:
@@ -1256,6 +1373,7 @@ class Connection(ObjectWithError):
             query.ansi(user.encode())
         self.execute_forget(query)
 
+    # noinspection DuplicatedCode
     def write_raw_record(self, record: RawRecord,
                          lock: bool = False,
                          actualize: bool = True) -> int:
@@ -1285,6 +1403,7 @@ class Connection(ObjectWithError):
             result = response.return_code  # Новый максимальный MFN
             return result
 
+    # noinspection DuplicatedCode
     def write_record(self, record: Record,
                      lock: bool = False,
                      actualize: bool = True,
@@ -1322,6 +1441,34 @@ class Connection(ObjectWithError):
                 record.database = database
                 record.parse(text)
             return result
+
+    def write_records(self, records: List[Record]) -> bool:
+        """
+        Сохранение нескольких записей на сервере.
+        Записи могут принадлежать разным базам.
+
+        :param records: Записи для сохранения.
+        :return: Результат.
+        """
+        if not records:
+            return True
+
+        if len(records) == 1:
+            return bool(self.write_record(records[0]))
+
+        query = ClientQuery(self, "6")
+        query.add(0).add(1)
+
+        for record in records:
+            database = record.database or self.database
+            line = database + IRBIS_DELIMITER + \
+                IRBIS_DELIMITER.join(record.encode())
+            query.utf(line)
+
+        with self.execute(query) as response:
+            response.check_return_code()
+
+        return True
 
     def write_text_file(self, *specification: FileSpecification) -> None:
         """

@@ -25,3 +25,8 @@ jobs:
         mypy irbis/
         pylint --version
         pylint irbis/
+    - name: Test
+      run: |
+        PYTHONPATH=$(pwd) python -m coverage run tests/offline_tests.py
+        python -m coverage report
+        python -m coverage html

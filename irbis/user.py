@@ -30,6 +30,7 @@ class UserInfo:
         self.provision: Optional[str] = None
         self.administrator: Optional[str] = None
 
+    # noinspection DuplicatedCode
     @staticmethod
     def parse(response: ServerResponse) -> List['UserInfo']:
         """

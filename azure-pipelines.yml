@@ -32,3 +32,9 @@ steps:
     mypy irbis/
     pylint irbis/
   displayName: 'Lint'
+
+- script: |
+    PYTHONPATH=$(pwd) coverage run tests/offline_tests.py
+    coverage report
+    coverage html
+  displayName: 'Test'

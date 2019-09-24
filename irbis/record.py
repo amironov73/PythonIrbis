@@ -215,7 +215,7 @@ class Field:
                 if tag < 10 and len(value) > 3:
                     found.value = value[3:]
             else:
-                if found:
+                if found is not None:
                     found.subfields.append(subfield)
 
         if found:
@@ -440,7 +440,7 @@ class Field:
         return len(self.subfields)
 
     def __bool__(self):
-        return bool(self.value) if bool(self.tag) else bool(self.subfields)
+        return bool(self.tag) and (bool(self.value) or bool(self.subfields))
 
 
 #############################################################################
@@ -807,6 +807,7 @@ class Record:
             if field is None:
                 field = Field(key)
                 self.fields.append(field)
+            value.tag = key
             field.assign_from(value)
 
         if isinstance(value, SubField):

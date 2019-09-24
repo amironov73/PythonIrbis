@@ -9,8 +9,9 @@
 # Python supported: 3.6 and higher
 # IRBIS64 supported: 2014 and higher
 
-from ._common import ADMINISTRATOR, BRIEF, close_async, init_async, \
-    irbis_event_loop
+from ._common import ADMINISTRATOR, BRIEF, CATALOGER, close_async, \
+    init_async, irbis_event_loop, LAST, LOCKED, LOGICALLY_DELETED, \
+    NON_ACTUALIZED, PHYSICALLY_DELETED
 
 from .alphabet import AlphabetTable, load_alphabet_table, UpperCaseTable, \
     load_uppercase_table
@@ -43,15 +44,16 @@ __uri__ = 'http://arsmagna.ru'
 __license__ = 'MIT License'
 __copyright__ = 'Copyright 2018-2019 Alexey Mironov'
 
-__all__ = ['ADMINISTRATOR', 'AlphabetTable', 'BRIEF', 'ClientQuery',
-           'Connection', 'close_async', 'DatabaseInfo', 'irbis_event_loop',
-           'IrbisError', 'IrbisFileNotFoundError', 'Field',
-           'FileSpecification', 'FoundLine', 'IniFile', 'IniLine',
+__all__ = ['ADMINISTRATOR', 'AlphabetTable', 'BRIEF', 'CATALOGER',
+           'ClientQuery', 'Connection', 'close_async', 'DatabaseInfo',
+           'irbis_event_loop', 'IrbisError', 'IrbisFileNotFoundError',
+           'Field', 'FileSpecification', 'FoundLine', 'IniFile', 'IniLine',
            'IniSection', 'init_async', 'load_alphabet_table', 'load_menu',
            'load_opt_file', 'load_par_file', 'load_tree_file',
-           'load_uppercase_table', 'MenuEntry', 'MenuFile', 'OptFile',
-           'ParFile', 'PostingParameters', 'Process', 'RawRecord',
-           'Record', 'SearchParameters', 'SearchScenario',
+           'load_uppercase_table', 'LAST', 'LOCKED', 'LOGICALLY_DELETED',
+           'MenuEntry', 'MenuFile', 'NON_ACTUALIZED', 'OptFile', 'ParFile',
+           'PHYSICALLY_DELETED', 'PostingParameters', 'Process',
+           'RawRecord', 'Record', 'SearchParameters', 'SearchScenario',
            'ServerResponse', 'ServerVersion', 'SubField', 'TermInfo',
            'TermParameters', 'TermPosting', 'TreeFile', 'TreeNode',
            'UpperCaseTable']

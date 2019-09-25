@@ -4,7 +4,8 @@
 Работа с PAR-файлами.
 """
 
-from typing import Dict, Iterable
+from typing import DefaultDict, Iterable
+from collections import defaultdict
 from ._common import ANSI
 
 
@@ -30,16 +31,14 @@ class ParFile:
         self.ext: str = mst
 
     @staticmethod
-    def make_dict(text: Iterable[str]) -> Dict:
+    def make_dict(text: Iterable[str]) -> DefaultDict:
         """
         Make the dictionary from the text.
 
         :param text: Text to parse.
         :return: Dictionary
         """
-
-        import collections
-        result: Dict = collections.defaultdict(lambda: '')
+        result: DefaultDict = defaultdict(lambda: '')
         for line in text:
             if not line:
                 continue

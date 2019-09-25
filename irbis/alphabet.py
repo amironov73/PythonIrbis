@@ -4,6 +4,7 @@
 Работа с алфавитной таблицей.
 """
 
+import re
 from typing import Dict, Generator, List
 from ._common import ANSI
 
@@ -80,7 +81,6 @@ class AlphabetTable:
         :param text: Text to parse
         :return: None
         """
-        import re
 
         parts = re.findall(r'\d+', text)
         array = bytearray(int(x) for x in parts if x and x.isdigit())
@@ -422,8 +422,6 @@ class UpperCaseTable:
         :param text: Text to parse
         :return: None
         """
-        import re
-
         parts = re.findall(r'\d+', text)
         if not parts:
             # Попалась пустая таблица

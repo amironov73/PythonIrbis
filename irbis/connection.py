@@ -6,6 +6,8 @@
 
 import asyncio
 import socket
+import random
+import time
 from typing import Any, List, Optional, Tuple, Union
 
 from ._common import ACTUALIZE_RECORD, ALL, CREATE_DATABASE, \
@@ -131,8 +133,6 @@ class Connection(ObjectWithError):
         assert isinstance(self.username, str)
         assert isinstance(self.password, str)
 
-        import random
-
         while True:
             self.query_id = 0
             self.client_id = random.randint(100000, 999999)
@@ -150,8 +150,6 @@ class Connection(ObjectWithError):
 
         :return: INI-файл
         """
-        import random
-
         while True:
             self.query_id = 0
             self.client_id = random.randint(100000, 999999)
@@ -609,8 +607,6 @@ class Connection(ObjectWithError):
         :param operation: Какую операцию ждем
         :return: Серверный лог-файл (результат выполнения операции)
         """
-
-        import time
         client_id = str(self.client_id)
         while True:
             processes = self.list_processes()

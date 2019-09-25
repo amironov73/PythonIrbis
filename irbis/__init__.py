@@ -27,6 +27,8 @@ from .record import Field, RawRecord, Record, SubField
 from .response import ServerResponse
 from .search import FoundLine, SearchParameters, SearchScenario
 from .specification import FileSpecification
+from .stat import ClientInfo, ServerStat
+from .table import TableDefinition
 from .terms import PostingParameters, TermInfo, TermParameters, TermPosting
 from .tree import load_tree_file, TreeFile, TreeNode
 from .version import ServerVersion
@@ -45,15 +47,16 @@ __license__ = 'MIT License'
 __copyright__ = 'Copyright 2018-2019 Alexey Mironov'
 
 __all__ = ['ADMINISTRATOR', 'AlphabetTable', 'BRIEF', 'CATALOGER',
-           'ClientQuery', 'Connection', 'close_async', 'DatabaseInfo',
-           'irbis_event_loop', 'IrbisError', 'IrbisFileNotFoundError',
-           'Field', 'FileSpecification', 'FoundLine', 'IniFile', 'IniLine',
-           'IniSection', 'init_async', 'load_alphabet_table', 'load_menu',
-           'load_opt_file', 'load_par_file', 'load_tree_file',
-           'load_uppercase_table', 'LAST', 'LOCKED', 'LOGICALLY_DELETED',
-           'MenuEntry', 'MenuFile', 'NON_ACTUALIZED', 'OptFile', 'ParFile',
+           'ClientInfo', 'ClientQuery', 'close_async', 'Connection',
+           'DatabaseInfo', 'irbis_event_loop', 'IrbisError',
+           'IrbisFileNotFoundError', 'Field', 'FileSpecification',
+           'FoundLine', 'IniFile', 'IniLine', 'IniSection', 'init_async',
+           'load_alphabet_table', 'load_menu', 'load_opt_file',
+           'load_par_file', 'load_tree_file', 'load_uppercase_table',
+           'LAST', 'LOCKED', 'LOGICALLY_DELETED', 'MenuEntry',
+           'MenuFile', 'NON_ACTUALIZED', 'OptFile', 'ParFile',
            'PHYSICALLY_DELETED', 'PostingParameters', 'Process',
            'RawRecord', 'Record', 'SearchParameters', 'SearchScenario',
-           'ServerResponse', 'ServerVersion', 'SubField', 'TermInfo',
-           'TermParameters', 'TermPosting', 'TreeFile', 'TreeNode',
-           'UpperCaseTable']
+           'ServerResponse', 'ServerStat', 'ServerVersion', 'SubField',
+           'TableDefinition', 'TermInfo', 'TermParameters', 'TermPosting',
+           'TreeFile', 'TreeNode', 'UpperCaseTable']

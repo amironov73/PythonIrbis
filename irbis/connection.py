@@ -10,15 +10,16 @@ from typing import Any, List, Optional, Tuple, Union
 
 from ._common import ACTUALIZE_RECORD, ALL, CREATE_DATABASE, \
     CREATE_DICTIONARY, DATA, DELETE_DATABASE, EMPTY_DATABASE, FORMAT_RECORD, \
-    GET_MAX_MFN, GET_PROCESS_LIST, GET_USER_LIST, IRBIS_DELIMITER, \
-    irbis_to_dos, irbis_to_lines, irbis_event_loop, LIST_FILES, \
-    LOGICALLY_DELETED, MASTER_FILE, MAX_POSTINGS, NOP, ObjectWithError, \
-    OTHER_DELIMITER, READ_RECORD, READ_RECORD_CODES, READ_DOCUMENT, \
-    READ_POSTINGS, READ_TERMS, READ_TERMS_REVERSE, READ_TERMS_CODES, \
-    RECORD_LIST, REGISTER_CLIENT, RELOAD_DICTIONARY, RELOAD_MASTER_FILE, \
-    RESTART_SERVER, safe_str, SEARCH, SERVER_INFO, SET_USER_LIST, \
-    short_irbis_to_lines, SYSTEM, throw_value_error, UNREGISTER_CLIENT, \
-    UNLOCK_DATABASE, UNLOCK_RECORDS, UPDATE_INI_FILE, UPDATE_RECORD
+    GET_MAX_MFN, GET_PROCESS_LIST, GET_SERVER_STAT, GET_USER_LIST, \
+    IRBIS_DELIMITER, irbis_to_dos, irbis_to_lines, irbis_event_loop, \
+    LIST_FILES, LOGICALLY_DELETED, MASTER_FILE, MAX_POSTINGS, NOP, \
+    ObjectWithError, OTHER_DELIMITER, PRINT, READ_RECORD, READ_RECORD_CODES, \
+    READ_DOCUMENT, READ_POSTINGS, READ_TERMS, READ_TERMS_REVERSE, \
+    READ_TERMS_CODES, RECORD_LIST, REGISTER_CLIENT, RELOAD_DICTIONARY, \
+    RELOAD_MASTER_FILE, RESTART_SERVER, safe_str, SEARCH, SERVER_INFO, \
+    SET_USER_LIST, short_irbis_to_lines, SYSTEM, throw_value_error, \
+    UNREGISTER_CLIENT, UNLOCK_DATABASE, UNLOCK_RECORDS, UPDATE_INI_FILE, \
+    UPDATE_RECORD
 
 from .alphabet import AlphabetTable, UpperCaseTable
 from .database import DatabaseInfo
@@ -33,6 +34,8 @@ from .record import RawRecord, Record
 from .response import ServerResponse
 from .search import SearchParameters, SearchScenario
 from .specification import FileSpecification
+from .stat import ServerStat
+from .table import TableDefinition
 from .terms import PostingParameters, TermInfo, TermPosting, TermParameters
 from .tree import TreeFile
 from .version import ServerVersion
@@ -475,6 +478,19 @@ class Connection(ObjectWithError):
         response.close()
         return result
 
+    def get_server_stat(self) -> ServerStat:
+        """
+        Получение статистики с сервера.
+
+        :return: Полученная статистика
+        """
+        query = ClientQuery(self, GET_SERVER_STAT)
+        with self.execute(query) as response:
+            response.check_return_code()
+            result = ServerStat()
+            result.parse(response)
+            return result
+
     def get_server_version(self) -> ServerVersion:
         """
         Получение версии сервера.
@@ -659,6 +675,25 @@ class Connection(ObjectWithError):
         result = self.database
         self.database = self._stack.pop()
         return result
+
+    def print_table(self, definition: TableDefinition) -> str:
+        """
+        Расформатирование таблицы.
+
+        :param definition: Определение таблицы
+        :return: Результат расформатирования
+        """
+        database = definition.database or self.database or throw_value_error()
+        query = ClientQuery(self, PRINT)
+        query.ansi(database).ansi(definition.table)
+        query.ansi('')  # instead of the headers
+        query.ansi(definition.mode).utf(definition.search)
+        query.add(definition.min_mfn).add(definition.max_mfn)
+        query.utf(definition.sequential)
+        query.ansi('')  # instead of the MFN list
+        with self.execute(query) as response:
+            result = response.utf_remaining_text()
+            return result
 
     def push_database(self, database: str) -> str:
         """
@@ -1208,6 +1243,24 @@ class Connection(ObjectWithError):
             raise IrbisFileNotFoundError(specification)
 
         return result
+
+    def require_tree_file(self,
+                          specification: Union[FileSpecification, str]) \
+            -> TreeFile:
+        """
+        Чтение TRE-файла с сервера.
+
+        :param specification: Спецификация файла.
+        :return: Дерево
+        """
+        with self.read_text_stream(specification) as response:
+            text = response.ansi_remaining_text()
+            if not text:
+                raise IrbisFileNotFoundError(specification)
+            text = [line for line in irbis_to_lines(text) if line]
+            result = TreeFile()
+            result.parse(text)
+            return result
 
     def search(self, parameters: Any) -> List[int]:
         """

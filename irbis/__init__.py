@@ -24,6 +24,7 @@ from .par import load_par_file, ParFile
 from .process import Process
 from .query import ClientQuery
 from .record import Field, RawRecord, Record, SubField
+from .resource import Resource, ResourceDictionary
 from .response import ServerResponse
 from .search import FoundLine, SearchParameters, SearchScenario
 from .specification import FileSpecification
@@ -31,6 +32,7 @@ from .stat import ClientInfo, ServerStat
 from .table import TableDefinition
 from .terms import PostingParameters, TermInfo, TermParameters, TermPosting
 from .tree import load_tree_file, TreeFile, TreeNode
+from .user import UserInfo
 from .version import ServerVersion
 
 from .connection import Connection
@@ -56,7 +58,8 @@ __all__ = ['ADMINISTRATOR', 'AlphabetTable', 'BRIEF', 'CATALOGER',
            'LAST', 'LOCKED', 'LOGICALLY_DELETED', 'MenuEntry',
            'MenuFile', 'NON_ACTUALIZED', 'OptFile', 'ParFile',
            'PHYSICALLY_DELETED', 'PostingParameters', 'Process',
-           'RawRecord', 'Record', 'SearchParameters', 'SearchScenario',
-           'ServerResponse', 'ServerStat', 'ServerVersion', 'SubField',
-           'TableDefinition', 'TermInfo', 'TermParameters', 'TermPosting',
-           'TreeFile', 'TreeNode', 'UpperCaseTable']
+           'RawRecord', 'Record', 'Resource', 'ResourceDictionary',
+           'SearchParameters', 'SearchScenario', 'ServerResponse',
+           'ServerStat', 'ServerVersion', 'SubField', 'TableDefinition',
+           'TermInfo', 'TermParameters', 'TermPosting', 'TreeFile',
+           'TreeNode', 'UpperCaseTable', 'UserInfo']

@@ -4,6 +4,7 @@
 Константы и утилитные функции.
 """
 
+import asyncio
 from typing import Union, Optional, SupportsInt, List
 
 #############################################################################
@@ -378,7 +379,6 @@ def init_async() -> None:
     """
     global irbis_event_loop  # pylint: disable=global-statement
     if not irbis_event_loop:
-        import asyncio
         irbis_event_loop = asyncio.get_event_loop()
 
 

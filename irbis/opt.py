@@ -4,6 +4,7 @@
 Работа с OPT-файлами.
 """
 
+import re
 from typing import List, Optional
 from ._common import ANSI, STOP_MARKER
 
@@ -26,8 +27,6 @@ class OptLine:
         :param text: Text to parse
         :return: None
         """
-        import re
-
         parts = re.split(r'\s+', text.strip())
         self.pattern = parts[0]
         self.worksheet = parts[1]

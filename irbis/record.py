@@ -859,7 +859,7 @@ class RawRecord:
         result.mfn = self.mfn
         result.status = self.status
         result.version = self.version
-        result.fields = [field for field in self.fields]
+        result.fields = list(field for field in self.fields)
         return result
 
     def encode(self) -> List[str]:

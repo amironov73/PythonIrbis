@@ -229,16 +229,16 @@ fields   | list | Список полей записи в нераскодиро
 
 * **def \_\_str\_\_(self)** -- получение текстового представления записи.
 
-Загрузить сырую запись с сервера можно с помощью функции `read_raw_record', сохранить на сервере можно с помощью функции `write_raw_record`.
+Загрузить сырую запись с сервера можно с помощью метода `read_raw_record`, сохранить на сервере можно с помощью метода `write_raw_record`.
 
 ```python
 import irbis
 
 client = irbis.Connection()
 client.connect('host', 6666, 'librarian', 'secret')
-record = irbis.read_raw_record(client, 123)
+record = client.read_raw_record(123)
 record.fields.append('300#Комментарий к записи')
-irbis.write_raw_record(client, record)
+client.write_raw_record(record)
 client.disconnect()
 ```
 

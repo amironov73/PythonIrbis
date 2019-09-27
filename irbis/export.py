@@ -355,5 +355,5 @@ def write_iso_record(stream, record: Record, encoding: str) -> None:
 ###############################################################################
 
 
-__all__ = ['read_text_record', 'write_text_record', 'read_iso_record',
-           'write_iso_record']
+__all__ = ['read_text_record', 'read_iso_record', 'STOP_MARKER',
+           'write_text_record', 'write_iso_record']

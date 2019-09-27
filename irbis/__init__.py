@@ -17,8 +17,8 @@ from .alphabet import AlphabetTable, load_alphabet_table, UpperCaseTable, \
     load_uppercase_table
 from .database import DatabaseInfo
 from .error import IrbisError, IrbisFileNotFoundError
-from .export import read_iso_record, read_text_record, write_iso_record, \
-    write_text_record
+from .export import read_iso_record, read_text_record, STOP_MARKER, \
+    write_iso_record, write_text_record
 from .ini import IniFile, IniLine, IniSection
 from .menus import load_menu, MenuEntry, MenuFile
 from .opt import load_opt_file, OptFile
@@ -63,7 +63,7 @@ __all__ = ['ADMINISTRATOR', 'AlphabetTable', 'BRIEF', 'CATALOGER',
            'RawRecord', 'read_iso_record', 'read_text_record', 'Record',
            'Resource', 'ResourceDictionary', 'SearchParameters',
            'SearchScenario', 'ServerResponse', 'ServerStat',
-           'ServerVersion', 'SubField', 'TableDefinition', 'TermInfo',
-           'TermParameters', 'TermPosting', 'TreeFile',
+           'ServerVersion', 'STOP_MARKER', 'SubField', 'TableDefinition',
+           'TermInfo', 'TermParameters', 'TermPosting', 'TreeFile',
            'TreeNode', 'UpperCaseTable', 'UserInfo', 'write_iso_record',
            'write_text_record']

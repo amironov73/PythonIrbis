@@ -11,7 +11,7 @@
 
 from ._common import ADMINISTRATOR, BRIEF, CATALOGER, close_async, \
     init_async, irbis_event_loop, LAST, LOCKED, LOGICALLY_DELETED, \
-    NON_ACTUALIZED, PHYSICALLY_DELETED
+    NON_ACTUALIZED, NOT_CONNECTED, PHYSICALLY_DELETED
 
 from .alphabet import AlphabetTable, load_alphabet_table, UpperCaseTable, \
     load_uppercase_table
@@ -58,8 +58,8 @@ __all__ = ['ADMINISTRATOR', 'AlphabetTable', 'BRIEF', 'CATALOGER',
            'load_alphabet_table', 'load_menu', 'load_opt_file',
            'load_par_file', 'load_tree_file', 'load_uppercase_table',
            'LAST', 'LOCKED', 'LOGICALLY_DELETED', 'MenuEntry',
-           'MenuFile', 'NON_ACTUALIZED', 'OptFile', 'ParFile',
-           'PHYSICALLY_DELETED', 'PostingParameters', 'Process',
+           'MenuFile', 'NON_ACTUALIZED', 'NOT_CONNECTED', 'OptFile',
+           'ParFile', 'PHYSICALLY_DELETED', 'PostingParameters', 'Process',
            'RawRecord', 'read_iso_record', 'read_text_record', 'Record',
            'Resource', 'ResourceDictionary', 'SearchParameters',
            'SearchScenario', 'ServerResponse', 'ServerStat',

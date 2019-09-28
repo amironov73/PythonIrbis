@@ -17,6 +17,10 @@ client.parse_connection_string('host=127.0.0.1;database=IBIS;' +
     'user=librarian;password=secret;')
 client.connect()
 
+if not client.connected:
+    print("Can't connect")
+    exit(1)
+
 # Search for books written by Byron
 found = client.search('"A=Byron$"')
 print(f'Records found: {len(found)}')

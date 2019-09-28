@@ -7,7 +7,6 @@
 import socket
 from typing import Any, List, Optional
 from ._common import ANSI, ObjectWithError, UTF
-from .error import IrbisError
 
 
 class ServerResponse:
@@ -124,21 +123,24 @@ class ServerResponse:
             result.append(line)
         return result
 
-    def check_return_code(self, allowed: List[int] = None) -> None:
+    def check_return_code(self, allowed: List[int] = None) -> bool:
         """
         Проверка кода возврата. Если код меньше нуля,
         генерируется IrbisError.
         Можно указать допустимые значения кода.
 
-        :param allowed: Допустимые отрицательные значения (опционально)
-        :return: None
+        :param allowed: Допустимые отрицательные значения (опционально).
+        :return: Результат проверки кода возврата.
         """
         if allowed is None:
             allowed = []
 
         if self.get_return_code() < 0:
             if self.return_code not in allowed:
-                raise IrbisError(self.return_code)
+                #  raise IrbisError(self.return_code)
+                return False
+
+        return True
 
     def close(self) -> None:
         """

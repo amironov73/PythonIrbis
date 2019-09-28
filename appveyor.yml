@@ -39,6 +39,10 @@ test_script:
   - coverage report
   - coverage html
 
+after_test:
+  - cd c:\projects\pythonirbis
+  - twine upload dist/*
+
 artifacts:
   - path: htmlcov
     name: Coverage

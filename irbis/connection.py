@@ -15,13 +15,13 @@ from ._common import ACTUALIZE_RECORD, ALL, CREATE_DATABASE, \
     GET_MAX_MFN, GET_PROCESS_LIST, GET_SERVER_STAT, GET_USER_LIST, \
     IRBIS_DELIMITER, irbis_to_dos, irbis_to_lines, irbis_event_loop, \
     LIST_FILES, LOGICALLY_DELETED, MASTER_FILE, MAX_POSTINGS, NOP, \
-    ObjectWithError, OTHER_DELIMITER, PRINT, READ_RECORD, READ_RECORD_CODES, \
-    READ_DOCUMENT, READ_POSTINGS, READ_TERMS, READ_TERMS_REVERSE, \
-    READ_TERMS_CODES, RECORD_LIST, REGISTER_CLIENT, RELOAD_DICTIONARY, \
-    RELOAD_MASTER_FILE, RESTART_SERVER, safe_str, SEARCH, SERVER_INFO, \
-    SET_USER_LIST, short_irbis_to_lines, SYSTEM, throw_value_error, \
-    UNREGISTER_CLIENT, UNLOCK_DATABASE, UNLOCK_RECORDS, UPDATE_INI_FILE, \
-    UPDATE_RECORD
+    NOT_CONNECTED, ObjectWithError, OTHER_DELIMITER, PRINT, READ_RECORD, \
+    READ_RECORD_CODES, READ_DOCUMENT, READ_POSTINGS, READ_TERMS, \
+    READ_TERMS_REVERSE, READ_TERMS_CODES, RECORD_LIST, REGISTER_CLIENT, \
+    RELOAD_DICTIONARY, RELOAD_MASTER_FILE, RESTART_SERVER, safe_str, \
+    SEARCH, SERVER_INFO, SET_USER_LIST, short_irbis_to_lines, SYSTEM, \
+    throw_value_error, UNREGISTER_CLIENT, UNLOCK_DATABASE, UNLOCK_RECORDS, \
+    UPDATE_INI_FILE, UPDATE_RECORD
 
 from .alphabet import AlphabetTable, UpperCaseTable
 from .database import DatabaseInfo
@@ -79,14 +79,16 @@ class Connection(ObjectWithError):
         self.last_error = 0
 
     def actualize_record(self, mfn: int,
-                         database: Optional[str] = None) -> None:
+                         database: Optional[str] = None) -> bool:
         """
         Актуализация записи с указанным MFN.
 
-        :param mfn: MFN записи
-        :param database: База данных
-        :return: None
+        :param mfn: MFN записи.
+        :param database: База данных.
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
 
         database = database or self.database or throw_value_error()
 
@@ -95,7 +97,22 @@ class Connection(ObjectWithError):
 
         query = ClientQuery(self, ACTUALIZE_RECORD).ansi(database).add(mfn)
         with self.execute(query) as response:
-            response.check_return_code()
+            if not response.check_return_code():
+                return False
+
+        return True
+
+    def check_connection(self) -> bool:
+        """
+        Проверяет, подключен ли клиент.
+        Устанавливает код ошибки, если не подключен.
+
+        :return: Состояние подключения.
+        """
+        if not self.connected:
+            self.last_error = NOT_CONNECTED
+
+        return self.connected
 
     def _connect(self, response: ServerResponse) -> IniFile:
         self.server_version = response.version
@@ -150,6 +167,9 @@ class Connection(ObjectWithError):
 
         :return: INI-файл
         """
+        if self.connected:
+            return self.ini_file
+
         while True:
             self.query_id = 0
             self.client_id = random.randint(100000, 999999)
@@ -166,15 +186,17 @@ class Connection(ObjectWithError):
 
     def create_database(self, database: Optional[str] = None,
                         description: Optional[str] = None,
-                        reader_access: bool = True) -> None:
+                        reader_access: bool = True) -> bool:
         """
         Создание базы данных.
 
-        :param database: Имя создаваемой базы
-        :param description: Описание в свободной форме
+        :param database: Имя создаваемой базы.
+        :param description: Описание в свободной форме.
         :param reader_access: Читатель будет иметь доступ?
-        :return: None
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
 
         database = database or self.database or throw_value_error()
         description = description or ''
@@ -185,15 +207,20 @@ class Connection(ObjectWithError):
         query = ClientQuery(self, CREATE_DATABASE)
         query.ansi(database).ansi(description).add(int(reader_access))
         with self.execute(query) as response:
-            response.check_return_code()
+            if not response.check_return_code():
+                return False
 
-    def create_dictionary(self, database: Optional[str] = None) -> None:
+        return True
+
+    def create_dictionary(self, database: Optional[str] = None) -> bool:
         """
         Создание словаря в базе данных.
 
-        :param database: База данных
-        :return: None
+        :param database: Имя базы данных.
+        :return: Признау успешности операции.
         """
+        if not self.check_connection():
+            return False
 
         database = database or self.database or throw_value_error()
 
@@ -201,38 +228,51 @@ class Connection(ObjectWithError):
 
         query = ClientQuery(self, CREATE_DICTIONARY).ansi(database)
         with self.execute(query) as response:
-            response.check_return_code()
+            if not response.check_return_code():
+                return False
 
-    def delete_database(self, database: Optional[str] = None) -> None:
+        return True
+
+    def delete_database(self, database: Optional[str] = None) -> bool:
         """
         Удаление базы данных.
 
-        :param database: Имя удаляемой базы
-        :return: None
+        :param database: Имя удаляемой базы.
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
 
         assert isinstance(database, str)
 
         database = database or self.database or throw_value_error()
         query = ClientQuery(self, DELETE_DATABASE).ansi(database)
         with self.execute(query) as response:
-            response.check_return_code()
+            if not response.check_return_code():
+                return False
 
-    def delete_record(self, mfn: int) -> None:
+        return True
+
+    def delete_record(self, mfn: int) -> bool:
         """
         Удаление записи по ее MFN.
 
         :param mfn: MFN удаляемой записи
-        :return: None
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
 
         assert mfn
         assert isinstance(mfn, int)
 
         record = self.read_record(mfn)
+        if not record:
+            return False
         if not record.is_deleted():
             record.status |= LOGICALLY_DELETED
-            self.write_record(record, dont_parse=True)
+            return bool(self.write_record(record, dont_parse=True))
+        return True
 
     def disconnect(self) -> None:
         """
@@ -240,7 +280,6 @@ class Connection(ObjectWithError):
 
         :return: None.
         """
-
         if not self.connected:
             return
 
@@ -334,6 +373,9 @@ class Connection(ObjectWithError):
         :param record: MFN записи либо сама запись
         :return: Результат расформатирования
         """
+        if not self.check_connection():
+            return ''
+
         script = script or throw_value_error()
         if not record:
             raise ValueError()
@@ -345,7 +387,6 @@ class Connection(ObjectWithError):
             return ''
 
         query = ClientQuery(self, FORMAT_RECORD).ansi(self.database)
-
         query.format(script)
 
         if isinstance(record, int):
@@ -354,7 +395,9 @@ class Connection(ObjectWithError):
             query.add(-2).utf(IRBIS_DELIMITER.join(record.encode()))
 
         with self.execute(query) as response:
-            response.check_return_code()
+            if not response.check_return_code():
+                return ''
+
             result = response.utf_remaining_text().strip('\r\n')
             return result
 
@@ -368,15 +411,17 @@ class Connection(ObjectWithError):
         :param record: MFN записи либо сама запись
         :return: Результат расформатирования
         """
-        script = script or throw_value_error()
+        if not self.check_connection():
+            return ''
+
+        if not script:
+            return ''
+
         if not record:
             raise ValueError()
 
         assert isinstance(script, str)
         assert isinstance(record, (Record, int))
-
-        if not script:
-            return ''
 
         query = ClientQuery(self, FORMAT_RECORD).ansi(self.database)
         query.format(script)
@@ -386,7 +431,9 @@ class Connection(ObjectWithError):
             query.add(-2).utf(IRBIS_DELIMITER.join(record.encode()))
 
         response = await self.execute_async(query)
-        response.check_return_code()
+        if not response.check_return_code():
+            return ''
+
         result = response.utf_remaining_text().strip('\r\n')
         response.close()
         return result
@@ -399,6 +446,9 @@ class Connection(ObjectWithError):
         :param records: Список MFN
         :return: Список строк
         """
+        if not self.check_connection():
+            return []
+
         if not records:
             return []
 
@@ -420,7 +470,9 @@ class Connection(ObjectWithError):
             query.add(mfn)
 
         with self.execute(query) as response:
-            response.check_return_code()
+            if not response.check_return_code():
+                return []
+
             result = response.utf_remaining_lines()
             result = [line.split('#', 1)[1] for line in result]
             return result
@@ -433,11 +485,16 @@ class Connection(ObjectWithError):
         :param database: Имя базы
         :return: Информация о базе
         """
+        if not self.check_connection():
+            return DatabaseInfo()
+
         database = database or self.database or throw_value_error()
         query = ClientQuery(self, RECORD_LIST).ansi(database)
         with self.execute(query) as response:
-            response.check_return_code()
             result = DatabaseInfo()
+            if not response.check_return_code():
+                return result
+
             result.parse(response)
             result.name = database
             return result
@@ -449,13 +506,16 @@ class Connection(ObjectWithError):
         :param database: База данных.
         :return: MFN, который будет присвоен следующей записи.
         """
+        if not self.check_connection():
+            return 0
 
         database = database or self.database or throw_value_error()
 
         assert isinstance(database, str)
 
         with self.execute_ansi(GET_MAX_MFN, database) as response:
-            response.check_return_code()
+            if not response.check_return_code():
+                return 0
             result = response.return_code
             return result
 
@@ -482,10 +542,14 @@ class Connection(ObjectWithError):
 
         :return: Полученная статистика
         """
+        if not self.check_connection():
+            return ServerStat()
+
         query = ClientQuery(self, GET_SERVER_STAT)
         with self.execute(query) as response:
-            response.check_return_code()
             result = ServerStat()
+            if not response.check_return_code():
+                return result
             result.parse(response)
             return result
 
@@ -495,11 +559,15 @@ class Connection(ObjectWithError):
 
         :return: Версия сервера
         """
+        if not self.check_connection():
+            return ServerVersion()
+
         query = ClientQuery(self, SERVER_INFO)
         with self.execute(query) as response:
-            response.check_return_code()
-            lines = response.ansi_remaining_lines()
             result = ServerVersion()
+            if not response.check_return_code():
+                return result
+            lines = response.ansi_remaining_lines()
             result.parse(lines)
             if not self.server_version:
                 self.server_version = result.version
@@ -513,6 +581,9 @@ class Connection(ObjectWithError):
         :param specification: Спецификация файла, например, '1..dbnam2.mnu'
         :return: Список баз данных
         """
+        if not self.check_connection():
+            return []
+
         menu = self.read_menu(specification)
         result: List[DatabaseInfo] = []
         for entry in menu.entries:
@@ -535,6 +606,9 @@ class Connection(ObjectWithError):
         (если нужны файлы, лежащие в папке текущей базы данных)
         :return: Список файлов
         """
+        if not self.check_connection():
+            return []
+
         query = ClientQuery(self, LIST_FILES)
 
         is_ok = False
@@ -562,6 +636,9 @@ class Connection(ObjectWithError):
 
         :return: Список процессов
         """
+        if not self.check_connection():
+            return []
+
         query = ClientQuery(self, GET_PROCESS_LIST)
         with self.execute(query) as response:
             response.check_return_code()
@@ -594,9 +671,13 @@ class Connection(ObjectWithError):
 
         :return: Список пользователей
         """
+        if not self.check_connection():
+            return []
+
         query = ClientQuery(self, GET_USER_LIST)
         with self.execute(query) as response:
-            response.check_return_code()
+            if not response.check_return_code():
+                return []
             result = UserInfo.parse(response)
             return result
 
@@ -607,6 +688,9 @@ class Connection(ObjectWithError):
         :param operation: Какую операцию ждем
         :return: Серверный лог-файл (результат выполнения операции)
         """
+        if not self.check_connection():
+            return ''
+
         client_id = str(self.client_id)
         while True:
             processes = self.list_processes()
@@ -634,25 +718,32 @@ class Connection(ObjectWithError):
 
         return FileSpecification(MASTER_FILE, self.database, filename)
 
-    def nop(self) -> None:
+    def nop(self) -> bool:
         """
         Пустая операция (используется для периодического
         подтверждения подключения клиента).
 
-        :return: None
+        :return: Признак успешности операции.
         """
-        with self.execute_ansi(NOP):
-            pass
+        if not self.check_connection():
+            return False
 
-    async def nop_async(self) -> None:
+        with self.execute_ansi(NOP):
+            return True
+
+    async def nop_async(self) -> bool:
         """
         Асинхронная пустая операция.
 
-        :return: None.
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
+
         query = ClientQuery(self, NOP)
         response = await self.execute_async(query)
         response.close()
+        return True
 
     def parse_connection_string(self, text: str) -> None:
         """
@@ -705,6 +796,9 @@ class Connection(ObjectWithError):
         :param definition: Определение таблицы
         :return: Результат расформатирования
         """
+        if not self.check_connection():
+            return ''
+
         database = definition.database or self.database or throw_value_error()
         query = ClientQuery(self, PRINT)
         query.ansi(database).ansi(definition.table)
@@ -743,6 +837,9 @@ class Connection(ObjectWithError):
         :param specification: Спецификация
         :return: Таблица
         """
+        if not self.check_connection():
+            return AlphabetTable.get_default()
+
         if specification is None:
             specification = FileSpecification(SYSTEM, None,
                                               AlphabetTable.FILENAME)
@@ -761,9 +858,12 @@ class Connection(ObjectWithError):
         """
         Чтение двоичного файла с сервера.
 
-        :param specification: Спецификация
-        :return: Массив байт или None
+        :param specification: Спецификация файла.
+        :return: Массив байт или None.
         """
+        if not self.check_connection():
+            return None
+
         if isinstance(specification, str):
             specification = self.near_master(specification)
 
@@ -783,6 +883,9 @@ class Connection(ObjectWithError):
         :param specification: Спецификация
         :return: INI-файл
         """
+        if not self.check_connection():
+            return IniFile()
+
         if isinstance(specification, str):
             specification = self.near_master(specification)
 
@@ -803,6 +906,8 @@ class Connection(ObjectWithError):
         :param specification: Спецификация файла
         :return: Меню
         """
+        if not self.check_connection():
+            return MenuFile()
 
         with self.read_text_stream(specification) as response:
             result = MenuFile()
@@ -818,6 +923,9 @@ class Connection(ObjectWithError):
         :param specification: Спецификация
         :return: Файл оптимизации
         """
+        if not self.check_connection():
+            return OptFile()
+
         with self.read_text_stream(specification) as response:
             result = OptFile()
             text = irbis_to_lines(response.ansi_remaining_text())
@@ -832,6 +940,9 @@ class Connection(ObjectWithError):
         :param specification: Спецификация или имя файла (если он в папке DATA)
         :return: Полученный файл
         """
+        if not self.check_connection():
+            return ParFile()
+
         if isinstance(specification, str):
             specification = FileSpecification(DATA, None, specification)
 
@@ -850,6 +961,9 @@ class Connection(ObjectWithError):
         :param fmt: Опциональный формат
         :return: Список постингов
         """
+        if not self.check_connection():
+            return []
+
         if isinstance(parameters, str):
             parameters = PostingParameters(parameters)
             parameters.fmt = fmt
@@ -861,8 +975,10 @@ class Connection(ObjectWithError):
         for term in parameters.terms:
             query.utf(term)
         with self.execute(query) as response:
-            response.check_return_code(READ_TERMS_CODES)
-            result = []
+            result: List[TermPosting] = []
+            if not response.check_return_code(READ_TERMS_CODES):
+                return result
+
             while True:
                 line = response.utf()
                 if not line:
@@ -872,19 +988,24 @@ class Connection(ObjectWithError):
                 result.append(posting)
             return result
 
-    def read_raw_record(self, mfn: int) -> RawRecord:
+    def read_raw_record(self, mfn: int) -> Optional[RawRecord]:
         """
         Чтение сырой записи с сервера.
 
         :param mfn: MFN записи.
         :return: Загруженная с сервера запись.
         """
+        if not self.check_connection():
+            return None
+
         mfn = mfn or int(throw_value_error())
 
         query = ClientQuery(self, READ_RECORD)
         query.ansi(self.database).add(mfn)
         with self.execute(query) as response:
-            response.check_return_code(READ_RECORD_CODES)
+            if not response.check_return_code(READ_RECORD_CODES):
+                return None
+
             text = response.utf_remaining_lines()
             result = RawRecord()
             result.database = self.database
@@ -892,7 +1013,7 @@ class Connection(ObjectWithError):
 
         return result
 
-    def read_record(self, mfn: int, version: int = 0) -> Record:
+    def read_record(self, mfn: int, version: int = 0) -> Optional[Record]:
         """
         Чтение записи с указанным MFN с сервера.
 
@@ -900,6 +1021,8 @@ class Connection(ObjectWithError):
         :param version: версия
         :return: Прочитанная запись
         """
+        if not self.check_connection():
+            return None
 
         mfn = mfn or int(throw_value_error())
 
@@ -909,7 +1032,9 @@ class Connection(ObjectWithError):
         if version:
             query.add(version)
         with self.execute(query) as response:
-            response.check_return_code(READ_RECORD_CODES)
+            if not response.check_return_code(READ_RECORD_CODES):
+                return None
+
             text = response.utf_remaining_lines()
             result = Record()
             result.database = self.database
@@ -920,18 +1045,24 @@ class Connection(ObjectWithError):
 
         return result
 
-    async def read_record_async(self, mfn: int) -> Record:
+    async def read_record_async(self, mfn: int) -> Optional[Record]:
         """
         Асинхронное чтение записи.
 
         :param mfn: MFN считываемой записи.
         :return: Прочитанная запись.
         """
+        if not self.check_connection():
+            return None
+
         mfn = mfn or int(throw_value_error())
         assert isinstance(mfn, int)
         query = ClientQuery(self, READ_RECORD).ansi(self.database).add(mfn)
+
         response = await self.execute_async(query)
-        response.check_return_code(READ_RECORD_CODES)
+        if not response.check_return_code(READ_RECORD_CODES):
+            return None
+
         text = response.utf_remaining_lines()
         result = Record()
         result.database = self.database
@@ -947,13 +1078,18 @@ class Connection(ObjectWithError):
         :param prefix: Префикс в виде "A=$".
         :return: Список постингов.
         """
+        if not self.check_connection():
+            return []
+
         assert mfn > 0
 
         query = ClientQuery(self, 'V')
         query.ansi(self.database).add(mfn).utf(prefix)
         result: List[TermPosting] = []
         with self.execute(query) as response:
-            response.check_return_code()
+            if not response.check_return_code():
+                return result
+
             lines = response.utf_remaining_lines()
             for line in lines:
                 one: TermPosting = TermPosting()
@@ -968,6 +1104,8 @@ class Connection(ObjectWithError):
         :param mfns: Перечень MFN
         :return: Список записей
         """
+        if not self.check_connection():
+            return []
 
         array = list(mfns)
 
@@ -975,10 +1113,11 @@ class Connection(ObjectWithError):
             return []
 
         if len(array) == 1:
-            return [self.read_record(array[0])]
+            record = self.read_record(array[0])
+            return [record] if record else []
 
         lines = self.format_records(ALL, array)
-        result = []
+        result: List[Record] = []
         for line in lines:
             parts = line.split(OTHER_DELIMITER)
             if parts:
@@ -1000,6 +1139,9 @@ class Connection(ObjectWithError):
         :param specification: File which contains the scenario
         :return: List of the scenarios (possibly empty)
         """
+        if not self.check_connection():
+            return []
+
         if isinstance(specification, str):
             specification = self.near_master(specification)
 
@@ -1020,6 +1162,9 @@ class Connection(ObjectWithError):
             или кортеж "терм, количество"
         :return: Список термов
         """
+        if not self.check_connection():
+            return []
+
         if isinstance(parameters, tuple):
             parameters2 = TermParameters(parameters[0])
             parameters2.number = parameters[1]
@@ -1051,6 +1196,8 @@ class Connection(ObjectWithError):
         (если он находится в папке текущей базы данных).
         :return: Текст файла или пустая строка, если файл не найден
         """
+        if not self.check_connection():
+            return ''
 
         with self.read_text_stream(specification) as response:
             result = response.ansi_remaining_text()
@@ -1067,6 +1214,9 @@ class Connection(ObjectWithError):
             (если он находится в папке текущей базы данных).
         :return: Текст файла или пустая строка, если файл не найден
         """
+        if not self.check_connection():
+            return ''
+
         if isinstance(specification, str):
             specification = self.near_master(specification)
         query = ClientQuery(self, READ_DOCUMENT).ansi(str(specification))
@@ -1103,6 +1253,9 @@ class Connection(ObjectWithError):
         :param specification:  Спецификация
         :return: Дерево
         """
+        if not self.check_connection():
+            return TreeFile()
+
         with self.read_text_stream(specification) as response:
             text = response.ansi_remaining_text()
             text = [line for line in irbis_to_lines(text) if line]
@@ -1120,6 +1273,9 @@ class Connection(ObjectWithError):
         :param specification: Спецификация
         :return: Таблица
         """
+        if not self.check_connection():
+            return UpperCaseTable.get_default()
+
         if specification is None:
             specification = FileSpecification(SYSTEM,
                                               None,
@@ -1134,54 +1290,64 @@ class Connection(ObjectWithError):
                 result = UpperCaseTable.get_default()
             return result
 
-    def reload_dictionary(self, database: Optional[str] = None) -> None:
+    def reload_dictionary(self, database: Optional[str] = None) -> bool:
         """
         Пересоздание словаря.
 
         :param database: База данных
-        :return: None
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
 
         database = database or self.database or throw_value_error()
 
         assert isinstance(database, str)
 
         with self.execute_ansi(RELOAD_DICTIONARY, database):
-            pass
+            return True
 
-    def reload_master_file(self, database: Optional[str] = None) -> None:
+    def reload_master_file(self, database: Optional[str] = None) -> bool:
         """
         Пересоздание мастер-файла.
 
         :param database: База данных
-        :return: None
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
 
         database = database or self.database or throw_value_error()
 
         assert isinstance(database, str)
 
         with self.execute_ansi(RELOAD_MASTER_FILE, database):
-            pass
+            return True
 
-    def restart_server(self) -> None:
+    def restart_server(self) -> bool:
         """
         Перезапуск сервера (без утери подключенных клиентов).
 
-        :return: None
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
 
         with self.execute_ansi(RESTART_SERVER):
-            pass
+            return True
 
-    async def restart_server_async(self) -> None:
+    async def restart_server_async(self) -> bool:
         """
         Асинхронный перезапуск сервера (без утери подключенных клиентов).
-        :return: None.
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
+
         query = ClientQuery(self, RESTART_SERVER)
         response = await self.execute_async(query)
         response.close()
+        return True
 
     def require_alphabet_table(self,
                                specification: Optional[FileSpecification] =
@@ -1298,9 +1464,12 @@ class Connection(ObjectWithError):
         """
         Поиск записей.
 
-        :param parameters: Параметры поиска (либо поисковый запрос)
-        :return: Список найденных MFN
+        :param parameters: Параметры поиска (либо поисковый запрос).
+        :return: Список найденных MFN.
         """
+        if not self.check_connection():
+            return []
+
         if not isinstance(parameters, SearchParameters):
             parameters = SearchParameters(str(parameters))
 
@@ -1314,10 +1483,13 @@ class Connection(ObjectWithError):
         query.add(parameters.min_mfn)
         query.add(parameters.max_mfn)
         query.ansi(parameters.sequential)
+
         response = self.execute(query)
-        response.check_return_code()
+        if not response.check_return_code():
+            return []
+
         _ = response.number()  # Число найденных записей
-        result = []
+        result: List[int] = []
         while 1:
             line = response.ansi()
             if not line:
@@ -1332,6 +1504,9 @@ class Connection(ObjectWithError):
         :param expression: Поисковый запрос.
         :return: Список найденных MFN
         """
+        if not self.check_connection():
+            return []
+
         assert expression
         expression = str(expression)
 
@@ -1348,8 +1523,11 @@ class Connection(ObjectWithError):
             query.new_line()
             query.add(0)
             query.add(0)
+
             response = self.execute(query)
-            response.check_return_code()
+            if not response.check_return_code():
+                return result
+
             if first == 1:
                 expected = response.number()
                 if expected == 0:
@@ -1378,6 +1556,9 @@ class Connection(ObjectWithError):
         :param parameters: Параметры поиска.
         :return: Список найденных MFN.
         """
+        if not self.check_connection():
+            return []
+
         if not isinstance(parameters, SearchParameters):
             parameters = SearchParameters(str(parameters))
 
@@ -1391,10 +1572,13 @@ class Connection(ObjectWithError):
         query.add(parameters.min_mfn)
         query.add(parameters.max_mfn)
         query.ansi(parameters.sequential)
+
         response = await self.execute_async(query)
-        response.check_return_code()
+        if not response.check_return_code():
+            return []
+
         _ = response.number()  # Число найденных записей
-        result = []
+        result: List[int] = []
         while 1:
             line = response.ansi()
             if not line:
@@ -1404,6 +1588,7 @@ class Connection(ObjectWithError):
         response.close()
         return result
 
+    # noinspection DuplicatedCode
     def search_count(self, expression: Any) -> int:
         """
         Количество найденных записей.
@@ -1411,6 +1596,9 @@ class Connection(ObjectWithError):
         :param expression: Поисковый запрос.
         :return: Количество найденных записей.
         """
+        if not self.check_connection():
+            return 0
+
         expression = str(expression)
 
         query = ClientQuery(self, SEARCH)
@@ -1418,10 +1606,14 @@ class Connection(ObjectWithError):
         query.utf(expression)
         query.add(0)
         query.add(0)
+
         response = self.execute(query)
-        response.check_return_code()
+        if not response.check_return_code():
+            return 0
+
         return response.number()
 
+    # noinspection DuplicatedCode
     async def search_count_async(self, expression: Any) -> int:
         """
         Асинхронное получение количества найденных записей.
@@ -1429,6 +1621,9 @@ class Connection(ObjectWithError):
         :param expression: Поисковый запрос.
         :return: Количество найденных записей.
         """
+        if not self.check_connection():
+            return 0
+
         expression = str(expression)
 
         query = ClientQuery(self, SEARCH)
@@ -1436,8 +1631,11 @@ class Connection(ObjectWithError):
         query.utf(expression)
         query.add(0)
         query.add(0)
+
         response = await self.execute_async(query)
-        response.check_return_code()
+        if not response.check_return_code():
+            return 0
+
         result = response.number()
         response.close()
         return result
@@ -1450,6 +1648,9 @@ class Connection(ObjectWithError):
         :param parameters: Параметры поиска (либо поисковый запрос)
         :return: Список найденных записей
         """
+        if not self.check_connection():
+            return []
+
         if not isinstance(parameters, SearchParameters):
             parameters = SearchParameters(str(parameters))
 
@@ -1463,8 +1664,11 @@ class Connection(ObjectWithError):
         query.add(parameters.min_mfn)
         query.add(parameters.max_mfn)
         query.ansi(parameters.sequential)
+
         response = self.execute(query)
-        response.check_return_code()
+        if not response.check_return_code():
+            return []
+
         _ = response.number()  # Число найденных записей
         result = []
         while 1:
@@ -1487,6 +1691,8 @@ class Connection(ObjectWithError):
         :param limit: Ограничение на количество выдаваемых записей.
         :return: Список расформатированных записей.
         """
+        if not self.check_connection():
+            return []
 
         assert isinstance(limit, int)
 
@@ -1501,10 +1707,13 @@ class Connection(ObjectWithError):
         query.format(format_specification)
         query.add(0)
         query.add(0)
+
         response = self.execute(query)
-        response.check_return_code()
+        if not response.check_return_code():
+            return []
+
         _ = response.number()
-        result = []
+        result: List[str] = []
         while 1:
             line = response.utf()
             if not line:
@@ -1528,6 +1737,9 @@ class Connection(ObjectWithError):
         :param limit: Лимит считываемых записей (0 - нет).
         :return: Список найденных записей.
         """
+        if not self.check_connection():
+            return []
+
         assert isinstance(limit, int)
 
         expression = str(expression)
@@ -1540,10 +1752,13 @@ class Connection(ObjectWithError):
         query.ansi(ALL)
         query.add(0)
         query.add(0)
+
         response = self.execute(query)
-        response.check_return_code()
+        if not response.check_return_code():
+            return []
+
         _ = response.number()
-        result = []
+        result: List[Record] = []
         while 1:
             line = response.utf()
             if not line:
@@ -1556,6 +1771,16 @@ class Connection(ObjectWithError):
             if limit and len(result) >= limit:
                 break
         return result
+
+    def throw_on_error(self) -> None:
+        """
+        Бросает исключение, если произошла ошибка
+        при выполнении последней операции.
+
+        :return: None
+        """
+        if self.last_error < 0:
+            raise IrbisError(self.last_error)
 
     def to_connection_string(self) -> str:
         """
@@ -1571,64 +1796,77 @@ class Connection(ObjectWithError):
                ';database=' + safe_str(self.database) + \
                ';workstation=' + safe_str(self.workstation) + ';'
 
-    def truncate_database(self, database: Optional[str] = None) -> None:
+    def truncate_database(self, database: Optional[str] = None) -> bool:
         """
         Опустошение базы данных.
 
-        :param database: База данных
-        :return: None
+        :param database: Имя опустошаемой базы данных.
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
 
         database = database or self.database or throw_value_error()
 
         assert isinstance(database, str)
 
         with self.execute_ansi(EMPTY_DATABASE, database):
-            pass
+            return True
 
-    def undelete_record(self, mfn: int) -> None:
+    def undelete_record(self, mfn: int) -> bool:
         """
         Восстановление записи по ее MFN.
 
-        :param mfn: MFN восстанавливаемой записи
-        :return: None
+        :param mfn: MFN восстанавливаемой записи.
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
 
         assert mfn
         assert isinstance(mfn, int)
 
         record = self.read_record(mfn)
+        if not record:
+            return False
+
         if record.is_deleted():
             record.status &= ~LOGICALLY_DELETED
-            self.write_record(record, dont_parse=True)
+            return bool(self.write_record(record, dont_parse=True))
 
-    def unlock_database(self, database: Optional[str] = None) -> None:
+        return True
+
+    def unlock_database(self, database: Optional[str] = None) -> bool:
         """
         Разблокирование базы данных.
 
         :param database: Имя базы
-        :return: None
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
 
         database = database or self.database or throw_value_error()
 
         assert isinstance(database, str)
 
         with self.execute_ansi(UNLOCK_DATABASE, database):
-            pass
+            return True
 
     def unlock_records(self, records: List[int],
-                       database: Optional[str] = None) -> None:
+                       database: Optional[str] = None) -> bool:
         """
         Разблокирование записей.
 
-        :param records: Список MFN
-        :param database: База данных
-        :return: None
+        :param records: Список MFN.
+        :param database: База данных.
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
 
         if not records:
-            return
+            return True
 
         database = database or self.database or throw_value_error()
 
@@ -1638,36 +1876,49 @@ class Connection(ObjectWithError):
         for mfn in records:
             query.add(mfn)
         with self.execute(query) as response:
-            response.check_return_code()
+            if not response.check_return_code():
+                return False
 
-    def update_ini_file(self, lines: List[str]) -> None:
+        return True
+
+    def update_ini_file(self, lines: List[str]) -> bool:
         """
         Обновление строк серверного INI-файла.
 
-        :param lines: Измененные строки
-        :return: None
+        :param lines: Измененные строки.
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
+
         if not lines:
-            return
+            return True
 
         query = ClientQuery(self, UPDATE_INI_FILE)
         for line in lines:
             query.ansi(line)
         self.execute_forget(query)
 
-    def update_user_list(self, users: List[UserInfo]) -> None:
+        return True
+
+    def update_user_list(self, users: List[UserInfo]) -> bool:
         """
         Обновление списка пользователей на сервере.
 
         :param users:  Список пользователей
-        :return: None
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
+
         assert isinstance(users, list) and users
 
         query = ClientQuery(self, SET_USER_LIST)
         for user in users:
             query.ansi(user.encode())
         self.execute_forget(query)
+
+        return True
 
     # noinspection DuplicatedCode
     def write_raw_record(self, record: RawRecord,
@@ -1679,14 +1930,14 @@ class Connection(ObjectWithError):
         :param record: Запись
         :param lock: Оставить запись заблокированной?
         :param actualize: Актуализировать запись?
-        :return: Новый максимальный MFN
+        :return: Новый максимальный MFN.
         """
+        if not self.check_connection():
+            return 0
+
         database = record.database or self.database or throw_value_error()
         if not record:
             raise ValueError()
-
-        assert isinstance(record, RawRecord)
-        assert isinstance(database, str)
 
         assert isinstance(record, RawRecord)
         assert isinstance(database, str)
@@ -1695,7 +1946,9 @@ class Connection(ObjectWithError):
         query.ansi(database).add(int(lock)).add(int(actualize))
         query.utf(IRBIS_DELIMITER.join(record.encode()))
         with self.execute(query) as response:
-            response.check_return_code()
+            if not response.check_return_code():
+                return 0
+
             result = response.return_code  # Новый максимальный MFN
             return result
 
@@ -1713,6 +1966,8 @@ class Connection(ObjectWithError):
         :param dont_parse: Не разбирать ответ сервера?
         :return: Новый максимальный MFN.
         """
+        if not self.check_connection():
+            return 0
 
         database = record.database or self.database or throw_value_error()
         if not record:
@@ -1721,14 +1976,13 @@ class Connection(ObjectWithError):
         assert isinstance(record, Record)
         assert isinstance(database, str)
 
-        assert isinstance(record, Record)
-        assert isinstance(database, str)
-
         query = ClientQuery(self, UPDATE_RECORD)
         query.ansi(database).add(int(lock)).add(int(actualize))
         query.utf(IRBIS_DELIMITER.join(record.encode()))
         with self.execute(query) as response:
-            response.check_return_code()
+            if not response.check_return_code():
+                return 0
+
             result = response.return_code  # Новый максимальный MFN
             if not dont_parse:
                 first_line = response.utf()
@@ -1752,6 +2006,9 @@ class Connection(ObjectWithError):
         :param dont_parse: Не разбирать ответ сервера?
         :return: Новый максимальный MFN.
         """
+        if not self.check_connection():
+            return 0
+
         database = record.database or self.database or throw_value_error()
         if not record:
             raise ValueError()
@@ -1785,6 +2042,9 @@ class Connection(ObjectWithError):
         :param records: Записи для сохранения.
         :return: Результат.
         """
+        if not self.check_connection():
+            return False
+
         if not records:
             return True
 
@@ -1805,13 +2065,16 @@ class Connection(ObjectWithError):
 
         return True
 
-    def write_text_file(self, *specification: FileSpecification) -> None:
+    def write_text_file(self, *specification: FileSpecification) -> bool:
         """
         Сохранение текстового файла на сервере.
 
-        :param specification: Спецификация (включая текст для сохранения)
-        :return: None
+        :param specification: Спецификация (включая текст для сохранения).
+        :return: Признак успешности операции.
         """
+        if not self.check_connection():
+            return False
+
         query = ClientQuery(self, READ_DOCUMENT)
         is_ok = False
         for spec in specification:
@@ -1819,10 +2082,13 @@ class Connection(ObjectWithError):
             query.ansi(str(spec))
             is_ok = True
         if not is_ok:
-            return
+            return False
 
         with self.execute(query) as response:
-            response.check_return_code()
+            if not response.check_return_code():
+                return False
+
+        return True
 
     def __enter__(self):
         return self
@@ -1835,4 +2101,4 @@ class Connection(ObjectWithError):
         return self.connected
 
 
-__all__ = ['Connection']
+__all__ = ['Connection', 'NOT_CONNECTED']

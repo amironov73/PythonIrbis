@@ -74,6 +74,11 @@ BOOKLAND = 'B'
 PROVISION = 'K'
 JAVA_APPLET = 'J'
 
+# Error codes
+
+# Клиент не подключен к серверу
+NOT_CONNECTED = -100500
+
 # Command codes
 
 # Получение признака монопольной блокировки базы данных

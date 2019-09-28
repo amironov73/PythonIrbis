@@ -51,6 +51,10 @@ client.parse_connection_string('host=127.0.0.1;port=6666;' +
     'database=IBIS;user=librarian;password=secret;')
 client.connect()
 
+if not client.connected:
+    print('Невозможно подключиться!')
+    exit(1)
+
 # Ищем все книги, автором которых является А. С. Пушкин
 # Обратите внимание на двойные кавычки в тексте запроса
 found = client.search('"A=ПУШКИН$"')
@@ -85,6 +89,10 @@ client = irbis.Connection()  # pylint:disable=invalid-name
 client.parse_connection_string('host=127.0.0.1;port=6666;' +
                                'database=IBIS;user=1;password=1;')
 client.connect()
+
+if not client.connected:
+    print('Невозможно подключиться!')
+    exit(1)
 
 for i in range(10):
     # Создаем запись

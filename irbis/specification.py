@@ -1,7 +1,7 @@
 # coding: utf-8
 
 """
-Спецификация файла.
+Спецификация файла на сервере ИРБИС64.
 """
 
 from typing import Optional
@@ -65,6 +65,9 @@ class FileSpecification:
         if result.filename.startswith('@'):
             result.filename = result.filename[1:]
             result.binary = True
+            parts = result.filename.split('&', 1)
+            result.filename = parts[0]
+            result.content = parts[1]
         if result.filename.startswith('&'):
             parts = result.filename[1:].split('&', 1)
             result.filename = parts[0]

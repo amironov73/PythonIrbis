@@ -11,7 +11,8 @@
 
 from ._common import ADMINISTRATOR, BRIEF, CATALOGER, close_async, \
     init_async, irbis_event_loop, LAST, LOCKED, LOGICALLY_DELETED, \
-    NON_ACTUALIZED, NOT_CONNECTED, PHYSICALLY_DELETED
+    NON_ACTUALIZED, NOT_CONNECTED, PHYSICALLY_DELETED, prepare_format, \
+    remove_comments
 
 from .alphabet import AlphabetTable, load_alphabet_table, UpperCaseTable, \
     load_uppercase_table
@@ -59,11 +60,11 @@ __all__ = ['ADMINISTRATOR', 'AlphabetTable', 'BRIEF', 'CATALOGER',
            'load_par_file', 'load_tree_file', 'load_uppercase_table',
            'LAST', 'LOCKED', 'LOGICALLY_DELETED', 'MenuEntry',
            'MenuFile', 'NON_ACTUALIZED', 'NOT_CONNECTED', 'OptFile',
-           'ParFile', 'PHYSICALLY_DELETED', 'PostingParameters', 'Process',
-           'RawRecord', 'read_iso_record', 'read_text_record', 'Record',
-           'Resource', 'ResourceDictionary', 'SearchParameters',
-           'SearchScenario', 'ServerResponse', 'ServerStat',
-           'ServerVersion', 'STOP_MARKER', 'SubField', 'TableDefinition',
-           'TermInfo', 'TermParameters', 'TermPosting', 'TreeFile',
-           'TreeNode', 'UpperCaseTable', 'UserInfo', 'write_iso_record',
-           'write_text_record']
+           'ParFile', 'PHYSICALLY_DELETED', 'PostingParameters',
+           'prepare_format', 'Process', 'RawRecord', 'read_iso_record',
+           'read_text_record', 'Record', 'remove_comments', 'Resource',
+           'ResourceDictionary', 'SearchParameters', 'SearchScenario',
+           'ServerResponse', 'ServerStat', 'ServerVersion', 'STOP_MARKER',
+           'SubField', 'TableDefinition', 'TermInfo', 'TermParameters',
+           'TermPosting', 'TreeFile', 'TreeNode', 'UpperCaseTable',
+           'UserInfo', 'write_iso_record', 'write_text_record']

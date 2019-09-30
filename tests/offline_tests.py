@@ -11,6 +11,11 @@ import unittest
 from sys import platform
 
 from irbis import *
+from irbis._common import same_string, safe_str, safe_int, irbis_to_dos, \
+    irbis_to_lines, short_irbis_to_lines
+from irbis.builder import author, bbk, document_kind, keyword, language, \
+    magazine, mhr, number, place, publisher, rzn, Search, subject, title, \
+    udc, year
 
 #############################################################################
 
@@ -47,6 +52,43 @@ def random_file_name():
     filename = str(random.randint(1111111, 9999999))
     result = os.path.join(tempdir, filename)
     return result
+
+
+#############################################################################
+
+
+class TestCommon(unittest.TestCase):
+
+    def test_same_string_1(self):
+        self.assertFalse(same_string(None, None))
+        self.assertFalse(same_string(None, ''))
+        self.assertTrue(same_string('', ''))
+        self.assertTrue(same_string('Hello', 'hello'))
+        self.assertFalse(same_string('Hello', 'hell'))
+
+    def test_safe_str_1(self):
+        self.assertEqual(safe_str(None), '')
+        self.assertEqual(safe_str(''), '')
+        self.assertEqual(safe_str('Hello'), 'Hello')
+        self.assertEqual(safe_str(1), '1')
+
+    def test_safe_int_1(self):
+        self.assertEqual(safe_int(''), 0)
+        self.assertEqual(safe_int('Hello'), 0)
+        self.assertEqual(safe_int('123'), 123)
+        self.assertEqual(safe_int('-123'), -123)
+
+    def test_irbis_to_dos_1(self):
+        self.assertEqual(irbis_to_dos('123\x1F\x1E456'), '123\n456')
+        self.assertEqual(irbis_to_dos('123456'), '123456')
+
+    def test_irbis_to_lines_1(self):
+        self.assertEqual(irbis_to_lines('123\x1F\x1E456'), ['123', '456'])
+        self.assertEqual(irbis_to_lines('123456'), ['123456'])
+
+    def test_short_irbis_to_lines_1(self):
+        self.assertEqual(short_irbis_to_lines('123\x1E456'), ['123', '456'])
+        self.assertEqual(short_irbis_to_lines('123456'), ['123456'])
 
 
 #############################################################################
@@ -747,5 +789,199 @@ class TestIrbisFormat(unittest.TestCase):
                          prepare_format("v100/*comment\r\nv200"))
         self.assertEqual("v100",
                          prepare_format("v100/*comment"))
+
+#############################################################################
+
+
+class TestSearchBuilder(unittest.TestCase):
+
+    def test_init_1(self):
+        builder = Search()
+        self.assertEqual(str(builder), '')
+
+    def test_all_1(self):
+        self.assertEqual(str(Search.all()), 'I=$')
+
+    def test_and_1(self):
+        builder = author('Byron$').and_(title('Poems$'))
+        self.assertEqual(str(builder), '(A=Byron$ * T=Poems$)')
+
+    def test_and_2(self):
+        builder = author('Byron$').and_(title('Poems$'), number(100))
+        self.assertEqual(str(builder), '(A=Byron$ * T=Poems$ * IN=100)')
+
+    def test_author_1(self):
+        builder = author('Byron')
+        self.assertEqual(str(builder), 'A=Byron')
+
+    def test_author_2(self):
+        builder = author('Byron', 'Tolstoy')
+        self.assertEqual(str(builder), '(A=Byron + A=Tolstoy)')
+
+    def test_bbk_1(self):
+        builder = bbk('11')
+        self.assertEqual(str(builder), 'BBK=11')
+
+    def test_bbk_2(self):
+        builder = bbk('22', '33')
+        self.assertEqual(str(builder), '(BBK=22 + BBK=33)')
+
+    def test_document_kind_1(self):
+        builder = document_kind('J')
+        self.assertEqual(str(builder), 'V=J')
+
+    def test_document_kind_2(self):
+        builder = document_kind('J', 'KN')
+        self.assertEqual(str(builder), '(V=J + V=KN)')
+
+    def test_equals_1(self):
+        builder = Search.equals('PREFIX=', 'Value$')
+        self.assertEqual(str(builder), 'PREFIX=Value$')
+
+    def test_equals_2(self):
+        builder = Search.equals('PREFIX=', 'Hello, world')
+        self.assertEqual(str(builder), '"PREFIX=Hello, world"')
+
+    def test_equals_3(self):
+        builder = Search.equals('PREFIX=', 'Hello', 'world')
+        self.assertEqual(str(builder), '(PREFIX=Hello + PREFIX=world)')
+
+    def test_keyword_1(self):
+        builder = keyword('Hello')
+        self.assertEqual(str(builder), 'K=Hello')
+
+    def test_keyword_2(self):
+        builder = keyword('Hello', 'world')
+        self.assertEqual(str(builder), '(K=Hello + K=world)')
+
+    def test_language_1(self):
+        builder = language('rus')
+        self.assertEqual(str(builder), 'J=rus')
+
+    def test_language_2(self):
+        builder = language('rus', 'eng')
+        self.assertEqual(str(builder), '(J=rus + J=eng)')
+
+    def test_magazine_1(self):
+        builder = magazine('Neva')
+        self.assertEqual(str(builder), 'TJ=Neva')
+
+    def test_magazine_2(self):
+        builder = magazine('Neva', 'Moscow')
+        self.assertEqual(str(builder), '(TJ=Neva + TJ=Moscow)')
+
+    def test_mhr_1(self):
+        builder = mhr('CHZ')
+        self.assertEqual(str(builder), 'MHR=CHZ')
+
+    def test_mhr_2(self):
+        builder = mhr('CHZ', 'AB')
+        self.assertEqual(str(builder), '(MHR=CHZ + MHR=AB)')
+
+    def test_need_wrap_1(self):
+        self.assertTrue(Search.need_wrap(''))
+        self.assertFalse(Search.need_wrap('Hello'))
+        self.assertTrue(Search.need_wrap('Hello, world!'))
+
+    def test_need_wrap_2(self):
+        self.assertFalse(Search.need_wrap('"Hello"'))
+        self.assertFalse(Search.need_wrap('(Hello)'))
+
+    def test_not_1(self):
+        builder = author('Byron$').not_(title('Poems$'))
+        self.assertEqual(str(builder), '(A=Byron$ ^ T=Poems$)')
+
+    def test_number_1(self):
+        builder = number(123)
+        self.assertEqual(str(builder), 'IN=123')
+
+    def test_number_2(self):
+        builder = number(123, 456)
+        self.assertEqual(str(builder), '(IN=123 + IN=456)')
+
+    def test_or_1(self):
+        builder = author('Byron$').or_(title('Poems$'))
+        self.assertEqual(str(builder), '(A=Byron$ + T=Poems$)')
+
+    def test_or_2(self):
+        builder = author('Byron$').or_(title('Poems$'), number(100))
+        self.assertEqual(str(builder), '(A=Byron$ + T=Poems$ + IN=100)')
+
+    def test_place_1(self):
+        builder = place('Irkutsk')
+        self.assertEqual(str(builder), 'MI=Irkutsk')
+
+    def test_place_2(self):
+        builder = place('Irkutsk', 'Moscow')
+        self.assertEqual(str(builder), '(MI=Irkutsk + MI=Moscow)')
+
+    def test_publisher_1(self):
+        builder = publisher('ISTU')
+        self.assertEqual(str(builder), 'O=ISTU')
+
+    def test_publisher_2(self):
+        builder = publisher('ISTU', 'ISU')
+        self.assertEqual(str(builder), '(O=ISTU + O=ISU)')
+
+    def test_rzn_1(self):
+        builder = rzn(1)
+        self.assertEqual(str(builder), 'RZN=1')
+
+    def test_rzn_2(self):
+        builder = rzn(1, 2)
+        self.assertEqual(str(builder), '(RZN=1 + RZN=2)')
+
+    def test_same_field_1(self):
+        builder = author('Byron$').same_field(title('Poems$'))
+        self.assertEqual(str(builder), '(A=Byron$ (G) T=Poems$)')
+
+    def test_same_field_2(self):
+        builder = author('Byron$').same_field(title('Poems$'), number(100))
+        self.assertEqual(str(builder), '(A=Byron$ (G) T=Poems$ (G) IN=100)')
+
+    def test_same_repeat_1(self):
+        builder = author('Byron$').same_repeat(title('Poems$'))
+        self.assertEqual(str(builder), '(A=Byron$ (F) T=Poems$)')
+
+    def test_same_repeat_2(self):
+        builder = author('Byron$').same_repeat(title('Poems$'), number(100))
+        self.assertEqual(str(builder), '(A=Byron$ (F) T=Poems$ (F) IN=100)')
+
+    def test_subject_1(self):
+        builder = subject('concrete')
+        self.assertEqual(str(builder), 'S=concrete')
+
+    def test_subject_2(self):
+        builder = subject('concrete', 'steel')
+        self.assertEqual(str(builder), '(S=concrete + S=steel)')
+
+    def test_title_1(self):
+        builder = title('Novels')
+        self.assertEqual(str(builder), 'T=Novels')
+
+    def test_title_2(self):
+        builder = title('Novels', 'Poems')
+        self.assertEqual(str(builder), '(T=Novels + T=Poems)')
+
+    def test_udc_1(self):
+        builder = udc('11')
+        self.assertEqual(str(builder), 'U=11')
+
+    def test_udc_2(self):
+        builder = udc('11', '22')
+        self.assertEqual(str(builder), '(U=11 + U=22)')
+
+    def test_wrap_1(self):
+        self.assertEqual(Search.wrap(''), '""')
+        self.assertEqual(Search.wrap('Hello'), 'Hello')
+        self.assertEqual(Search.wrap('Hello, world'), '"Hello, world"')
+
+    def test_year_1(self):
+        builder = year(2000)
+        self.assertEqual(str(builder), 'G=2000')
+
+    def test_year_2(self):
+        builder = year(2000, 2019)
+        self.assertEqual(str(builder), '(G=2000 + G=2019)')
 
 #############################################################################

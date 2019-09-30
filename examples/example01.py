@@ -18,6 +18,10 @@ client.parse_connection_string('host=127.0.0.1;database=IBIS;' +
                                'user=librarian;password=secret;')
 client.connect()
 
+if not client.connected:
+    print('Невозможно подключиться!')
+    exit(1)
+
 # Ищем все книги, автором которых является А. С. Пушкин
 # Обратите внимание на двойные кавычки в тексте запроса
 found = client.search('"A=ПУШКИН$"')  # pylint:disable=invalid-name

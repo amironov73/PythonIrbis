@@ -14,6 +14,10 @@ client.parse_connection_string('host=127.0.0.1;port=6666;' +
                                'database=IBIS;user=1;password=1;')
 client.connect()
 
+if not client.connected:
+    print('Невозможно подключиться!')
+    exit(1)
+
 for i in range(10):
     # Создаем запись
     record = irbis.Record()

@@ -3,3 +3,5 @@
 echo Files: `find irbis/ -name '*.py' | wc -l`
 echo Lines: `find irbis/ -name '*.py' -exec cat {} \; | wc -l`
 echo Bytes: `find irbis/ -name '*.py' -exec cat {} \; | wc -c`
+
+echo Lines of code: `pygount irbis | cut -d $'\t' -f1 | paste -sd+ - | bc`

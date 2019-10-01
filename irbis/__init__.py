@@ -17,8 +17,8 @@ from ._common import ADMINISTRATOR, BRIEF, CATALOGER, close_async, \
 from .alphabet import AlphabetTable, load_alphabet_table, UpperCaseTable, \
     load_uppercase_table
 from .database import DatabaseInfo
-from .direct import DirectAccess, MstControl, MstField, MstFile, MstEntry, \
-    MstLeader, MstRecord, XrfFile, XrfRecord
+from .direct import DirectAccess, InvertedFile, MstControl, MstField,\
+    MstFile, MstEntry, MstLeader, MstRecord, XrfFile, XrfRecord
 from .error import IrbisError, IrbisFileNotFoundError
 from .export import read_iso_record, read_text_record, STOP_MARKER, \
     write_iso_record, write_text_record
@@ -58,17 +58,17 @@ __all__ = ['ADMINISTRATOR', 'AlphabetTable', 'BRIEF', 'CATALOGER',
            'DatabaseInfo', 'DirectAccess', 'irbis_event_loop', 'IrbisError',
            'IrbisFileNotFoundError', 'Field', 'FileSpecification',
            'FoundLine', 'IniFile', 'IniLine', 'IniSection', 'init_async',
-           'load_alphabet_table', 'load_menu', 'load_opt_file',
-           'load_par_file', 'load_tree_file', 'load_uppercase_table',
-           'LAST', 'LOCKED', 'LOGICALLY_DELETED', 'MenuEntry',
-           'MenuFile', 'MstControl', 'MstField', 'MstFile', 'MstEntry',
-           'MstLeader', 'MstRecord', 'NON_ACTUALIZED', 'NOT_CONNECTED',
-           'OptFile', 'ParFile', 'PHYSICALLY_DELETED', 'PostingParameters',
-           'prepare_format', 'Process', 'RawRecord', 'read_iso_record',
-           'read_text_record', 'Record', 'remove_comments', 'Resource',
-           'ResourceDictionary', 'SearchParameters', 'SearchScenario',
-           'ServerResponse', 'ServerStat', 'ServerVersion', 'STOP_MARKER',
-           'SubField', 'TableDefinition', 'TermInfo', 'TermParameters',
-           'TermPosting', 'TreeFile', 'TreeNode', 'UpperCaseTable',
-           'UserInfo', 'write_iso_record', 'write_text_record', 'XrfFile',
-           'XrfRecord']
+           'InvertedFile', 'load_alphabet_table', 'load_menu',
+           'load_opt_file', 'load_par_file', 'load_tree_file',
+           'load_uppercase_table', 'LAST', 'LOCKED', 'LOGICALLY_DELETED',
+           'MenuEntry', 'MenuFile', 'MstControl', 'MstField', 'MstFile',
+           'MstEntry', 'MstLeader', 'MstRecord', 'NON_ACTUALIZED',
+           'NOT_CONNECTED', 'OptFile', 'ParFile', 'PHYSICALLY_DELETED',
+           'PostingParameters', 'prepare_format', 'Process', 'RawRecord',
+           'read_iso_record', 'read_text_record', 'Record', 'remove_comments',
+           'Resource', 'ResourceDictionary', 'SearchParameters',
+           'SearchScenario', 'ServerResponse', 'ServerStat', 'ServerVersion',
+           'STOP_MARKER', 'SubField', 'TableDefinition', 'TermInfo',
+           'TermParameters', 'TermPosting', 'TreeFile', 'TreeNode',
+           'UpperCaseTable', 'UserInfo', 'write_iso_record',
+           'write_text_record', 'XrfFile', 'XrfRecord']

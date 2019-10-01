@@ -5,6 +5,7 @@
 """
 
 import asyncio
+import os.path
 from typing import Union, Optional, SupportsInt, List
 
 #############################################################################
@@ -296,6 +297,16 @@ def short_irbis_to_lines(text: str) -> List[str]:
     :return: List of strings
     """
     return text.split(SHORT_DELIMITER)
+
+
+def change_extension(filename: str, new_extension: str) -> str:
+    """
+    Смена расширения у файла (без физического переименования!).
+    :param filename:
+    :param new_extension:
+    :return:
+    """
+    return os.path.splitext(filename)[0] + new_extension
 
 
 def remove_comments(text: str) -> str:

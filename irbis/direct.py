@@ -6,10 +6,10 @@
 
 from typing import List
 from io import SEEK_SET
-import os.path
-from ctypes import BigEndianStructure, c_int32, c_uint32
-from ._common import UTF
+from ctypes import BigEndianStructure, c_int32, c_uint16, c_uint32
+from ._common import change_extension, UTF
 from .record import Field, RawRecord, Record
+
 
 #############################################################################
 
@@ -294,19 +294,173 @@ class MstFile:
 #############################################################################
 
 
+class NodeItem(BigEndianStructure):
+    """
+    Элемент справочника в N01/L01.
+    """
+
+    _fields_ = [('length', c_uint16),
+                ('key_offset', c_uint16),
+                ('offset_low', c_int32),
+                ('offset_high', c_int32)]
+
+    def offset(self):
+        """
+        Полное смещение.
+        :return:
+        """
+        return self.offset_high + (self.offset_low << 32)
+
+    def __str__(self):
+        return f"{self.length}: {self.key_offset}"
+
+
+#############################################################################
+
+
+class NodeLeader(BigEndianStructure):
+    """
+    Лидер записи в L01/N01.
+    """
+
+    _fields_ = [('number', c_uint32),
+                ('previous', c_int32),
+                ('next', c_uint32),
+                ('term_count', c_int32),
+                ('free_offset', c_int32)]
+
+    def __str__(self):
+        return f"{self.number}"
+
+
+#############################################################################
+
+
+class NodeRecord:
+    """
+    Файлы N01 и L01 содержат  в себе индексы словаря поисковых
+    терминов и состоят из записей (блоков) постоянной длины.
+    Записи состоят из трех частей: лидера, справочника
+    и ключей переменной длины.
+    """
+
+    __slots__ = 'leader', 'items', 'keys'
+
+    def __init__(self):
+        self.leader: NodeLeader = NodeLeader()
+        self.items: List[NodeItem] = []
+        self.keys: List[str] = []
+
+    def __str__(self):
+        return str(self.leader)
+
+
+#############################################################################
+
+
+class Link(BigEndianStructure):
+    """
+    Ссылка на запись в мастер-файле.
+    """
+
+    _fields_ = [('mfn', c_uint32),
+                ('tag', c_int32),
+                ('occ', c_int32),
+                ('cnt', c_int32)]
+
+    def __str__(self):
+        return f"{self.mfn}: {self.tag}: {self.occ}: {self.cnt}"
+
+
+#############################################################################
+
+
+class InvertedLeader(BigEndianStructure):
+    """
+    Заголовок инвертированной записи.
+    """
+
+    _fields_ = [('low', c_int32),
+                ('high', c_int32),
+                ('total', c_int32),
+                ('used', c_int32),
+                ('count', c_int32)]
+
+    def __str__(self):
+        return f"{self.high}: {self.low}"
+
+
+#############################################################################
+
+
+class InvertedRecord:
+    """
+    Запись состоит из заголовка и упорядоченного набора ссылок.
+    """
+
+    __slots__ = 'leader', 'links'
+
+    def __init__(self):
+        self.leader: InvertedLeader = InvertedLeader()
+        self.links: List[Link] = []
+
+    def __str__(self):
+        return str(self.leader)
+
+
+#############################################################################
+
+
+class InvertedFile:
+    """
+    Работа с инверсным файлом.
+    """
+
+    NODE_LENGTH = 2048
+
+    __slots__ = '_ifp', '_l01', '_n01'
+
+    def __init__(self, filename: str) -> None:
+        self._ifp = open(change_extension(filename, '.ifp'), 'rb')
+        self._l01 = open(change_extension(filename, '.l01'), 'rb')
+        self._n01 = open(change_extension(filename, '.n01'), 'rb')
+
+    def close(self):
+        """
+        Закрывает файлы.
+        :return:
+        """
+        self._ifp.close()
+        self._l01.close()
+        self._n01.close()
+
+    @staticmethod
+    def _node_offset(number: int) -> int:
+        return (number - 1) * InvertedFile.NODE_LENGTH
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        return exc_type is None
+
+#############################################################################
+
+
 class DirectAccess:
     """
     Прямой доступ к базе данных.
     """
 
-    __slots__ = '_xrf', '_mst', '_filename'
+    __slots__ = '_xrf', '_mst', '_inverted', '_filename'
 
     def __init__(self, master_file_name: str) -> None:
         self._filename = master_file_name
         self._mst = MstFile(master_file_name)
-        (pre, _) = os.path.splitext(master_file_name)
-        xrf_file_name = pre + '.xrf'
+        xrf_file_name = change_extension(master_file_name, '.xrf')
         self._xrf = XrfFile(xrf_file_name)
+        self._inverted = InvertedFile(master_file_name)
 
     def close(self) -> None:
         """
@@ -315,6 +469,7 @@ class DirectAccess:
         """
         self._mst.close()
         self._xrf.close()
+        self._inverted.close()
 
     def next_mfn(self) -> int:
         """
@@ -365,5 +520,5 @@ class DirectAccess:
 #############################################################################
 
 
-__all__ = ['DirectAccess', 'MstControl', 'MstField', 'MstFile', 'MstEntry',
-           'MstLeader', 'MstRecord', 'XrfFile', 'XrfRecord']
+__all__ = ['DirectAccess', 'InvertedFile', 'MstControl', 'MstField', 'MstFile',
+           'MstEntry', 'MstRecord', 'XrfFile', 'XrfRecord']

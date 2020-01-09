@@ -1,6 +1,6 @@
 # PythonIrbis
 
-`PythonIrbis` package is just [ManagedIrbis](https://github.com/amironov73/ManagedIrbis) package ported from C# to Python 3
+`PythonIrbis` package is universal client software for IRBIS64 library automation system ([ManagedIrbis](https://github.com/amironov73/ManagedIrbis) package ported from C# to Python 3). Available on [PyPi](https://pypi.org/project/irbis).
 
 ### Supported environments
 

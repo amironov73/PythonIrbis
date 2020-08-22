@@ -113,6 +113,8 @@ class Field:
         assert len(code) == 1
 
         code = code.lower()
+        # if code == '*':
+        #    return [self.get_value_or_first_subfield()]
         return [sf for sf in self.subfields if sf.code == code]
 
     def all_values(self, code: str) -> List[str]:
@@ -126,6 +128,8 @@ class Field:
         assert len(code) == 1
 
         code = code.lower()
+        if code == '*':
+            return [self.get_value_or_first_subfield()]
         return [sf.value for sf in self.subfields
                 if sf.code == code if sf.value]
 
@@ -175,6 +179,8 @@ class Field:
         assert len(code) == 1
 
         code = code.lower()
+        # if code == '*':
+        #    return self.get_value_or_first_subfield()
         for subfield in self.subfields:
             if subfield.code == code:
                 return subfield
@@ -189,6 +195,8 @@ class Field:
         assert len(code) == 1
 
         code = code.lower()
+        if code == '*':
+            return self.get_value_or_first_subfield()
         for subfield in self.subfields:
             if subfield.code == code:
                 return subfield.value
@@ -223,7 +231,7 @@ class Field:
 
         return result
 
-    def get_value_or_firs_subfield(self) -> Optional[str]:
+    def get_value_or_first_subfield(self) -> Optional[str]:
         """
         Выдаёт значение для ^*.
         :return: Найденное значение
@@ -245,7 +253,6 @@ class Field:
         assert len(code) == 1
 
         code = code.lower()
-
         for subfield in self.subfields:
             if subfield.code == code:
                 return True
@@ -386,6 +393,27 @@ class Field:
 
         return self
 
+    def text(self) -> str:
+        """
+        Текстовое представление поля без кода.
+        :return:
+        """
+        result = ''
+        if self.value:
+            result = self.value
+        result += ''.join(str(s) for s in self.subfields)
+        return result
+
+    def to_dict(self) -> dict:
+        """
+        Выдает словарь "код - значение подполя".
+        :return:
+        """
+        result = {}
+        for sf in self.subfields:
+            result[sf.code] = sf.value
+        return result
+
     def __str__(self):
         if not self.tag:
             return ''
@@ -394,7 +422,14 @@ class Field:
         return ''.join(buffer)
 
     def __iter__(self):
-        yield from self.subfields
+        """
+        Перебор подполей в виде "код - значение".
+        """
+        if self.subfields:
+            for sf in self.subfields:
+                yield sf.code, sf.value
+        else:
+            yield '', self.value
 
     def __iadd__(self, other: Union[SubField, Iterable[SubField]]):
         if isinstance(other, SubField):
@@ -416,7 +451,10 @@ class Field:
     def __getitem__(self, item: Union[str, int]):
         if isinstance(item, int):
             return self.subfields[item]
-        return self.first(item)
+        result = self.first(item)
+        if result:
+            return result.value
+        return None
 
     def __setitem__(self, key: Union[str, int], value: Optional[str]):
         if isinstance(key, int):
@@ -516,6 +554,17 @@ class Record:
 
         return [f for f in self.fields if f.tag == tag]
 
+    def all_as_dict(self, tag: int) -> List[dict]:
+        """
+        Список полей с указанной меткой, каждое поле в виде словаря
+        "код - значение".
+        :param tag:
+        :return:
+        """
+        assert tag > 0
+
+        return [f.to_dict() for f in self.fields if f.tag == tag]
+
     def clear(self) -> 'Record':
         """
         Очистка записи (удаление всех полей).
@@ -604,6 +653,18 @@ class Record:
             if field.tag == tag:
                 return field
         return None
+
+    def first_as_dict(self, tag: int) -> dict:
+        """
+        Первое из полей с указанной меткой в виде словаря
+        "код - значение".
+        """
+        assert tag > 0
+
+        for field in self.fields:
+            if field.tag == tag:
+                return field.to_dict()
+        return {}
 
     def have_field(self, tag: int) -> bool:
         """
@@ -764,7 +825,29 @@ class Record:
         return '\n'.join(result)
 
     def __iter__(self):
-        yield from self.fields
+        """
+        Перебор полей записи для формирования словаря "код - поля".
+        """
+        accumulator = {}
+        for field in self.fields:
+            key = field.tag
+
+            if field.subfields:
+                value = dict(field)
+            else:
+                value = field.value
+
+            value_count = len(self.all(key))
+            if value_count == 1:
+                accumulator[key] = value
+            elif value_count > 1:
+                if key not in accumulator:
+                    accumulator[key] = [value]
+                else:
+                    accumulator[key].append(value)
+
+        for k, v in accumulator.items():
+            yield k, v
 
     def __iadd__(self, other: Union[Field, Iterable[Field]]):
         if isinstance(other, Field):

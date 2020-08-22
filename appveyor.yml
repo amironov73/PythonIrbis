@@ -11,7 +11,7 @@ environment:
   COVERAGE: C:\Python36-x64\Scripts\coverage.exe
   TWINE: C:\Python36-x64\Scripts\twine.exe
   TWINE_USERNAME: amironov73
-  TWINE_PASSWORD: 
+  TWINE_PASSWORD:
     secure: 1JY9Dr54nOTpD3EAV4mqMQ==
 
 install:
@@ -25,7 +25,7 @@ before_build:
 
 build_script:
   - cd c:\projects\pythonirbis
-  - python -m flake8 iris
+  - python -m flake8 irbis
   - python -m mypy irbis
   - python -m pylint irbis
 

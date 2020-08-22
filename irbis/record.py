@@ -129,7 +129,7 @@ class Field:
 
         code = code.lower()
         if code == '*':
-            return [self.get_value_or_first_subfield()]
+            return [self.get_value_or_first_subfield() or '']
         return [sf.value for sf in self.subfields
                 if sf.code == code if sf.value]
 
@@ -410,8 +410,8 @@ class Field:
         :return:
         """
         result = {}
-        for sf in self.subfields:
-            result[sf.code] = sf.value
+        for subfield in self.subfields:
+            result[subfield.code] = subfield.value
         return result
 
     def __str__(self):
@@ -426,8 +426,8 @@ class Field:
         Перебор подполей в виде "код - значение".
         """
         if self.subfields:
-            for sf in self.subfields:
-                yield sf.code, sf.value
+            for subfield in self.subfields:
+                yield subfield.code, subfield.value
         else:
             yield '', self.value
 
@@ -846,8 +846,8 @@ class Record:
                 else:
                     accumulator[key].append(value)
 
-        for k, v in accumulator.items():
-            yield k, v
+        for key, value in accumulator.items():
+            yield key, value
 
     def __iadd__(self, other: Union[Field, Iterable[Field]]):
         if isinstance(other, Field):

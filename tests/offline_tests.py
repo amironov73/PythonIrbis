@@ -285,25 +285,27 @@ class TestField(unittest.TestCase):
         field = Field(100).add('a', 'SubA').add('b', 'SubB')
         s = list(field)
         self.assertEqual(len(s), 2)
-        self.assertEqual(s[0].code, field.subfields[0].code)
-        self.assertEqual(s[0].value, field.subfields[0].value)
-        self.assertEqual(s[1].code, field.subfields[1].code)
-        self.assertEqual(s[1].value, field.subfields[1].value)
+        self.assertEqual(s[0][0], field.subfields[0].code)
+        self.assertEqual(s[0][1], field.subfields[0].value)
+        self.assertEqual(s[1][0], field.subfields[1].code)
+        self.assertEqual(s[1][1], field.subfields[1].value)
 
     def test_iter_2(self):
         field = Field()
         s = list(field)
-        self.assertEqual(len(s), 0)
+        self.assertEqual(len(s), 1)
+        self.assertEqual(s[0][0], '')
+        self.assertIsNone(s[0][1])
 
     def test_iter_3(self):
         field = Field(100).add('a', 'SubA').add('b', 'SubB')
         i = iter(field)
         sf = next(i)
-        self.assertEqual(sf.code, 'a')
-        self.assertEqual(sf.value, 'SubA')
+        self.assertEqual(sf[0], 'a')
+        self.assertEqual(sf[1], 'SubA')
         sf = next(i)
-        self.assertEqual(sf.code, 'b')
-        self.assertEqual(sf.value, 'SubB')
+        self.assertEqual(sf[0], 'b')
+        self.assertEqual(sf[1], 'SubB')
         ok = False
         try:
             next(i)
@@ -361,9 +363,9 @@ class TestField(unittest.TestCase):
         field.subfields.append(sfa)
         field.subfields.append(sfb)
         found = field['a']
-        self.assertIs(found, sfa)
+        self.assertEqual(found, 'SubA')
         found = field['b']
-        self.assertIs(found, sfb)
+        self.assertEqual(found, 'SubB')
         found = field['c']
         self.assertIsNone(found)
 
@@ -433,6 +435,44 @@ class TestField(unittest.TestCase):
         field.value = 'Value'
         self.assertFalse(bool(field))
 
+    def test_text_1(self):
+        field = Field()
+        self.assertEqual(field.text(), '')
+
+    def test_text_2(self):
+        field = Field(100)
+        self.assertEqual(field.text(), '')
+
+    def test_text_3(self):
+        field = Field(100, 'Value')
+        self.assertEqual(field.text(), 'Value')
+
+    def test_text_4(self):
+        field = Field(100, SubField('a', 'SubA')).add('b', 'SubB')
+        self.assertEqual(field.text(), '^aSubA^bSubB')
+
+    def test_to_dict_1(self):
+        field = Field()
+        d = field.to_dict()
+        self.assertEqual(len(d), 0)
+
+    def test_to_dict_2(self):
+        field = Field(100)
+        d = field.to_dict()
+        self.assertEqual(len(d), 0)
+
+    def test_to_dict_3(self):
+        field = Field(100, 'Value')
+        d = field.to_dict()
+        self.assertEqual(len(d), 0)
+
+    def test_to_dict_4(self):
+        field = Field(100, SubField('a', 'SubA')).add('b', 'SubB')
+        d = field.to_dict()
+        self.assertEqual(len(d), 2)
+        self.assertEqual(d['a'], 'SubA')
+        self.assertEqual(d['b'], 'SubB')
+
 #############################################################################
 
 
@@ -478,6 +518,37 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(len(record.all(300)), 2)
         self.assertEqual(len(record.all(400)), 0)
 
+    def test_all_as_dict_1(self):
+        record = Record()
+        v = record.first_as_dict(700)
+        self.assertEqual(len(v), 0)
+
+    def test_all_as_dict_2(self):
+        record = Record()
+        record.add(100, 'Field100')
+        v = record.all_as_dict(100)
+        self.assertEqual(len(v), 1)
+        self.assertEqual(len(v[0]), 0)
+
+    def test_all_as_dict_3(self):
+        record = Record()
+        record.add(100).add('a', 'SubA').add('b', 'SubB')
+        v = record.all_as_dict(100)
+        self.assertEqual(len(v), 1)
+        self.assertEqual(v[0]['a'], 'SubA')
+        self.assertEqual(v[0]['b'], 'SubB')
+
+    def test_all_as_dict_4(self):
+        record = Record()
+        record.add(100).add('a', 'SubA').add('b', 'SubB')
+        record.add(100).add('c', 'SubC').add('d', 'SubD')
+        v = record.all_as_dict(100)
+        self.assertEqual(len(v), 2)
+        self.assertEqual(v[0]['a'], 'SubA')
+        self.assertEqual(v[0]['b'], 'SubB')
+        self.assertEqual(v[1]['c'], 'SubC')
+        self.assertEqual(v[1]['d'], 'SubD')
+
     def test_clear_1(self):
         record = Record()
         record.add(100, 'Some value')
@@ -505,6 +576,40 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(record.encode(),
                          ['123#32', '0#321', '100#Field100',
                           '200#^aSubA^bSubB'])
+
+    def test_first_1(self):
+        record = Record()
+        v = record.first(100)
+        self.assertIsNone(v)
+
+    def test_first_2(self):
+        record = Record()
+        v100 = Field(100)
+        record.fields.append(v100)
+        v = record.first(100)
+        self.assertIs(v, v100)
+
+    def test_first_3(self):
+        record = Record()
+        v100_1 = Field(100)
+        record.fields.append(v100_1)
+        v100_2 = Field(100)
+        record.fields.append(v100_2)
+        v = record.first(100)
+        self.assertIs(v, v100_1)
+
+    def test_first_as_dict_1(self):
+        record = Record()
+        v = record.first_as_dict(100)
+        self.assertEqual(len(v), 0)
+
+    def test_first_as_dict_2(self):
+        record = Record()
+        record.add(100).add('a', 'SubA').add('b', 'SubB')
+        v = record.first_as_dict(100)
+        self.assertEqual(len(v), 2)
+        self.assertEqual(v['a'], 'SubA')
+        self.assertEqual(v['b'], 'SubB')
 
     def test_fm_1(self):
         record = Record()
@@ -578,10 +683,11 @@ class TestMarcRecord(unittest.TestCase):
         record = Record()
         record.add(100, 'Field 100')
         record.add(200).add('a', 'SubA').add('b', 'SubB')
-        s = list(record)
+        s = dict(record)
         self.assertEqual(len(s), 2)
-        self.assertEqual(s[0].tag, 100)
-        self.assertEqual(s[1].tag, 200)
+        self.assertEqual(s[100], 'Field 100')
+        self.assertEqual(s[200]['a'], 'SubA')
+        self.assertEqual(s[200]['b'], 'SubB')
 
     def test_iter_2(self):
         record = Record()
@@ -589,9 +695,12 @@ class TestMarcRecord(unittest.TestCase):
         record.add(200).add('a', 'SubA').add('b', 'SubB')
         i = iter(record)
         f = next(i)
-        self.assertEqual(f.tag, 100)
+        self.assertEqual(f[0], 100)
+        self.assertEqual(f[1], 'Field 100')
         f = next(i)
-        self.assertEqual(f.tag, 200)
+        self.assertEqual(f[0], 200)
+        self.assertEqual(f[1]['a'], 'SubA')
+        self.assertEqual(f[1]['b'], 'SubB')
         ok = False
         try:
             next(i)

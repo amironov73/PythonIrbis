@@ -16,7 +16,7 @@ environment:
 
 install:
   - python -m pip install --upgrade pip
-  - pip install --upgrade setuptools wheel coverage mypy flake8 twine pylint
+  - pip install --upgrade setuptools wheel coverage mypy flake8 twine pylint pygount
   - IF not "L%APPVEYOR_REPO_BRANCH%L" == "LpypiL" SET TWINE_REPOSITORY_URL=https://test.pypi.org/legacy/
 
 before_build:

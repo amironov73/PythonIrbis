@@ -296,6 +296,17 @@ class Field:
         self.subfields.insert(index, subfield)
         return self
 
+    def keys(self) -> List[str]:
+        """
+        Получение списка кодов подполей
+
+        :return: список кодов
+        """
+        if self.subfields:
+            return [subfield.code for subfield in self.subfields]
+        else:
+            return ['']
+
     def parse(self, line: str) -> None:
         """
         Разбор текстового представления поля (в серверном формате).
@@ -448,13 +459,17 @@ class Field:
                     self.subfields.remove(one)
         return self
 
-    def __getitem__(self, item: Union[str, int]):
-        if isinstance(item, int):
-            return self.subfields[item]
-        result = self.first(item)
-        if result:
-            return result.value
-        return None
+    def __getitem__(self, code: str) -> str:
+        """
+        Получение значения подполя по индексу
+
+        :param code: строковый код подполя
+        :return: строковое значение подполя
+        """
+        if code == '':
+            return self.value
+        else:
+            return self.first_value(code)
 
     def __setitem__(self, key: Union[str, int], value: Optional[str]):
         if isinstance(key, int):
@@ -705,6 +720,14 @@ class Record:
         """
         return (self.status & (LOGICALLY_DELETED | PHYSICALLY_DELETED)) != 0
 
+    def keys(self) -> List[int]:
+        """
+        Получение списка меток полей
+
+        :return: список меток
+        """
+        return [field.tag for field in self.fields]
+
     # noinspection DuplicatedCode
     def parse(self, text: List[str]) -> None:
         """
@@ -866,8 +889,26 @@ class Record:
                     self.fields.remove(one)
         return self
 
-    def __getitem__(self, item: int):
-        return self.fm(item)
+    def __getitem__(self, tag: int) -> Union[dict, List[dict], str]:
+        """
+        Получение значения поля по индексу
+
+        :param tag: числовая метка поля
+        :return: словарь, список словарей или строку со значением поля
+        """
+        def get_str_or_dict(field):
+            if field.subfields:
+                return dict(field)
+            else:
+                return field.value
+
+        fields = self.all(tag)
+        count = len(fields)
+
+        if count == 1:
+            return get_str_or_dict(fields[0])
+        elif count > 1:
+            return [get_str_or_dict(field) for field in fields]
 
     def __setitem__(self, key: int,
                     value: Union[Field, SubField, str, None]):

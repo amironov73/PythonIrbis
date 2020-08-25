@@ -192,7 +192,7 @@ class Field:
         :param code: Код
         :return: Значение подполя или None
         """
-        assert len(code) == 1
+        assert len(code) <= 1
 
         code = code.lower()
         if code == '*':
@@ -304,8 +304,7 @@ class Field:
         """
         if self.subfields:
             return [subfield.code for subfield in self.subfields]
-        else:
-            return ['']
+        return ['']
 
     def parse(self, line: str) -> None:
         """
@@ -459,17 +458,20 @@ class Field:
                     self.subfields.remove(one)
         return self
 
-    def __getitem__(self, code: str) -> str:
+    def __getitem__(self, code: Union[str, int]) -> str:
         """
         Получение значения подполя по индексу
 
         :param code: строковый код подполя
         :return: строковое значение подполя
         """
+        if isinstance(code, int):
+            return self.subfields[code].value or ''
+
         if code == '':
-            return self.value
-        else:
-            return self.first_value(code)
+            return self.value or ''
+
+        return self.first_value(code) or ''
 
     def __setitem__(self, key: Union[str, int], value: Optional[str]):
         if isinstance(key, int):
@@ -899,16 +901,18 @@ class Record:
         def get_str_or_dict(field):
             if field.subfields:
                 return dict(field)
-            else:
-                return field.value
+            return field.value
 
         fields = self.all(tag)
         count = len(fields)
 
         if count == 1:
             return get_str_or_dict(fields[0])
-        elif count > 1:
+
+        if count > 1:
             return [get_str_or_dict(field) for field in fields]
+
+        return ''
 
     def __setitem__(self, key: int,
                     value: Union[Field, SubField, str, None]):

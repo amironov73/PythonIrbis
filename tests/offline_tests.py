@@ -367,7 +367,7 @@ class TestField(unittest.TestCase):
         found = field['b']
         self.assertEqual(found, 'SubB')
         found = field['c']
-        self.assertIsNone(found)
+        self.assertEqual(found, '')
 
     def test_getitem_2(self):
         sfa = SubField('a', 'SubA')
@@ -376,9 +376,9 @@ class TestField(unittest.TestCase):
         field.subfields.append(sfa)
         field.subfields.append(sfb)
         found = field[0]
-        self.assertIs(found, sfa)
+        self.assertEqual(found, sfa.value)
         found = field[1]
-        self.assertIs(found, sfb)
+        self.assertEqual(found, sfb.value)
 
     def test_setitem_1(self):
         sfa = SubField('a', 'SubA')
@@ -472,6 +472,31 @@ class TestField(unittest.TestCase):
         self.assertEqual(len(d), 2)
         self.assertEqual(d['a'], 'SubA')
         self.assertEqual(d['b'], 'SubB')
+
+    def test_keys_1(self):
+        field = Field(100)
+        d = field.keys()
+        self.assertEqual(d, [''])
+
+    def test_keys_2(self):
+        field = Field(100, 'Value')
+        d = field.keys()
+        self.assertEqual(d, [''])
+
+    def test_keys_3(self):
+        field = Field(100).add('a', 'SubA').add('b', 'SubB')
+        d = field.keys()
+        self.assertEqual(len(d), 2)
+        self.assertEqual(d[0], 'a')
+        self.assertEqual(d[1], 'b')
+
+    def test_keys_4(self):
+        field = Field(100).add('a', 'SubA1').add('a', 'SubA2')
+        d = field.keys()
+        self.assertEqual(len(d), 2)
+        self.assertEqual(d[0], 'a')
+        self.assertEqual(d[1], 'a')
+
 
 #############################################################################
 
@@ -749,8 +774,8 @@ class TestMarcRecord(unittest.TestCase):
         field = Field(200).add('a', 'SubA').add('b', 'SubB')
         record.fields.append(field)
         self.assertEqual(record[100], 'Field 100')
-        self.assertIsNone(record[200])
-        self.assertIsNone(record[300])
+        self.assertEqual(record[200]['a'], 'SubA')
+        self.assertEqual(record[300], '')
 
     def test_setitem_1(self):
         f100 = Field(100, 'Field 100')

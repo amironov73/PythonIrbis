@@ -4,7 +4,7 @@
 Работа с записями, полями, подполями.
 """
 
-from typing import Iterable, List, Optional, Union
+from typing import Iterable, List, Optional, Set, Union
 from ._common import LOGICALLY_DELETED, PHYSICALLY_DELETED
 
 
@@ -296,15 +296,15 @@ class Field:
         self.subfields.insert(index, subfield)
         return self
 
-    def keys(self) -> List[str]:
+    def keys(self) -> Set[str]:
         """
-        Получение списка кодов подполей
+        Получение множества кодов подполей
 
-        :return: список кодов
+        :return: множество кодов
         """
         if self.subfields:
-            return [subfield.code for subfield in self.subfields]
-        return ['']
+            return set(subfield.code for subfield in self.subfields)
+        return set('')
 
     def parse(self, line: str) -> None:
         """
@@ -722,13 +722,13 @@ class Record:
         """
         return (self.status & (LOGICALLY_DELETED | PHYSICALLY_DELETED)) != 0
 
-    def keys(self) -> List[int]:
+    def keys(self) -> Set[int]:
         """
-        Получение списка меток полей
+        Получение множества меток полей
 
-        :return: список меток
+        :return: множество меток
         """
-        return [field.tag for field in self.fields]
+        return set(field.tag for field in self.fields)
 
     # noinspection DuplicatedCode
     def parse(self, text: List[str]) -> None:

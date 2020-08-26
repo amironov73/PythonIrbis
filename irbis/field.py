@@ -18,8 +18,11 @@ class Field:
 
     __slots__ = 'tag', 'value', 'subfields'
 
-    def __init__(self, tag: Optional[int] = DEFAULT_TAG,
-                 value: Union[List[SubField], SubField, str, dict] = None) -> None:
+    def __init__(
+            self,
+            tag: Optional[int] = DEFAULT_TAG,
+            value: Union[List[SubField], SubField, str, dict] = None
+    ) -> None:
         self.tag: int = tag or self.DEFAULT_TAG
         self.value: Optional[str] = None
         if isinstance(value, str):
@@ -28,7 +31,7 @@ class Field:
         if isinstance(value, SubField):
             self.subfields.append(value)
 
-        if isinstance(value, List):
+        if isinstance(value, list):
             for element in value:
                 if isinstance(element, SubField):
                     self.subfields.append(element)
@@ -401,8 +404,8 @@ class Field:
     def __str__(self):
         if not self.tag:
             return ''
-        buffer = [str(self.tag), '#', self.value or ''] \
-            + [str(sf) for sf in self.subfields]
+        buffer = [str(self.tag), '#', self.value or '']
+        buffer += [str(sf) for sf in self.subfields]
         return ''.join(buffer)
 
     def __iter__(self):
@@ -470,4 +473,3 @@ class Field:
 
     def __bool__(self):
         return bool(self.tag) and (bool(self.value) or bool(self.subfields))
-

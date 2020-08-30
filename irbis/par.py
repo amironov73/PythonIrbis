@@ -6,7 +6,7 @@
 
 from typing import DefaultDict, Iterable
 from collections import defaultdict
-from ._common import ANSI
+from irbis._common import ANSI
 
 
 class ParFile:

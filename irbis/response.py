@@ -6,7 +6,7 @@
 
 import socket
 from typing import Any, List, Optional
-from ._common import ANSI, ObjectWithError, UTF
+from irbis._common import ANSI, ObjectWithError, UTF
 
 
 class ServerResponse:

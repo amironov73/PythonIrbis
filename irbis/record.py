@@ -5,9 +5,9 @@
 """
 
 from typing import Iterable, List, Optional, Set, Union
-from ._common import LOGICALLY_DELETED, PHYSICALLY_DELETED
-from .field import Field
-from .subfield import SubField
+from irbis._common import LOGICALLY_DELETED, PHYSICALLY_DELETED
+from irbis.field import Field
+from irbis.subfield import SubField
 
 
 class Record:

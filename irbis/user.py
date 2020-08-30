@@ -5,8 +5,8 @@
 """
 
 from typing import List, Optional
-from ._common import safe_str, same_string
-from .response import ServerResponse
+from irbis._common import safe_str, same_string
+from irbis.response import ServerResponse
 
 
 class UserInfo:

@@ -10,7 +10,7 @@ import random
 import time
 from typing import Any, List, Optional, Tuple, Union
 
-from ._common import ACTUALIZE_RECORD, ALL, CREATE_DATABASE, \
+from irbis._common import ACTUALIZE_RECORD, ALL, CREATE_DATABASE, \
     CREATE_DICTIONARY, DATA, DELETE_DATABASE, EMPTY_DATABASE, FORMAT_RECORD, \
     GET_MAX_MFN, GET_PROCESS_LIST, GET_SERVER_STAT, GET_USER_LIST, \
     IRBIS_DELIMITER, irbis_to_dos, irbis_to_lines, irbis_event_loop, \
@@ -23,25 +23,25 @@ from ._common import ACTUALIZE_RECORD, ALL, CREATE_DATABASE, \
     throw_value_error, UNREGISTER_CLIENT, UNLOCK_DATABASE, UNLOCK_RECORDS, \
     UPDATE_INI_FILE, UPDATE_RECORD
 
-from .alphabet import AlphabetTable, UpperCaseTable
-from .database import DatabaseInfo
-from .error import IrbisError, IrbisFileNotFoundError
-from .ini import IniFile
-from .menus import MenuFile
-from .opt import OptFile
-from .par import ParFile
-from .process import Process
-from .query import ClientQuery
-from .record import RawRecord, Record
-from .response import ServerResponse
-from .search import FoundLine, SearchParameters, SearchScenario
-from .specification import FileSpecification
-from .stat import ServerStat
-from .table import TableDefinition
-from .terms import PostingParameters, TermInfo, TermPosting, TermParameters
-from .tree import TreeFile
-from .version import ServerVersion
-from .user import UserInfo
+from irbis.alphabet import AlphabetTable, UpperCaseTable
+from irbis.database import DatabaseInfo
+from irbis.error import IrbisError, IrbisFileNotFoundError
+from irbis.ini import IniFile
+from irbis.menus import MenuFile
+from irbis.opt import OptFile
+from irbis.par import ParFile
+from irbis.process import Process
+from irbis.query import ClientQuery
+from irbis.record import RawRecord, Record
+from irbis.response import ServerResponse
+from irbis.search import FoundLine, SearchParameters, SearchScenario
+from irbis.specification import FileSpecification
+from irbis.stats import ServerStat
+from irbis.table import TableDefinition
+from irbis.terms import PostingParameters, TermInfo, TermPosting, TermParameters
+from irbis.tree import TreeFile
+from irbis.version import ServerVersion
+from irbis.user import UserInfo
 
 
 class Connection(ObjectWithError):

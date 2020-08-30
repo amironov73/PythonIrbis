@@ -6,7 +6,7 @@
 
 import re
 from typing import Dict, Generator, List
-from ._common import ANSI
+from irbis._common import ANSI
 
 
 class AlphabetTable:

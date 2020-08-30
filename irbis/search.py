@@ -5,8 +5,8 @@
 """
 
 from typing import List, Optional
-from ._common import safe_int, safe_str
-from .ini import IniFile
+from irbis._common import safe_int, safe_str
+from irbis.ini import IniFile
 
 
 class FoundLine:

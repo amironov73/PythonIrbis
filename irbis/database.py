@@ -5,8 +5,8 @@
 """
 
 from typing import List, Optional
-from ._common import SHORT_DELIMITER
-from .response import ServerResponse
+from irbis._common import SHORT_DELIMITER
+from irbis.response import ServerResponse
 
 
 class DatabaseInfo:

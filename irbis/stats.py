@@ -5,7 +5,7 @@
 """
 
 from typing import Optional
-from .response import ServerResponse
+from irbis.response import ServerResponse
 
 
 class ClientInfo:

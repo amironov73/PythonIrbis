@@ -6,7 +6,7 @@
 
 import re
 from typing import List, Optional
-from ._common import ANSI, STOP_MARKER
+from irbis._common import ANSI, STOP_MARKER
 
 
 class OptLine:

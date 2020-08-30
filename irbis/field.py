@@ -5,7 +5,7 @@
 """
 
 from typing import Iterable, List, Optional, Set, Union
-from .subfield import SubField
+from irbis.subfield import SubField
 
 
 class Field:

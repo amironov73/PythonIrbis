@@ -5,7 +5,7 @@
 """
 
 from typing import Union, Optional
-from ._common import ANSI, UTF, prepare_format
+from irbis._common import ANSI, UTF, prepare_format
 
 
 class ClientQuery:

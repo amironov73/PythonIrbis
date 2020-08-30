@@ -9,38 +9,38 @@
 # Python supported: 3.6 and higher
 # IRBIS64 supported: 2014 and higher
 
-from ._common import ADMINISTRATOR, BRIEF, CATALOGER, close_async, \
+from irbis._common import ADMINISTRATOR, BRIEF, CATALOGER, close_async, \
     init_async, irbis_event_loop, LAST, LOCKED, LOGICALLY_DELETED, \
     NON_ACTUALIZED, NOT_CONNECTED, PHYSICALLY_DELETED, prepare_format, \
     remove_comments
 
-from .alphabet import AlphabetTable, load_alphabet_table, UpperCaseTable, \
+from irbis.alphabet import AlphabetTable, load_alphabet_table, UpperCaseTable, \
     load_uppercase_table
-from .database import DatabaseInfo
-from .direct import DirectAccess, InvertedFile, MstControl, MstField,\
+from irbis.database import DatabaseInfo
+from irbis.direct import DirectAccess, InvertedFile, MstControl, MstField,\
     MstFile, MstEntry, MstLeader, MstRecord, XrfFile, XrfRecord
-from .error import IrbisError, IrbisFileNotFoundError
-from .export import read_iso_record, read_text_record, STOP_MARKER, \
+from irbis.error import IrbisError, IrbisFileNotFoundError
+from irbis.export import read_iso_record, read_text_record, STOP_MARKER, \
     write_iso_record, write_text_record
-from .ini import IniFile, IniLine, IniSection
-from .menus import load_menu, MenuEntry, MenuFile
-from .opt import load_opt_file, OptFile
-from .par import load_par_file, ParFile
-from .process import Process
-from .query import ClientQuery
-from .record import Field, RawRecord, Record, SubField
-from .resource import Resource, ResourceDictionary
-from .response import ServerResponse
-from .search import FoundLine, SearchParameters, SearchScenario
-from .specification import FileSpecification
-from .stat import ClientInfo, ServerStat
-from .table import TableDefinition
-from .terms import PostingParameters, TermInfo, TermParameters, TermPosting
-from .tree import load_tree_file, TreeFile, TreeNode
-from .user import UserInfo
-from .version import ServerVersion
+from irbis.ini import IniFile, IniLine, IniSection
+from irbis.menus import load_menu, MenuEntry, MenuFile
+from irbis.opt import load_opt_file, OptFile
+from irbis.par import load_par_file, ParFile
+from irbis.process import Process
+from irbis.query import ClientQuery
+from irbis.record import Field, RawRecord, Record, SubField
+from irbis.resource import Resource, ResourceDictionary
+from irbis.response import ServerResponse
+from irbis.search import FoundLine, SearchParameters, SearchScenario
+from irbis.specification import FileSpecification
+from irbis.stats import ClientInfo, ServerStat
+from irbis.table import TableDefinition
+from irbis.terms import PostingParameters, TermInfo, TermParameters, TermPosting
+from irbis.tree import load_tree_file, TreeFile, TreeNode
+from irbis.user import UserInfo
+from irbis.version import ServerVersion
 
-from .connection import Connection
+from irbis.connection import Connection
 
 __version__ = '0.1.100'
 __author__ = 'Alexey Mironov'

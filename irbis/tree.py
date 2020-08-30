@@ -5,7 +5,7 @@
 """
 
 from typing import Iterable, List, Optional
-from ._common import ANSI, safe_str
+from irbis._common import ANSI, safe_str
 
 
 class TreeNode:

@@ -5,7 +5,7 @@
 """
 
 from typing import Union
-from .specification import FileSpecification
+from irbis.specification import FileSpecification
 
 
 def get_error_description(code: int) -> str:

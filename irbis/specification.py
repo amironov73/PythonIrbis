@@ -5,7 +5,7 @@
 """
 
 from typing import Optional
-from ._common import SYSTEM
+from irbis._common import SYSTEM
 
 
 class FileSpecification:

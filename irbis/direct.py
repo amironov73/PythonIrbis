@@ -7,8 +7,8 @@
 from typing import List
 from io import SEEK_SET
 from ctypes import BigEndianStructure, c_int32, c_uint16, c_uint32
-from ._common import change_extension, UTF
-from .record import Field, RawRecord, Record
+from irbis._common import change_extension, UTF
+from irbis.record import Field, RawRecord, Record
 
 
 #############################################################################

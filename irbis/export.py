@@ -10,9 +10,9 @@ Reading and writing plain text files in IRBIS format.
 
 from typing import Iterable, Optional, List
 
-from ._common import ANSI, STOP_MARKER, safe_str
-from .error import IrbisError
-from .record import SubField, Field, Record
+from irbis._common import ANSI, STOP_MARKER, safe_str
+from irbis.error import IrbisError
+from irbis.record import SubField, Field, Record
 
 
 def read_text_record(stream) -> Optional[Record]:

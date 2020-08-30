@@ -5,7 +5,7 @@
 """
 
 from typing import Iterable, List, Optional
-from ._common import safe_str
+from irbis._common import safe_str
 
 
 class PostingParameters:

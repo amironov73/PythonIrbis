@@ -6,7 +6,10 @@
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Optional
+    from typing import Dict, List, Optional
+
+    SubFieldList = List['SubField']
+    SubFieldsDict = Dict[str, str]
 
 
 class SubField:
@@ -22,7 +25,7 @@ class SubField:
                  value: 'Optional[str]' = None) -> None:
         code = code or SubField.DEFAULT_CODE
         self.code: str = code.lower()
-        self.value: Optional[str] = value
+        self.value: 'Optional[str]' = value
 
     def assign_from(self, other: 'SubField') -> None:
         """

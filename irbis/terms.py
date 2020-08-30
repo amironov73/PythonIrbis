@@ -4,7 +4,9 @@
 Работа с терминами словаря.
 """
 
-from typing import Iterable, List, Optional
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Iterable, List, Optional
 from irbis._common import safe_str
 
 
@@ -16,11 +18,11 @@ class PostingParameters:
     __slots__ = 'database', 'first', 'fmt', 'number', 'terms'
 
     def __init__(self, term: str = None, fmt: str = None) -> None:
-        self.database: Optional[str] = None
+        self.database: 'Optional[str]' = None
         self.first: int = 1
-        self.fmt: Optional[str] = fmt
+        self.fmt: 'Optional[str]' = fmt
         self.number: int = 0
-        self.terms: List[str] = []
+        self.terms: 'List[str]' = []
         if term:
             self.terms.append(term)
 
@@ -40,7 +42,7 @@ class TermInfo:
         self.text: str = text
 
     @staticmethod
-    def parse(lines: Iterable[str]):
+    def parse(lines: 'Iterable[str]'):
         """
         Parse the text for term info.
 
@@ -69,8 +71,8 @@ class TermParameters:
         self.database: str = ''
         self.number: int = number
         self.reverse: bool = False
-        self.start: Optional[str] = start
-        self.format: Optional[str] = None
+        self.start: 'Optional[str]' = start
+        self.format: 'Optional[str]' = None
 
     def __str__(self):
         return str(self.number) + ' ' + safe_str(self.format)
@@ -88,7 +90,7 @@ class TermPosting:
         self.tag: int = 0
         self.occurrence: int = 0
         self.count: int = 0
-        self.text: Optional[str] = None
+        self.text: 'Optional[str]' = None
 
     def parse(self, text: str) -> None:
         """

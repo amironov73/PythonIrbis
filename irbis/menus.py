@@ -4,7 +4,9 @@
 Работа с MNU-файлами.
 """
 
-from typing import List, Optional
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import List, Optional
 from irbis._common import ANSI, STOP_MARKER
 
 
@@ -36,7 +38,7 @@ class MenuFile:
     __slots__ = ('entries',)
 
     def __init__(self) -> None:
-        self.entries: List[MenuEntry] = []
+        self.entries: 'List[MenuEntry]' = []
 
     def add(self, code: str, comment: str = ''):
         """
@@ -50,7 +52,7 @@ class MenuFile:
         self.entries.append(entry)
         return self
 
-    def get_entry(self, code: str) -> Optional[MenuEntry]:
+    def get_entry(self, code: str) -> 'Optional[MenuEntry]':
         """
         Get an entry for the specified code.
 
@@ -76,7 +78,7 @@ class MenuFile:
         return None
 
     def get_value(self, code: str,
-                  default_value: Optional[str] = None) -> Optional[str]:
+                  default_value: 'Optional[str]' = None) -> 'Optional[str]':
         """
         Get value for the specified code.
 
@@ -89,7 +91,7 @@ class MenuFile:
         result = entry.comment if entry else default_value
         return result
 
-    def parse(self, lines: List[str]) -> None:
+    def parse(self, lines: 'List[str]') -> None:
         """
         Parse the text for menu entries.
 

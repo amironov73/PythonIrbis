@@ -8,7 +8,6 @@ import asyncio
 import socket
 import random
 import time
-from typing import Any, List, Optional, Tuple, Union
 
 from irbis._common import ACTUALIZE_RECORD, ALL, CREATE_DATABASE, \
     CREATE_DICTIONARY, DATA, DELETE_DATABASE, EMPTY_DATABASE, FORMAT_RECORD, \
@@ -43,6 +42,10 @@ from irbis.tree import TreeFile
 from irbis.version import ServerVersion
 from irbis.user import UserInfo
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Any, List, Optional, Tuple, Union
+
 
 class Connection(ObjectWithError):
     """
@@ -57,29 +60,29 @@ class Connection(ObjectWithError):
                  'workstation', 'client_id', 'query_id', 'connected',
                  '_stack', 'server_version', 'ini_file')
 
-    def __init__(self, host: Optional[str] = None,
+    def __init__(self, host: 'Optional[str]' = None,
                  port: int = 0,
-                 username: Optional[str] = None,
-                 password: Optional[str] = None,
-                 database: Optional[str] = None,
+                 username: 'Optional[str]' = None,
+                 password: 'Optional[str]' = None,
+                 database: 'Optional[str]' = None,
                  workstation: str = 'C') -> None:
         super().__init__()
         self.host: str = host or Connection.DEFAULT_HOST
         self.port: int = port or Connection.DEFAULT_PORT
-        self.username: Optional[str] = username
-        self.password: Optional[str] = password
+        self.username: 'Optional[str]' = username
+        self.password: 'Optional[str]' = password
         self.database: str = database or Connection.DEFAULT_DATABASE
         self.workstation: str = workstation
         self.client_id: int = 0
         self.query_id: int = 0
         self.connected: bool = False
-        self._stack: List[str] = []
-        self.server_version: Optional[str] = None
+        self._stack: 'List[str]' = []
+        self.server_version: 'Optional[str]' = None
         self.ini_file: IniFile = IniFile()
         self.last_error = 0
 
     def actualize_record(self, mfn: int,
-                         database: Optional[str] = None) -> bool:
+                         database: 'Optional[str]' = None) -> bool:
         """
         Актуализация записи с указанным MFN.
 
@@ -126,11 +129,11 @@ class Connection(ObjectWithError):
         self.ini_file = result
         return result
 
-    def connect(self, host: Optional[str] = None,
+    def connect(self, host: 'Optional[str]' = None,
                 port: int = 0,
-                username: Optional[str] = None,
-                password: Optional[str] = None,
-                database: Optional[str] = None) -> IniFile:
+                username: 'Optional[str]' = None,
+                password: 'Optional[str]' = None,
+                database: 'Optional[str]' = None) -> IniFile:
         """
         Подключение к серверу ИРБИС64.
 
@@ -184,8 +187,8 @@ class Connection(ObjectWithError):
             response.close()
             return result
 
-    def create_database(self, database: Optional[str] = None,
-                        description: Optional[str] = None,
+    def create_database(self, database: 'Optional[str]' = None,
+                        description: 'Optional[str]' = None,
                         reader_access: bool = True) -> bool:
         """
         Создание базы данных.
@@ -212,7 +215,7 @@ class Connection(ObjectWithError):
 
         return True
 
-    def create_dictionary(self, database: Optional[str] = None) -> bool:
+    def create_dictionary(self, database: 'Optional[str]' = None) -> bool:
         """
         Создание словаря в базе данных.
 
@@ -233,7 +236,7 @@ class Connection(ObjectWithError):
 
         return True
 
-    def delete_database(self, database: Optional[str] = None) -> bool:
+    def delete_database(self, database: 'Optional[str]' = None) -> bool:
         """
         Удаление базы данных.
 
@@ -365,7 +368,7 @@ class Connection(ObjectWithError):
             pass
 
     # noinspection DuplicatedCode
-    def format_record(self, script: str, record: Union[Record, int]) -> str:
+    def format_record(self, script: str, record: 'Union[Record, int]') -> str:
         """
         Форматирование записи с указанным MFN.
 
@@ -403,7 +406,7 @@ class Connection(ObjectWithError):
 
     # noinspection DuplicatedCode
     async def format_record_async(self, script: str,
-                                  record: Union[Record, int]) -> str:
+                                  record: 'Union[Record, int]') -> str:
         """
         Асинхронное форматирование записи с указанным MFN.
 
@@ -438,7 +441,7 @@ class Connection(ObjectWithError):
         response.close()
         return result
 
-    def format_records(self, script: str, records: List[int]) -> List[str]:
+    def format_records(self, script: str, records: 'List[int]') -> 'List[str]':
         """
         Форматирование группы записей по MFN.
 
@@ -477,7 +480,7 @@ class Connection(ObjectWithError):
             result = [line.split('#', 1)[1] for line in result]
             return result
 
-    def get_database_info(self, database: Optional[str] = None) \
+    def get_database_info(self, database: 'Optional[str]' = None) \
             -> DatabaseInfo:
         """
         Получение информации о базе данных.
@@ -499,7 +502,7 @@ class Connection(ObjectWithError):
             result.name = database
             return result
 
-    def get_max_mfn(self, database: Optional[str] = None) -> int:
+    def get_max_mfn(self, database: 'Optional[str]' = None) -> int:
         """
         Получение максимального MFN для указанной базы данных.
 
@@ -519,7 +522,7 @@ class Connection(ObjectWithError):
             result = response.return_code
             return result
 
-    async def get_max_mfn_async(self, database: Optional[str] = None) -> int:
+    async def get_max_mfn_async(self, database: 'Optional[str]' = None) -> int:
         """
         Асинхронное получение максимального MFN.
 
@@ -574,7 +577,7 @@ class Connection(ObjectWithError):
             return result
 
     def list_databases(self, specification: str) \
-            -> List[DatabaseInfo]:
+            -> 'List[DatabaseInfo]':
         """
         Получение списка баз данных.
 
@@ -585,7 +588,7 @@ class Connection(ObjectWithError):
             return []
 
         menu = self.read_menu(specification)
-        result: List[DatabaseInfo] = []
+        result: 'List[DatabaseInfo]' = []
         for entry in menu.entries:
             db_info: DatabaseInfo = DatabaseInfo()
             db_info.name = entry.code
@@ -598,7 +601,7 @@ class Connection(ObjectWithError):
         return result
 
     def list_files(self,
-                   *specification: Union[FileSpecification, str]) -> List[str]:
+                   *specification: 'Union[FileSpecification, str]') -> 'List[str]':
         """
         Получение списка файлов с сервера.
 
@@ -618,7 +621,7 @@ class Connection(ObjectWithError):
             query.ansi(str(spec))
             is_ok = True
 
-        result: List[str] = []
+        result: 'List[str]' = []
         if not is_ok:
             return result
 
@@ -630,7 +633,7 @@ class Connection(ObjectWithError):
         return result
 
     # noinspection DuplicatedCode
-    def list_processes(self) -> List[Process]:
+    def list_processes(self) -> 'List[Process]':
         """
         Получение списка серверных процессов.
 
@@ -642,7 +645,7 @@ class Connection(ObjectWithError):
         query = ClientQuery(self, GET_PROCESS_LIST)
         with self.execute(query) as response:
             response.check_return_code()
-            result: List[Process] = []
+            result: 'List[Process]' = []
             process_count = response.number()
             lines_per_process = response.number()
 
@@ -665,7 +668,7 @@ class Connection(ObjectWithError):
 
             return result
 
-    def list_users(self) -> List[UserInfo]:
+    def list_users(self) -> 'List[UserInfo]':
         """
         Получение списка пользователей с сервера.
 
@@ -828,7 +831,7 @@ class Connection(ObjectWithError):
         return result
 
     def read_alphabet_table(self,
-                            specification: Optional[FileSpecification] =
+                            specification: 'Optional[FileSpecification]' =
                             None) \
             -> AlphabetTable:
         """
@@ -853,8 +856,8 @@ class Connection(ObjectWithError):
                 result = AlphabetTable.get_default()
             return result
 
-    def read_binary_file(self, specification: Union[FileSpecification, str]) \
-            -> Optional[bytearray]:
+    def read_binary_file(self, specification: 'Union[FileSpecification, str]') \
+            -> 'Optional[bytearray]':
         """
         Чтение двоичного файла с сервера.
 
@@ -875,7 +878,7 @@ class Connection(ObjectWithError):
             result = response.get_binary_file()
             return result
 
-    def read_ini_file(self, specification: Union[FileSpecification, str]) \
+    def read_ini_file(self, specification: 'Union[FileSpecification, str]') \
             -> IniFile:
         """
         Чтение INI-файла с сервера.
@@ -898,7 +901,7 @@ class Connection(ObjectWithError):
             result.parse(text)
             return result
 
-    def read_menu(self, specification: Union[FileSpecification, str]) \
+    def read_menu(self, specification: 'Union[FileSpecification, str]') \
             -> MenuFile:
         """
         Чтение меню с сервера.
@@ -915,7 +918,7 @@ class Connection(ObjectWithError):
             result.parse(text)
             return result
 
-    def read_opt_file(self, specification: Union[FileSpecification, str]) \
+    def read_opt_file(self, specification: 'Union[FileSpecification, str]') \
             -> OptFile:
         """
         Получение файла оптимизации рабочих листов с сервера.
@@ -932,7 +935,7 @@ class Connection(ObjectWithError):
             result.parse(text)
             return result
 
-    def read_par_file(self, specification: Union[FileSpecification, str]) \
+    def read_par_file(self, specification: 'Union[FileSpecification, str]') \
             -> ParFile:
         """
         Получение PAR-файла с сервера.
@@ -952,8 +955,8 @@ class Connection(ObjectWithError):
             result.parse(text)
             return result
 
-    def read_postings(self, parameters: Union[PostingParameters, str],
-                      fmt: Optional[str] = None) -> List[TermPosting]:
+    def read_postings(self, parameters: 'Union[PostingParameters, str]',
+                      fmt: 'Optional[str]' = None) -> 'List[TermPosting]':
         """
         Считывание постингов для указанных термов из поискового словаря.
 
@@ -975,7 +978,7 @@ class Connection(ObjectWithError):
         for term in parameters.terms:
             query.utf(term)
         with self.execute(query) as response:
-            result: List[TermPosting] = []
+            result: 'List[TermPosting]' = []
             if not response.check_return_code(READ_TERMS_CODES):
                 return result
 
@@ -988,7 +991,7 @@ class Connection(ObjectWithError):
                 result.append(posting)
             return result
 
-    def read_raw_record(self, mfn: int) -> Optional[RawRecord]:
+    def read_raw_record(self, mfn: int) -> 'Optional[RawRecord]':
         """
         Чтение сырой записи с сервера.
 
@@ -1013,7 +1016,7 @@ class Connection(ObjectWithError):
 
         return result
 
-    def read_record(self, mfn: int, version: int = 0) -> Optional[Record]:
+    def read_record(self, mfn: int, version: int = 0) -> 'Optional[Record]':
         """
         Чтение записи с указанным MFN с сервера.
 
@@ -1045,7 +1048,7 @@ class Connection(ObjectWithError):
 
         return result
 
-    async def read_record_async(self, mfn: int) -> Optional[Record]:
+    async def read_record_async(self, mfn: int) -> 'Optional[Record]':
         """
         Асинхронное чтение записи.
 
@@ -1070,7 +1073,7 @@ class Connection(ObjectWithError):
         response.close()
         return result
 
-    def read_record_postings(self, mfn: int, prefix: str) -> List[TermPosting]:
+    def read_record_postings(self, mfn: int, prefix: str) -> 'List[TermPosting]':
         """
         Получение постингов для указанных записи и префикса.
 
@@ -1085,7 +1088,7 @@ class Connection(ObjectWithError):
 
         query = ClientQuery(self, 'V')
         query.ansi(self.database).add(mfn).utf(prefix)
-        result: List[TermPosting] = []
+        result: 'List[TermPosting]' = []
         with self.execute(query) as response:
             if not response.check_return_code():
                 return result
@@ -1097,7 +1100,7 @@ class Connection(ObjectWithError):
                 result.append(one)
         return result
 
-    def read_records(self, *mfns: int) -> List[Record]:
+    def read_records(self, *mfns: int) -> 'List[Record]':
         """
         Чтение записей с указанными MFN с сервера.
 
@@ -1117,7 +1120,7 @@ class Connection(ObjectWithError):
             return [record] if record else []
 
         lines = self.format_records(ALL, array)
-        result: List[Record] = []
+        result: 'List[Record]' = []
         for line in lines:
             parts = line.split(OTHER_DELIMITER)
             if parts:
@@ -1131,8 +1134,8 @@ class Connection(ObjectWithError):
         return result
 
     def read_search_scenario(self,
-                             specification: Union[FileSpecification, str]) \
-            -> List[SearchScenario]:
+                             specification: 'Union[FileSpecification, str]') \
+            -> 'List[SearchScenario]':
         """
         Read search scenario from the server.
 
@@ -1153,8 +1156,8 @@ class Connection(ObjectWithError):
             return result
 
     def read_terms(self,
-                   parameters: Union[TermParameters, str, Tuple[str, int]]) \
-            -> List[TermInfo]:
+                   parameters: 'Union[TermParameters, str, Tuple[str, int]]') \
+            -> 'List[TermInfo]':
         """
         Получение термов поискового словаря.
 
@@ -1187,7 +1190,7 @@ class Connection(ObjectWithError):
             result = TermInfo.parse(lines)
             return result
 
-    def read_text_file(self, specification: Union[FileSpecification, str]) \
+    def read_text_file(self, specification: 'Union[FileSpecification, str]') \
             -> str:
         """
         Получение содержимого текстового файла с сервера.
@@ -1204,9 +1207,10 @@ class Connection(ObjectWithError):
             result = irbis_to_dos(result)
             return result
 
-    async def read_text_file_async(self,
-                                   specification: Union[FileSpecification,
-                                                        str]) -> str:
+    async def read_text_file_async(
+        self,
+        specification: 'Union[FileSpecification, str]',
+    ) -> str:
         """
         Асинхронное получение содержимого текстового файла с сервера.
 
@@ -1226,7 +1230,7 @@ class Connection(ObjectWithError):
         response.close()
         return result
 
-    def read_text_stream(self, specification: Union[FileSpecification, str]) \
+    def read_text_stream(self, specification: 'Union[FileSpecification, str]') \
             -> ServerResponse:
         """
         Получение текстового файла с сервера в виде потока.
@@ -1245,7 +1249,7 @@ class Connection(ObjectWithError):
         result = self.execute(query)
         return result
 
-    def read_tree_file(self, specification: Union[FileSpecification, str]) \
+    def read_tree_file(self, specification: 'Union[FileSpecification, str]') \
             -> TreeFile:
         """
         Чтение TRE-файла с сервера.
@@ -1264,7 +1268,7 @@ class Connection(ObjectWithError):
             return result
 
     def read_uppercase_table(self,
-                             specification: Optional[FileSpecification] =
+                             specification: 'Optional[FileSpecification]' =
                              None) \
             -> UpperCaseTable:
         """
@@ -1290,7 +1294,7 @@ class Connection(ObjectWithError):
                 result = UpperCaseTable.get_default()
             return result
 
-    def reload_dictionary(self, database: Optional[str] = None) -> bool:
+    def reload_dictionary(self, database: 'Optional[str]' = None) -> bool:
         """
         Пересоздание словаря.
 
@@ -1307,7 +1311,7 @@ class Connection(ObjectWithError):
         with self.execute_ansi(RELOAD_DICTIONARY, database):
             return True
 
-    def reload_master_file(self, database: Optional[str] = None) -> bool:
+    def reload_master_file(self, database: 'Optional[str]' = None) -> bool:
         """
         Пересоздание мастер-файла.
 
@@ -1350,7 +1354,7 @@ class Connection(ObjectWithError):
         return True
 
     def require_alphabet_table(self,
-                               specification: Optional[FileSpecification] =
+                               specification: 'Optional[FileSpecification]' =
                                None) \
             -> AlphabetTable:
         """
@@ -1375,7 +1379,7 @@ class Connection(ObjectWithError):
             return result
 
     def require_menu(self,
-                     specification: Union[FileSpecification, str]) -> MenuFile:
+                     specification: 'Union[FileSpecification, str]') -> MenuFile:
         """
         Чтение меню с сервера.
 
@@ -1391,7 +1395,7 @@ class Connection(ObjectWithError):
             return result
 
     def require_opt_file(self,
-                         specification: Union[FileSpecification, str]) \
+                         specification: 'Union[FileSpecification, str]') \
             -> OptFile:
         """
         Получение файла оптимизации рабочих листов с сервера.
@@ -1408,7 +1412,7 @@ class Connection(ObjectWithError):
             return result
 
     def require_par_file(self,
-                         specification: Union[FileSpecification, str]) \
+                         specification: 'Union[FileSpecification, str]') \
             -> ParFile:
         """
         Получение PAR-файла с сервера.
@@ -1442,7 +1446,7 @@ class Connection(ObjectWithError):
         return result
 
     def require_tree_file(self,
-                          specification: Union[FileSpecification, str]) \
+                          specification: 'Union[FileSpecification, str]') \
             -> TreeFile:
         """
         Чтение TRE-файла с сервера.
@@ -1460,7 +1464,7 @@ class Connection(ObjectWithError):
             return result
 
     # noinspection DuplicatedCode
-    def search(self, parameters: Any) -> List[int]:
+    def search(self, parameters: 'Any') -> 'List[int]':
         """
         Поиск записей.
 
@@ -1489,7 +1493,7 @@ class Connection(ObjectWithError):
             return []
 
         _ = response.number()  # Число найденных записей
-        result: List[int] = []
+        result: 'List[int]' = []
         while 1:
             line = response.ansi()
             if not line:
@@ -1498,7 +1502,7 @@ class Connection(ObjectWithError):
             result.append(mfn)
         return result
 
-    def search_all(self, expression: Any) -> List[int]:
+    def search_all(self, expression: 'Any') -> 'List[int]':
         """
         Поиск всех записей (даже если их окажется больше 32 тыс.).
         :param expression: Поисковый запрос.
@@ -1510,7 +1514,7 @@ class Connection(ObjectWithError):
         assert expression
         expression = str(expression)
 
-        result: List[int] = []
+        result: 'List[int]' = []
         first: int = 1
         expected: int = 0
 
@@ -1549,7 +1553,7 @@ class Connection(ObjectWithError):
         return result
 
     # noinspection DuplicatedCode
-    async def search_async(self, parameters: Any) -> List[int]:
+    async def search_async(self, parameters: 'Any') -> 'List[int]':
         """
         Асинхронный поиск записей.
 
@@ -1578,7 +1582,7 @@ class Connection(ObjectWithError):
             return []
 
         _ = response.number()  # Число найденных записей
-        result: List[int] = []
+        result: 'List[int]' = []
         while 1:
             line = response.ansi()
             if not line:
@@ -1589,7 +1593,7 @@ class Connection(ObjectWithError):
         return result
 
     # noinspection DuplicatedCode
-    def search_count(self, expression: Any) -> int:
+    def search_count(self, expression: 'Any') -> int:
         """
         Количество найденных записей.
 
@@ -1614,7 +1618,7 @@ class Connection(ObjectWithError):
         return response.number()
 
     # noinspection DuplicatedCode
-    async def search_count_async(self, expression: Any) -> int:
+    async def search_count_async(self, expression: 'Any') -> int:
         """
         Асинхронное получение количества найденных записей.
 
@@ -1641,7 +1645,7 @@ class Connection(ObjectWithError):
         return result
 
     # noinspection DuplicatedCode
-    def search_ex(self, parameters: Any) -> List[FoundLine]:
+    def search_ex(self, parameters: 'Any') -> 'List[FoundLine]':
         """
         Расширенный поиск записей.
 
@@ -1681,8 +1685,8 @@ class Connection(ObjectWithError):
         return result
 
     # noinspection DuplicatedCode
-    def search_format(self, expression: Any,
-                      format_specification: Any, limit: int = 0) -> List[str]:
+    def search_format(self, expression: 'Any',
+                      format_specification: 'Any', limit: int = 0) -> 'List[str]':
         """
         Поиск записей с одновременным их расформатированием.
 
@@ -1713,7 +1717,7 @@ class Connection(ObjectWithError):
             return []
 
         _ = response.number()
-        result: List[str] = []
+        result: 'List[str]' = []
         while 1:
             line = response.utf()
             if not line:
@@ -1729,7 +1733,7 @@ class Connection(ObjectWithError):
         return result
 
     # noinspection DuplicatedCode
-    def search_read(self, expression: Any, limit: int = 0) -> List[Record]:
+    def search_read(self, expression: 'Any', limit: int = 0) -> 'List[Record]':
         """
         Поиск и считывание записей.
 
@@ -1758,7 +1762,7 @@ class Connection(ObjectWithError):
             return []
 
         _ = response.number()
-        result: List[Record] = []
+        result: 'List[Record]' = []
         while 1:
             line = response.utf()
             if not line:
@@ -1796,7 +1800,7 @@ class Connection(ObjectWithError):
                ';database=' + safe_str(self.database) + \
                ';workstation=' + safe_str(self.workstation) + ';'
 
-    def truncate_database(self, database: Optional[str] = None) -> bool:
+    def truncate_database(self, database: 'Optional[str]' = None) -> bool:
         """
         Опустошение базы данных.
 
@@ -1836,7 +1840,7 @@ class Connection(ObjectWithError):
 
         return True
 
-    def unlock_database(self, database: Optional[str] = None) -> bool:
+    def unlock_database(self, database: 'Optional[str]' = None) -> bool:
         """
         Разблокирование базы данных.
 
@@ -1853,8 +1857,8 @@ class Connection(ObjectWithError):
         with self.execute_ansi(UNLOCK_DATABASE, database):
             return True
 
-    def unlock_records(self, records: List[int],
-                       database: Optional[str] = None) -> bool:
+    def unlock_records(self, records: 'List[int]',
+                       database: 'Optional[str]' = None) -> bool:
         """
         Разблокирование записей.
 
@@ -1881,7 +1885,7 @@ class Connection(ObjectWithError):
 
         return True
 
-    def update_ini_file(self, lines: List[str]) -> bool:
+    def update_ini_file(self, lines: 'List[str]') -> bool:
         """
         Обновление строк серверного INI-файла.
 
@@ -1901,7 +1905,7 @@ class Connection(ObjectWithError):
 
         return True
 
-    def update_user_list(self, users: List[UserInfo]) -> bool:
+    def update_user_list(self, users: 'List[UserInfo]') -> bool:
         """
         Обновление списка пользователей на сервере.
 
@@ -2034,7 +2038,7 @@ class Connection(ObjectWithError):
         response.close()
         return result
 
-    def write_records(self, records: List[Record]) -> bool:
+    def write_records(self, records: 'List[Record]') -> bool:
         """
         Сохранение нескольких записей на сервере.
         Записи могут принадлежать разным базам.

@@ -4,9 +4,11 @@
 Работа с PAR-файлами.
 """
 
-from typing import DefaultDict, Iterable
 from collections import defaultdict
 from irbis._common import ANSI
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import DefaultDict, Iterable
 
 
 class ParFile:
@@ -31,14 +33,14 @@ class ParFile:
         self.ext: str = mst
 
     @staticmethod
-    def make_dict(text: Iterable[str]) -> DefaultDict:
+    def make_dict(text: 'Iterable[str]') -> 'DefaultDict':
         """
         Make the dictionary from the text.
 
         :param text: Text to parse.
         :return: Dictionary
         """
-        result: DefaultDict = defaultdict(lambda: '')
+        result: 'DefaultDict' = defaultdict(lambda: '')
         for line in text:
             if not line:
                 continue
@@ -50,7 +52,7 @@ class ParFile:
             result[key] = value
         return result
 
-    def parse(self, text: Iterable[str]) -> None:
+    def parse(self, text: 'Iterable[str]') -> None:
         """
         Parse the text for PAR entries.
 

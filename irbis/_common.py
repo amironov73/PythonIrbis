@@ -6,7 +6,9 @@
 
 import asyncio
 import os.path
-from typing import Union, Optional, SupportsInt, List
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Union, Optional, SupportsInt, List
 
 #############################################################################
 # COMMON CONSTANTS
@@ -218,7 +220,7 @@ READ_TERMS_CODES = [-202, -203, -204]
 #############################################################################
 
 
-def same_string(first: Optional[str], second: Optional[str]) -> bool:
+def same_string(first: 'Optional[str]', second: 'Optional[str]') -> bool:
     """
     Строки совпадают с точностью до регистра?
 
@@ -243,7 +245,7 @@ def safe_str(obj) -> str:
     return str(obj)
 
 
-def safe_int(text: Union[str, bytes, SupportsInt]) -> int:
+def safe_int(text: 'Union[str, bytes, SupportsInt]') -> int:
     """
     Безопасное превращение строки в целое.
 
@@ -279,7 +281,7 @@ def irbis_to_dos(text: str) -> str:
     return text.replace(IRBIS_DELIMITER, '\n')
 
 
-def irbis_to_lines(text: str) -> List[str]:
+def irbis_to_lines(text: str) -> 'List[str]':
     """
     Convert IRBIS text to list of strings.
 
@@ -289,7 +291,7 @@ def irbis_to_lines(text: str) -> List[str]:
     return text.split(IRBIS_DELIMITER)
 
 
-def short_irbis_to_lines(text: str) -> List[str]:
+def short_irbis_to_lines(text: str) -> 'List[str]':
     """
     Convert IRBIS with short delimiter text to list of strings.
 

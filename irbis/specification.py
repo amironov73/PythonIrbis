@@ -4,8 +4,10 @@
 Спецификация файла на сервере ИРБИС64.
 """
 
-from typing import Optional
 from irbis._common import SYSTEM
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Optional
 
 
 class FileSpecification:
@@ -34,13 +36,13 @@ class FileSpecification:
 
     __slots__ = 'binary', 'path', 'database', 'filename', 'content'
 
-    def __init__(self, path: int, database: Optional[str],
+    def __init__(self, path: int, database: 'Optional[str]',
                  filename: str) -> None:
         self.binary: bool = False
         self.path: int = path
-        self.database: Optional[str] = database
+        self.database: 'Optional[str]' = database
         self.filename: str = filename
-        self.content: Optional[str] = None
+        self.content: 'Optional[str]' = None
 
     @staticmethod
     def system(filename: str) -> 'FileSpecification':

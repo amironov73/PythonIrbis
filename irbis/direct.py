@@ -4,12 +4,13 @@
 Прямой доступ к базе данных.
 """
 
-from typing import List
 from io import SEEK_SET
 from ctypes import BigEndianStructure, c_int32, c_uint16, c_uint32
 from irbis._common import change_extension, UTF
 from irbis.record import Field, RawRecord, Record
-
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import List
 
 #############################################################################
 
@@ -175,7 +176,7 @@ class MstRecord:
 
     def __init__(self):
         self.leader: MstLeader = MstLeader()
-        self.fields: List[MstField] = []
+        self.fields: 'List[MstField]' = []
 
     def decode_raw(self) -> RawRecord:
         """
@@ -263,7 +264,7 @@ class MstFile:
         result = MstRecord()
         self._stream.readinto(result.leader)  # type: ignore
         nvf = result.leader.nvf
-        entries: List[MstEntry] = []
+        entries: 'List[MstEntry]' = []
         for i in range(nvf):
             entry = MstEntry()
             self._stream.readinto(entry)  # type: ignore
@@ -348,8 +349,8 @@ class NodeRecord:
 
     def __init__(self):
         self.leader: NodeLeader = NodeLeader()
-        self.items: List[NodeItem] = []
-        self.keys: List[str] = []
+        self.items: 'List[NodeItem]' = []
+        self.keys: 'List[str]' = []
 
     def __str__(self):
         return str(self.leader)
@@ -402,7 +403,7 @@ class InvertedRecord:
 
     def __init__(self):
         self.leader: InvertedLeader = InvertedLeader()
-        self.links: List[Link] = []
+        self.links: 'List[Link]' = []
 
     def __str__(self):
         return str(self.leader)

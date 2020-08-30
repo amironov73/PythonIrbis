@@ -4,9 +4,11 @@
 Всё, связанное с поиском.
 """
 
-from typing import List, Optional
 from irbis._common import safe_int, safe_str
 from irbis.ini import IniFile
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import List, Optional
 
 
 class FoundLine:
@@ -18,7 +20,7 @@ class FoundLine:
 
     def __init__(self) -> None:
         self.mfn: int = 0
-        self.description: Optional[str] = None
+        self.description: 'Optional[str]' = None
 
     def parse_line(self, line: str) -> None:
         """
@@ -44,17 +46,17 @@ class SearchParameters:
     __slots__ = ('database', 'first', 'format', 'max_mfn', 'min_mfn',
                  'number', 'expression', 'sequential', 'filter', 'utf')
 
-    def __init__(self, expression: Optional[str] = None,
+    def __init__(self, expression: 'Optional[str]' = None,
                  number: int = 0) -> None:
-        self.database: Optional[str] = None
+        self.database: 'Optional[str]' = None
         self.first: int = 1
-        self.format: Optional[str] = None
+        self.format: 'Optional[str]' = None
         self.max_mfn: int = 0
         self.min_mfn: int = 0
         self.number: int = number
         self.expression = expression
-        self.sequential: Optional[str] = None
-        self.filter: Optional[str] = None
+        self.sequential: 'Optional[str]' = None
+        self.filter: 'Optional[str]' = None
         self.utf = False
 
     def __str__(self):
@@ -71,22 +73,22 @@ class SearchScenario:
                  'mod_by_dic_auto', 'logic', 'advance',
                  'format')
 
-    def __init__(self, name: Optional[str] = None) -> None:
-        self.name: Optional[str] = name
-        self.prefix: Optional[str] = None
+    def __init__(self, name: 'Optional[str]' = None) -> None:
+        self.name: 'Optional[str]' = name
+        self.prefix: 'Optional[str]' = None
         self.type: int = 0
-        self.menu: Optional[str] = None
-        self.old: Optional[str] = None
-        self.correction: Optional[str] = None
+        self.menu: 'Optional[str]' = None
+        self.old: 'Optional[str]' = None
+        self.correction: 'Optional[str]' = None
         self.truncation: bool = False
-        self.hint: Optional[str] = None
-        self.mod_by_dic_auto: Optional[str] = None
+        self.hint: 'Optional[str]' = None
+        self.mod_by_dic_auto: 'Optional[str]' = None
         self.logic: int = 0
-        self.advance: Optional[str] = None
-        self.format: Optional[str] = None
+        self.advance: 'Optional[str]' = None
+        self.format: 'Optional[str]' = None
 
     @staticmethod
-    def parse(ini: IniFile) -> List['SearchScenario']:
+    def parse(ini: IniFile) -> 'List[SearchScenario]':
         """
         Parse the INI file for the search scenarios.
 
@@ -100,7 +102,7 @@ class SearchScenario:
         count = safe_int(safe_str(section.get_value('ItemNumb', '0')))
         if not count:
             return []
-        result: List['SearchScenario'] = []
+        result: 'List[SearchScenario]' = []
         for i in range(count):
             name = section.get_value(f'ItemName{i}')
             scenario = SearchScenario(name)

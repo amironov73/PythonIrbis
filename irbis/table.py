@@ -4,7 +4,9 @@
 Печать таблиц.
 """
 
-from typing import Optional
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Optional
 
 
 class TableDefinition:
@@ -16,14 +18,14 @@ class TableDefinition:
                  'min_mfn', 'max_mfn', 'sequential', 'mfn_list')
 
     def __init__(self):
-        self.database: Optional[str] = None
-        self.table: Optional[str] = None
+        self.database: 'Optional[str]' = None
+        self.table: 'Optional[str]' = None
         self.headers: [str] = []
-        self.mode: Optional[str] = None
-        self.search: Optional[str] = None
+        self.mode: 'Optional[str]' = None
+        self.search: 'Optional[str]' = None
         self.min_mfn: int = 0
         self.max_mfn: int = 0
-        self.sequential: Optional[str] = None
+        self.sequential: 'Optional[str]' = None
         self.mfn_list: [int] = []
 
 

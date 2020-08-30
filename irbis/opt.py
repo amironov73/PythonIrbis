@@ -4,9 +4,11 @@
 Работа с OPT-файлами.
 """
 
-import re
-from typing import List, Optional
 from irbis._common import ANSI, STOP_MARKER
+import re
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import List, Optional
 
 
 class OptLine:
@@ -42,11 +44,11 @@ class OptFile:
     __slots__ = 'lines', 'length', 'tag'
 
     def __init__(self):
-        self.lines: List[OptLine] = []
+        self.lines: 'List[OptLine]' = []
         self.length: int = 5
         self.tag: int = 920
 
-    def parse(self, text: List[str]) -> None:
+    def parse(self, text: 'List[str]') -> None:
         """
         Parse the text for OPT table.
 
@@ -126,7 +128,7 @@ class OptFile:
             if not self.same_char(pattern_char, testable_char):
                 return False
 
-    def resolve_worksheet(self, tag: str) -> Optional[str]:
+    def resolve_worksheet(self, tag: str) -> 'Optional[str]':
         """
         Resolve worksheet for the specified tag value.
 

@@ -4,7 +4,9 @@
 Search expression builder.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Any
 
 ###############################################################################
 
@@ -28,7 +30,7 @@ class Search:
         result.buffer = 'I=$'
         return result
 
-    def and_(self, *items: Any) -> 'Search':
+    def and_(self, *items: 'Any') -> 'Search':
         """
         Logical AND.
         """
@@ -39,7 +41,7 @@ class Search:
         return self
 
     @staticmethod
-    def equals(prefix: str, *values: Any) -> 'Search':
+    def equals(prefix: str, *values: 'Any') -> 'Search':
         """
         Prefix search for matching records.
         """
@@ -67,14 +69,14 @@ class Search:
                 return True
         return False
 
-    def not_(self, text: Any) -> 'Search':
+    def not_(self, text: 'Any') -> 'Search':
         """
         Logical NOT.
         """
         self.buffer = '(' + self.buffer + ' ^ ' + Search.wrap(text) + ')'
         return self
 
-    def or_(self, *items: Any) -> 'Search':
+    def or_(self, *items: 'Any') -> 'Search':
         """
         Logical OR.
         """
@@ -84,7 +86,7 @@ class Search:
         self.buffer = self.buffer + ')'
         return self
 
-    def same_field(self, *items: Any) -> 'Search':
+    def same_field(self, *items: 'Any') -> 'Search':
         """
         Logical "Same field"
         """
@@ -94,7 +96,7 @@ class Search:
         self.buffer = self.buffer + ')'
         return self
 
-    def same_repeat(self, *items: Any) -> 'Search':
+    def same_repeat(self, *items: 'Any') -> 'Search':
         """
         Logical "Same field repeat"
         """
@@ -105,7 +107,7 @@ class Search:
         return self
 
     @staticmethod
-    def wrap(text: Any) -> str:
+    def wrap(text: 'Any') -> str:
         """
         Wrap the text if needed.
         """
@@ -120,7 +122,7 @@ class Search:
 ###############################################################################
 
 
-def keyword(*values: Any) -> Search:
+def keyword(*values: 'Any') -> Search:
     """
     Поиск по ключевым словам.
 
@@ -132,7 +134,7 @@ def keyword(*values: Any) -> Search:
     return Search.equals('K=', *values)
 
 
-def author(*values: Any) -> Search:
+def author(*values: 'Any') -> Search:
     """
     Поиск по индивидуальным авторам.
 
@@ -144,7 +146,7 @@ def author(*values: Any) -> Search:
     return Search.equals('A=', *values)
 
 
-def title(*values: Any) -> Search:
+def title(*values: 'Any') -> Search:
     """
     Поиск по заглавиям.
 
@@ -156,7 +158,7 @@ def title(*values: Any) -> Search:
     return Search.equals('T=', *values)
 
 
-def number(*values: Any) -> Search:
+def number(*values: 'Any') -> Search:
     """
     Поиск по инвентарным номерам.
 
@@ -168,7 +170,7 @@ def number(*values: Any) -> Search:
     return Search.equals('IN=', *values)
 
 
-def publisher(*values: Any) -> Search:
+def publisher(*values: 'Any') -> Search:
     """
     Поиск по издательству.
 
@@ -180,7 +182,7 @@ def publisher(*values: Any) -> Search:
     return Search.equals('O=', *values)
 
 
-def place(*values: Any) -> Search:
+def place(*values: 'Any') -> Search:
     """
     Поиск по месту издания (городу).
 
@@ -192,7 +194,7 @@ def place(*values: Any) -> Search:
     return Search.equals('MI=', *values)
 
 
-def subject(*values: Any) -> Search:
+def subject(*values: 'Any') -> Search:
     """
     Поиск по предметным рубрикам.
 
@@ -204,7 +206,7 @@ def subject(*values: Any) -> Search:
     return Search.equals('S=', *values)
 
 
-def language(*values: Any) -> Search:
+def language(*values: 'Any') -> Search:
     """
     Поиск по языку документа.
 
@@ -216,7 +218,7 @@ def language(*values: Any) -> Search:
     return Search.equals('J=', *values)
 
 
-def year(*values: Any) -> Search:
+def year(*values: 'Any') -> Search:
     """
     Поиск по году издания.
 
@@ -227,7 +229,7 @@ def year(*values: Any) -> Search:
     return Search.equals('G=', *values)
 
 
-def magazine(*values: Any) -> Search:
+def magazine(*values: 'Any') -> Search:
     """
     Поиск по заглавиям журналов.
 
@@ -239,7 +241,7 @@ def magazine(*values: Any) -> Search:
     return Search.equals('TJ=', *values)
 
 
-def document_kind(*values: Any) -> Search:
+def document_kind(*values: 'Any') -> Search:
     """
     Поиск по виду документа.
 
@@ -251,7 +253,7 @@ def document_kind(*values: Any) -> Search:
     return Search.equals('V=', *values)
 
 
-def udc(*values: Any) -> Search:
+def udc(*values: 'Any') -> Search:
     """
     Поиск по индексам УДК.
 
@@ -263,7 +265,7 @@ def udc(*values: Any) -> Search:
     return Search.equals('U=', *values)
 
 
-def bbk(*values: Any) -> Search:
+def bbk(*values: 'Any') -> Search:
     """
     Поиск по индексам ББК.
 
@@ -275,7 +277,7 @@ def bbk(*values: Any) -> Search:
     return Search.equals('BBK=', *values)
 
 
-def rzn(*values: Any) -> Search:
+def rzn(*values: 'Any') -> Search:
     """
     Поиск по разделу знаний.
 
@@ -287,7 +289,7 @@ def rzn(*values: Any) -> Search:
     return Search.equals('RZN=', *values)
 
 
-def mhr(*values: Any) -> Search:
+def mhr(*values: 'Any') -> Search:
     """
     Поиск по месту хранения.
 

@@ -4,8 +4,11 @@
 Клиентский запрос.
 """
 
-from typing import Union, Optional
+
 from irbis._common import ANSI, UTF, prepare_format
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Union, Optional
 
 
 class ClientQuery:
@@ -38,7 +41,7 @@ class ClientQuery:
         """
         return self.ansi(str(number))
 
-    def ansi(self, text: Optional[str]) -> 'ClientQuery':
+    def ansi(self, text: 'Optional[str]') -> 'ClientQuery':
         """
         Добавление строки в кодировке ANSI.
 
@@ -47,7 +50,7 @@ class ClientQuery:
         """
         return self.append(text, ANSI)
 
-    def append(self, text: Optional[str], encoding: str) -> 'ClientQuery':
+    def append(self, text: 'Optional[str]', encoding: str) -> 'ClientQuery':
         """
         Добавление строки в указанной кодировке.
 
@@ -60,8 +63,8 @@ class ClientQuery:
         self.new_line()
         return self
 
-    def format(self, format_specification: Optional[str]) \
-            -> Union['ClientQuery', bool]:
+    def format(self, format_specification: 'Optional[str]') \
+            -> 'Union[ClientQuery, bool]':
         """
         Добавление строки формата, предварительно подготовив её.
         Также добавляется перевод строки.
@@ -92,7 +95,7 @@ class ClientQuery:
         self._memory.append(0x0A)
         return self
 
-    def utf(self, text: Optional[str]) -> 'ClientQuery':
+    def utf(self, text: 'Optional[str]') -> 'ClientQuery':
         """
         Добавление строки в кодировке UTF-8.
 

@@ -4,8 +4,10 @@
 Статистика работы сервера.
 """
 
-from typing import Optional
 from irbis.response import ServerResponse
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Optional
 
 
 class ClientInfo:
@@ -19,16 +21,16 @@ class ClientInfo:
                  'last_command', 'command_number')
 
     def __init__(self):
-        self.number: Optional[str] = None
-        self.ip_address: Optional[str] = None
-        self.port: Optional[str] = None
-        self.name: Optional[str] = None
-        self.client_id: Optional[str] = None
-        self.workstation: Optional[str] = None
-        self.registered: Optional[str] = None
-        self.acknowledged: Optional[str] = None
-        self.last_command: Optional[str] = None
-        self.command_number: Optional[str] = None
+        self.number: 'Optional[str]' = None
+        self.ip_address: 'Optional[str]' = None
+        self.port: 'Optional[str]' = None
+        self.name: 'Optional[str]' = None
+        self.client_id: 'Optional[str]' = None
+        self.workstation: 'Optional[str]' = None
+        self.registered: 'Optional[str]' = None
+        self.acknowledged: 'Optional[str]' = None
+        self.last_command: 'Optional[str]' = None
+        self.command_number: 'Optional[str]' = None
 
     def __str__(self):
         return ' '.join([self.number, self.ip_address, self.port, self.name,

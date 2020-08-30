@@ -7,15 +7,16 @@ Reading and writing plain text files in IRBIS format.
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-statements
 
-
-from typing import Iterable, Optional, List
-
 from irbis._common import ANSI, STOP_MARKER, safe_str
 from irbis.error import IrbisError
 from irbis.record import SubField, Field, Record
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Iterable, Optional, List
 
-def read_text_record(stream) -> Optional[Record]:
+
+def read_text_record(stream) -> 'Optional[Record]':
     """
     Чтение записи из файла в текстовом обменном формате ИРБИС.
 
@@ -84,7 +85,7 @@ FIELD_DELIMITER = 0x1E
 SUBFIELD_DELIMITER = 0x1F
 
 
-def parse_int(buffer: Iterable):
+def parse_int(buffer: 'Iterable'):
     """
     Parse the bytes for integer value.
 
@@ -120,7 +121,7 @@ def encode_int(buffer: bytearray, position: int,
 
 
 def encode_str(buffer: bytearray, position: int,
-               value: Optional[str], encoding: str) -> int:
+               value: 'Optional[str]', encoding: str) -> int:
     """
     Encode the string value.
 
@@ -140,7 +141,7 @@ def encode_str(buffer: bytearray, position: int,
     return position
 
 
-def read_iso_record(stream, charset: str = ANSI) -> Optional[Record]:
+def read_iso_record(stream, charset: str = ANSI) -> 'Optional[Record]':
     """
     Чтение записи из файла в формате ISO 2709.
 
@@ -239,7 +240,7 @@ def write_iso_record(stream, record: Record, encoding: str) -> None:
 
     record_length = MARKER_LENGTH
     dictionary_length = 1  # С учетом ограничителя справочника
-    field_length: List[int] = []
+    field_length: 'List[int]' = []
 
     # Сначала подсчитываем общую длину записи
     for field in record.fields:

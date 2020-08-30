@@ -4,8 +4,10 @@
 Ошибка, специфичная для ИРБИС.
 """
 
-from typing import Union
 from irbis.specification import FileSpecification
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Union
 
 
 def get_error_description(code: int) -> str:
@@ -83,7 +85,7 @@ class IrbisError(Exception):
 
     __slots__ = ('code', 'message')
 
-    def __init__(self, code: Union[int, str] = 0) -> None:
+    def __init__(self, code: 'Union[int, str]' = 0) -> None:
         super().__init__(self)
         if isinstance(code, int):
             self.code: int = code
@@ -103,7 +105,7 @@ class IrbisFileNotFoundError(IrbisError):
 
     __slots__ = ('filename',)
 
-    def __init__(self, filename: Union[str, FileSpecification]) -> None:
+    def __init__(self, filename: 'Union[str, FileSpecification]') -> None:
         super().__init__()
         self.filename: str = str(filename)
 

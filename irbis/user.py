@@ -4,9 +4,11 @@
 Пользователи системы.
 """
 
-from typing import List, Optional
 from irbis._common import safe_str, same_string
 from irbis.response import ServerResponse
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import List, Optional
 
 
 class UserInfo:
@@ -18,21 +20,21 @@ class UserInfo:
                  'reader', 'circulation', 'acquisitions',
                  'provision', 'administrator')
 
-    def __init__(self, name: Optional[str] = None,
-                 password: Optional[str] = None) -> None:
-        self.number: Optional[str] = None
-        self.name: Optional[str] = name
-        self.password: Optional[str] = password
-        self.cataloger: Optional[str] = None
-        self.reader: Optional[str] = None
-        self.circulation: Optional[str] = None
-        self.acquisitions: Optional[str] = None
-        self.provision: Optional[str] = None
-        self.administrator: Optional[str] = None
+    def __init__(self, name: 'Optional[str]' = None,
+                 password: 'Optional[str]' = None) -> None:
+        self.number: 'Optional[str]' = None
+        self.name: 'Optional[str]' = name
+        self.password: 'Optional[str]' = password
+        self.cataloger: 'Optional[str]' = None
+        self.reader: 'Optional[str]' = None
+        self.circulation: 'Optional[str]' = None
+        self.acquisitions: 'Optional[str]' = None
+        self.provision: 'Optional[str]' = None
+        self.administrator: 'Optional[str]' = None
 
     # noinspection DuplicatedCode
     @staticmethod
-    def parse(response: ServerResponse) -> List['UserInfo']:
+    def parse(response: ServerResponse) -> 'List[UserInfo]':
         """
         Parse the server response for the user info.
 

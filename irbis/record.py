@@ -9,8 +9,8 @@ from irbis.field import Field
 from irbis.subfield import SubField
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from irbis.types_ import FieldList, FieldValue
     from typing import Iterable, List, Optional, Set, Union
+    from irbis.field import FieldList, FieldValue
 
 
 class Record:
@@ -25,10 +25,10 @@ class Record:
         self.mfn: int = 0
         self.version: int = 0
         self.status: int = 0
-        self.fields: FieldList = []
+        self.fields: 'FieldList' = []
         self.fields.extend(fields)
 
-    def add(self, tag: int, value: 'Union[str, TSubField]' = None) \
+    def add(self, tag: int, value: 'Union[str, SubField]' = None) \
             -> 'Field':
         """
         Добавление поля (возможно, с значением и подполями) к записи.
@@ -483,11 +483,11 @@ class RawRecord:
     __slots__ = 'database', 'mfn', 'status', 'version', 'fields'
 
     def __init__(self, *fields: str) -> None:
-        self.database: Optional[str] = None
+        self.database: 'Optional[str]' = None
         self.mfn: int = 0
         self.version: int = 0
         self.status: int = 0
-        self.fields: List[str] = []
+        self.fields: 'List[str]' = []
         self.fields.extend(fields)
 
     def clear(self) -> 'RawRecord':

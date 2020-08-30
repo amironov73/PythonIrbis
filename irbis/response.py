@@ -5,8 +5,10 @@
 """
 
 import socket
-from typing import Any, List, Optional
 from irbis._common import ANSI, ObjectWithError, UTF
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Any, List, Optional
 
 
 class ServerResponse:
@@ -44,7 +46,7 @@ class ServerResponse:
         sock.close()
         self._view = memoryview(self._memory)
 
-    async def read_data_async(self, sock: Any) -> None:
+    async def read_data_async(self, sock: 'Any') -> None:
         """
         Асинхронное считывание ответа из сокета.
 
@@ -82,7 +84,7 @@ class ServerResponse:
         # noinspection PyTypeChecker
         return str(self.read(), ANSI)  # type: ignore
 
-    def ansi_n(self, count: int) -> List[str]:
+    def ansi_n(self, count: int) -> 'List[str]':
         """
         Считывание не менее указанного количества строк
         в кодировке ANSI.
@@ -108,7 +110,7 @@ class ServerResponse:
         # noinspection PyTypeChecker
         return str(self._view[self._pos:], ANSI)  # type: ignore
 
-    def ansi_remaining_lines(self) -> List[str]:
+    def ansi_remaining_lines(self) -> 'List[str]':
         """
         Получение всего оставшегося текста ответа сервера
         как списка строк в кодировке ANSI.
@@ -123,7 +125,7 @@ class ServerResponse:
             result.append(line)
         return result
 
-    def check_return_code(self, allowed: List[int] = None) -> bool:
+    def check_return_code(self, allowed: 'List[int]' = None) -> bool:
         """
         Проверка кода возврата. Если код меньше нуля,
         генерируется IrbisError.
@@ -151,7 +153,7 @@ class ServerResponse:
 
         # Пока ничего не делаем
 
-    def get_binary_file(self) -> Optional[bytearray]:
+    def get_binary_file(self) -> 'Optional[bytearray]':
         """
         Получение двоичного файла с сервера.
 
@@ -245,7 +247,7 @@ class ServerResponse:
         # noinspection PyTypeChecker
         return str(self.read(), UTF)  # type: ignore
 
-    def utf_n(self, count: int) -> List[str]:
+    def utf_n(self, count: int) -> 'List[str]':
         """
         Считывание не менее указанного количества строк
         в кодировке UTF-8.
@@ -271,7 +273,7 @@ class ServerResponse:
         # noinspection PyTypeChecker
         return str(self._view[self._pos:], UTF)  # type: ignore
 
-    def utf_remaining_lines(self) -> List[str]:
+    def utf_remaining_lines(self) -> 'List[str]':
         """
         Получение всего оставшегося текста ответа сервера
         как списка строк в кодировке UTF-8.

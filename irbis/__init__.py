@@ -42,6 +42,7 @@ from irbis.version import ServerVersion
 
 from irbis.connection import Connection
 
+
 __version__ = '0.1.100'
 __author__ = 'Alexey Mironov'
 __email__ = 'amironov73@gmail.com'

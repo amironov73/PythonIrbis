@@ -4,7 +4,9 @@
 Ресурсы сервера.
 """
 
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Dict, List, Optional
 
 
 class Resource:
@@ -42,12 +44,12 @@ class ResourceDictionary:
         self.dictionary[name] = Resource(name, content)
         return self
 
-    def all(self) -> List[Resource]:
+    def all(self) -> 'List[Resource]':
         """
         Все зарегистрированные ресурсы в виде массива.
         :return: Массив
         """
-        result: List[Resource] = []
+        result: 'List[Resource]' = []
         for item in self.dictionary.values():
             result.append(item)
         return result
@@ -67,7 +69,7 @@ class ResourceDictionary:
         """
         return len(self.dictionary)
 
-    def get(self, name: str) -> Optional[str]:
+    def get(self, name: str) -> 'Optional[str]':
         """
         Получение ресурса из словаря по имени.
         :param name: Имя

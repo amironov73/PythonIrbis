@@ -4,7 +4,9 @@
 Версия сервера.
 """
 
-from typing import List
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import List
 
 
 class ServerVersion:
@@ -19,7 +21,7 @@ class ServerVersion:
         self.max_clients = 0
         self.connected_clients = 0
 
-    def parse(self, lines: List[str]) -> None:
+    def parse(self, lines: 'List[str]') -> None:
         """
         Parse the text.
 

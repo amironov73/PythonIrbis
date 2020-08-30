@@ -4,9 +4,14 @@
 Работа с полями.
 """
 
-from typing import Iterable, List, Optional, Set, Union
+from typing import TYPE_CHECKING
 from irbis.subfield import SubField
-from irbis.types_ import FieldValue, SubFieldList
+if TYPE_CHECKING:
+    from irbis.subfield import SubFieldList, SubFieldsDict
+    from typing import Iterable, List, Optional, Set, Union
+
+    FieldList = List['Field']
+    FieldValue = Union[SubField, SubFieldList, SubFieldsDict, str, None]
 
 
 class Field:
@@ -19,13 +24,13 @@ class Field:
 
     __slots__ = 'tag', 'value', 'subfields'
 
-    def __init__(self, tag: Optional[int] = DEFAULT_TAG,
-                 value: FieldValue = None) -> None:
+    def __init__(self, tag: 'Optional[int]' = DEFAULT_TAG,
+                 value: 'FieldValue' = None) -> None:
         self.tag: int = tag or self.DEFAULT_TAG
-        self.value: Optional[str] = None
+        self.value: 'Optional[str]' = None
         if isinstance(value, str):
             self.value = value
-        self.subfields: SubFieldList = []
+        self.subfields: 'SubFieldList' = []
         if isinstance(value, SubField):
             self.subfields.append(value)
 
@@ -61,7 +66,7 @@ class Field:
         self.subfields.append(SubField(code, value))
         return self
 
-    def add_non_empty(self, code: str, value: Optional[str]) -> 'Field':
+    def add_non_empty(self, code: str, value: 'Optional[str]') -> 'Field':
         """
         Добавление подполя с указанным кодом при условии,
         что значение поля не пустое.
@@ -77,7 +82,7 @@ class Field:
 
         return self
 
-    def all(self, code: str) -> SubFieldList:
+    def all(self, code: str) -> 'SubFieldList':
         """
         Список всех подполей с указанным кодом.
 
@@ -91,7 +96,7 @@ class Field:
         #    return [self.get_value_or_first_subfield()]
         return [sf for sf in self.subfields if sf.code == code]
 
-    def all_values(self, code: str) -> List[str]:
+    def all_values(self, code: str) -> 'List[str]':
         """
         Список значений всех подполей с указанным кодом.
         Пустые значения подполей в список не включаются.
@@ -160,7 +165,7 @@ class Field:
                 return subfield
         return None
 
-    def first_value(self, code: str) -> Optional[str]:
+    def first_value(self, code: str) -> 'Optional[str]':
         """
         Находит первое подполе с указанным кодом.
         :param code: Код
@@ -176,14 +181,14 @@ class Field:
                 return subfield.value
         return None
 
-    def get_embedded_fields(self) -> List['Field']:
+    def get_embedded_fields(self) -> 'List[Field]':
         """
         Получение списка встроенных полей.
 
         :return: Список встроенных полей.
         """
-        result: List['Field'] = []
-        found: Optional['Field'] = None
+        result: 'List[Field]' = []
+        found: 'Optional[Field]' = None
 
         for subfield in self.subfields:
             if subfield.code == '1':
@@ -205,7 +210,7 @@ class Field:
 
         return result
 
-    def get_value_or_first_subfield(self) -> Optional[str]:
+    def get_value_or_first_subfield(self) -> 'Optional[str]':
         """
         Выдаёт значение для ^*.
         :return: Найденное значение
@@ -270,7 +275,7 @@ class Field:
         self.subfields.insert(index, subfield)
         return self
 
-    def keys(self) -> Set[str]:
+    def keys(self) -> 'Set[str]':
         """
         Получение множества кодов подполей
 
@@ -335,8 +340,8 @@ class Field:
 
         return self
 
-    def replace_subfield(self, code: str, old_value: Optional[str],
-                         new_value: Optional[str]) -> 'Field':
+    def replace_subfield(self, code: str, old_value: 'Optional[str]',
+                         new_value: 'Optional[str]') -> 'Field':
         """
         Заменяет значение подполя с указанным кодом.
 
@@ -354,7 +359,7 @@ class Field:
 
         return self
 
-    def set_subfield(self, code: str, value: Optional[str]) -> 'Field':
+    def set_subfield(self, code: str, value: 'Optional[str]') -> 'Field':
         """
         Устанавливает значение первого повторения подполя с указанным кодом.
         Если value==None, подполе удаляется.

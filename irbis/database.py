@@ -4,9 +4,11 @@
 Информация о базах данных.
 """
 
-from typing import List, Optional
 from irbis._common import SHORT_DELIMITER
 from irbis.response import ServerResponse
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import List, Optional
 
 
 class DatabaseInfo:
@@ -18,20 +20,20 @@ class DatabaseInfo:
                  'physically_deleted', 'nonactualized', 'locked_records',
                  'database_locked', 'read_only')
 
-    def __init__(self, name: Optional[str] = None,
-                 description: Optional[str] = None) -> None:
-        self.name: Optional[str] = name
-        self.description: Optional[str] = description
+    def __init__(self, name: 'Optional[str]' = None,
+                 description: 'Optional[str]' = None) -> None:
+        self.name: 'Optional[str]' = name
+        self.description: 'Optional[str]' = description
         self.max_mfn: int = 0
-        self.logically_deleted: List[int] = []
-        self.physically_deleted: List[int] = []
-        self.nonactualized: List[int] = []
-        self.locked_records: List[int] = []
+        self.logically_deleted: 'List[int]' = []
+        self.physically_deleted: 'List[int]' = []
+        self.nonactualized: 'List[int]' = []
+        self.locked_records: 'List[int]' = []
         self.database_locked: bool = False
         self.read_only: bool = False
 
     @staticmethod
-    def _parse(line: str) -> List[int]:
+    def _parse(line: str) -> 'List[int]':
         if not line:
             return []
         return [int(x) for x in line.split(SHORT_DELIMITER) if x]

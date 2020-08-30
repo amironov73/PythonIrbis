@@ -4,8 +4,10 @@
 Работа с TRE-файлами.
 """
 
-from typing import Iterable, List, Optional
 from irbis._common import ANSI, safe_str
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Iterable, List, Optional
 
 
 class TreeNode:
@@ -15,9 +17,9 @@ class TreeNode:
 
     __slots__ = 'children', 'value', 'level'
 
-    def __init__(self, value: Optional[str] = None, level: int = 0) -> None:
+    def __init__(self, value: 'Optional[str]' = None, level: int = 0) -> None:
         self.children: List = []
-        self.value: Optional[str] = value
+        self.value: 'Optional[str]' = value
         self.level: int = level
 
     def add(self, name: str):
@@ -32,7 +34,7 @@ class TreeNode:
         self.children.append(result)
         return result
 
-    def write(self) -> List[str]:
+    def write(self) -> 'List[str]':
         """
         Represent the node and its child as lines.
 
@@ -58,7 +60,7 @@ class TreeFile:
     __slots__ = ('roots',)
 
     def __init__(self):
-        self.roots: List[TreeNode] = []
+        self.roots: 'List[TreeNode]' = []
 
     @staticmethod
     def _count_indent(text: str) -> int:
@@ -71,14 +73,14 @@ class TreeFile:
         return result
 
     @staticmethod
-    def _arrange_level(nodes: List[TreeNode], level: int) -> None:
+    def _arrange_level(nodes: 'List[TreeNode]', level: int) -> None:
         count = len(nodes)
         index = 0
         while index < count:
             index = TreeFile._arrange_nodes(nodes, level, index, count)
 
     @staticmethod
-    def _arrange_nodes(nodes: List[TreeNode], level: int,
+    def _arrange_nodes(nodes: 'List[TreeNode]', level: int,
                        index: int, count: int) -> int:
         nxt = index + 1
         level2 = level + 1
@@ -105,7 +107,7 @@ class TreeFile:
         return result
 
     @staticmethod
-    def determine_level(nodes: Iterable[TreeNode], current: int) -> None:
+    def determine_level(nodes: 'Iterable[TreeNode]', current: int) -> None:
         """
         Determine level of the nodes.
 
@@ -118,7 +120,7 @@ class TreeFile:
             node.level = current
             TreeFile.determine_level(node.children, current + 1)
 
-    def parse(self, text: Iterable[str]) -> None:
+    def parse(self, text: 'Iterable[str]') -> None:
         """
         Parse the text for the tree structure.
 

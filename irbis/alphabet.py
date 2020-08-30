@@ -4,9 +4,11 @@
 Работа с алфавитной таблицей.
 """
 
-import re
-from typing import Dict, Generator, List
 from irbis._common import ANSI
+import re
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Dict, Generator, List
 
 
 class AlphabetTable:
@@ -19,7 +21,7 @@ class AlphabetTable:
     __slots__ = ('characters',)
 
     def __init__(self) -> None:
-        self.characters: List[str] = []
+        self.characters: 'List[str]' = []
 
     @staticmethod
     def get_default():
@@ -87,7 +89,7 @@ class AlphabetTable:
         array.remove(0x98)  # Этот символ не мапится
         self.characters = list(array.decode(ANSI))
 
-    def split_words(self, text: str) -> Generator:
+    def split_words(self, text: str) -> 'Generator':
         """
         Split the text to words according the alphabet table.
 

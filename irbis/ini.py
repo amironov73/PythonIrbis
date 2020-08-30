@@ -4,7 +4,9 @@
 Всё, связанное с INI-файлами.
 """
 
-from typing import Iterable, List, Optional, Union
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Iterable, List, Optional, Union
 
 
 class IniLine:
@@ -14,8 +16,8 @@ class IniLine:
 
     __slots__ = 'key', 'value'
 
-    def __init__(self, key: Optional[str] = None,
-                 value: Optional[str] = None) -> None:
+    def __init__(self, key: 'Optional[str]' = None,
+                 value: 'Optional[str]' = None) -> None:
         self.key = key
         self.value = value
 
@@ -26,7 +28,7 @@ class IniLine:
         return self.__str__()
 
 
-def same_key(first: Optional[str], second: Optional[str]) -> bool:
+def same_key(first: 'Optional[str]', second: 'Optional[str]') -> bool:
     """
     Сравнение двух ключей (с точностью до регистра).
 
@@ -47,11 +49,11 @@ class IniSection:
 
     __slots__ = 'name', 'lines'
 
-    def __init__(self, name: Optional[str] = None) -> None:
-        self.name: Optional[str] = name
-        self.lines: List[IniLine] = []
+    def __init__(self, name: 'Optional[str]' = None) -> None:
+        self.name: 'Optional[str]' = name
+        self.lines: 'List[IniLine]' = []
 
-    def find(self, key: str) -> Optional[IniLine]:
+    def find(self, key: str) -> 'Optional[IniLine]':
         """
         Нахождение строки с указанным ключом.
 
@@ -64,7 +66,7 @@ class IniSection:
         return None
 
     def get_value(self, key: str,
-                  default: Optional[str] = None) -> Optional[str]:
+                  default: 'Optional[str]' = None) -> 'Optional[str]':
         """
         Получение значения строки с указанным ключом.
 
@@ -115,7 +117,7 @@ class IniSection:
     def __iter__(self):
         yield from self.lines
 
-    def __getitem__(self, item: Union[str, int]):
+    def __getitem__(self, item: 'Union[str, int]'):
         if isinstance(item, int):
             return self.lines[item]
         return self.get_value(item)
@@ -137,7 +139,7 @@ class IniFile:
     def __init__(self):
         self.sections = []
 
-    def find(self, name: str) -> Optional[IniSection]:
+    def find(self, name: str) -> 'Optional[IniSection]':
         """
         Нахождение секции с указанным именем.
 
@@ -165,7 +167,7 @@ class IniFile:
         return result
 
     def get_value(self, name: str, key: str,
-                  default: Optional[str] = None) -> Optional[str]:
+                  default: 'Optional[str]' = None) -> 'Optional[str]':
         """
         Получение значения строки с указанными именем секции и ключом.
 
@@ -194,7 +196,7 @@ class IniFile:
             self.sections.append(section)
         section.set_value(key, value)
 
-    def parse(self, text: Iterable[str]) -> None:
+    def parse(self, text: 'Iterable[str]') -> None:
         """
         Разбор текстового представления INI-файла.
 
@@ -233,7 +235,7 @@ class IniFile:
     def __iter__(self):
         yield from self.sections
 
-    def __getitem__(self, item: Union[str, int]):
+    def __getitem__(self, item: 'Union[str, int]'):
         if isinstance(item, int):
             return self.sections[item]
         return self.find(item)

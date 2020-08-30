@@ -4,10 +4,13 @@
 Работа с записями, полями, подполями.
 """
 
-from typing import Iterable, List, Optional, Set, Union
 from irbis._common import LOGICALLY_DELETED, PHYSICALLY_DELETED
 from irbis.field import Field
 from irbis.subfield import SubField
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from irbis.types_ import FieldList, FieldValue
+    from typing import Iterable, List, Optional, Set, Union
 
 
 class Record:
@@ -17,15 +20,15 @@ class Record:
 
     __slots__ = 'database', 'mfn', 'version', 'status', 'fields'
 
-    def __init__(self, *fields: Field) -> None:
-        self.database: Optional[str] = None
+    def __init__(self, *fields: 'Field') -> None:
+        self.database: 'Optional[str]' = None
         self.mfn: int = 0
         self.version: int = 0
         self.status: int = 0
-        self.fields: List[Field] = []
+        self.fields: FieldList = []
         self.fields.extend(fields)
 
-    def add(self, tag: int, value: Union[str, SubField] = None) \
+    def add(self, tag: int, value: 'Union[str, TSubField]' = None) \
             -> 'Field':
         """
         Добавление поля (возможно, с значением и подполями) к записи.
@@ -47,7 +50,7 @@ class Record:
         return result
 
     def add_non_empty(self, tag: int,
-                      value: Union[str, SubField]) -> 'Record':
+                      value: 'Union[str, SubField]') -> 'Record':
         """
         Добавление поля, если его значение не пустое.
 
@@ -69,7 +72,7 @@ class Record:
 
         return self
 
-    def all(self, tag: int) -> List[Field]:
+    def all(self, tag: int) -> 'FieldList':
         """
         Список полей с указанной меткой.
 
@@ -80,7 +83,7 @@ class Record:
 
         return [f for f in self.fields if f.tag == tag]
 
-    def all_as_dict(self, tag: int) -> List[dict]:
+    def all_as_dict(self, tag: int) -> 'List[dict]':
         """
         Список полей с указанной меткой, каждое поле в виде словаря
         "код - значение".
@@ -114,7 +117,7 @@ class Record:
         result.fields = [field.clone() for field in self.fields]
         return result
 
-    def encode(self) -> List[str]:
+    def encode(self) -> 'List[str]':
         """
         Кодирование записи в серверное представление.
 
@@ -126,7 +129,7 @@ class Record:
             result.append(str(field))
         return result
 
-    def fm(self, tag: int, code: str = '') -> Optional[str]:
+    def fm(self, tag: int, code: str = '') -> 'Optional[str]':
         """
         Текст первого поля с указанной меткой.
         :param tag: Искомая метка поля
@@ -142,7 +145,7 @@ class Record:
                 return field.value
         return None
 
-    def fma(self, tag: int, code: str = '') -> List[str]:
+    def fma(self, tag: int, code: str = '') -> 'List[str]':
         """
         Спосок значений полей с указанной меткой.
         Пустые значения в список не включаются.
@@ -166,7 +169,7 @@ class Record:
                         result.append(one)
         return result
 
-    def first(self, tag: int) -> Optional[Field]:
+    def first(self, tag: int) -> 'Optional[Field]':
         """
         Первое из полей с указанной меткой.
 
@@ -207,8 +210,8 @@ class Record:
 
         return False
 
-    def insert_at(self, index: int, tag: int, value: Optional[str] = None) \
-            -> Field:
+    def insert_at(self, index: int, tag: int, value: 'Optional[str]' = None) \
+            -> 'Field':
         """
         Вставка поля в указанной позиции.
 
@@ -231,7 +234,7 @@ class Record:
         """
         return (self.status & (LOGICALLY_DELETED | PHYSICALLY_DELETED)) != 0
 
-    def keys(self) -> Set[int]:
+    def keys(self) -> 'Set[int]':
         """
         Получение множества меток полей
 
@@ -240,7 +243,7 @@ class Record:
         return set(field.tag for field in self.fields)
 
     # noinspection DuplicatedCode
-    def parse(self, text: List[str]) -> None:
+    def parse(self, text: 'List[str]') -> None:
         """
         Разбор текстового представления записи (в серверном формате).
 
@@ -307,7 +310,7 @@ class Record:
         self.database = None
         return self
 
-    def set_field(self, tag: int, value: Optional[str]) -> 'Record':
+    def set_field(self, tag: int, value: 'Optional[str]') -> 'Record':
         """
         Устанавливает значение первого повторения указанного поля.
         Если указанное значение пустое, поле удаляется из записи.
@@ -331,7 +334,7 @@ class Record:
         return self
 
     def set_subfield(self, tag: int, code: str,
-                     value: Optional[str]) -> 'Record':
+                     value: 'Optional[str]') -> 'Record':
         """
         Устанавливает значение подполя в первом повторении указанного поля.
         Если указанное значение пустое, подполе удаляется из поля.
@@ -383,14 +386,14 @@ class Record:
         for key, value in accumulator.items():
             yield key, value
 
-    def __iadd__(self, other: Union[Field, Iterable[Field]]):
+    def __iadd__(self, other: 'Union[Field, Iterable[Field]]'):
         if isinstance(other, Field):
             self.fields.append(other)
         else:
             self.fields.extend(other)
         return self
 
-    def __isub__(self, other: Union[Field, Iterable[Field]]):
+    def __isub__(self, other: 'Union[Field, Iterable[Field]]'):
         if isinstance(other, Field):
             if other in self.fields:
                 self.fields.remove(other)
@@ -400,7 +403,7 @@ class Record:
                     self.fields.remove(one)
         return self
 
-    def __getitem__(self, tag: int) -> Union[dict, List[dict], str]:
+    def __getitem__(self, tag: int) -> 'Union[dict, List[dict], str]':
         """
         Получение значения поля по индексу
 
@@ -423,15 +426,14 @@ class Record:
 
         return ''
 
-    def __setitem__(self, key: int,
-                    value: Union[Field, SubField, str, None]):
+    def __setitem__(self, key: int, value: 'Union[Field, FieldValue]') -> None:
         if value is None:
-            found: List[Field] = self.all(key)
+            found: 'FieldList' = self.all(key)
             for fld in found:
                 self.fields.remove(fld)
             return
 
-        field: Optional[Field] = self.first(key)
+        field: 'Optional[Field]' = self.first(key)
         if isinstance(value, str):
             if field is None:
                 field = Field(key, value)
@@ -447,12 +449,24 @@ class Record:
             value.tag = key
             field.assign_from(value)
 
+        if isinstance(value, list):
+            if field is None:
+                if all((isinstance(element, SubField) for element in value)):
+                    field = Field(key, value)
+                else:
+                    raise TypeError('All elements must be of the SubField type')
+
         if isinstance(value, SubField):
             if field is None:
                 field = Field(key)
                 self.fields.append(field)
             field.clear()
             field.subfields.append(value)
+
+        if isinstance(value, dict):
+            if field is None:
+                field = Field(key, value)
+                self.fields.append(field)
 
     def __len__(self):
         return len(self.fields)
@@ -499,7 +513,7 @@ class RawRecord:
         result.fields = list(field for field in self.fields)
         return result
 
-    def encode(self) -> List[str]:
+    def encode(self) -> 'List[str]':
         """
         Кодирование записи в серверное представление.
 
@@ -519,7 +533,7 @@ class RawRecord:
         return (self.status & (LOGICALLY_DELETED | PHYSICALLY_DELETED)) != 0
 
     # noinspection DuplicatedCode
-    def parse(self, text: List[str]) -> None:
+    def parse(self, text: 'List[str]') -> None:
         """
         Разбор текстового представления записи (в серверном формате).
 

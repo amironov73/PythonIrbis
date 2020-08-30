@@ -4,7 +4,9 @@
 Работа с подполями.
 """
 
-from typing import Optional
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Optional
 
 
 class SubField:
@@ -17,7 +19,7 @@ class SubField:
     __slots__ = 'code', 'value'
 
     def __init__(self, code: str = DEFAULT_CODE,
-                 value: Optional[str] = None) -> None:
+                 value: 'Optional[str]' = None) -> None:
         code = code or SubField.DEFAULT_CODE
         self.code: str = code.lower()
         self.value: Optional[str] = value

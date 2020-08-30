@@ -476,26 +476,25 @@ class TestField(unittest.TestCase):
     def test_keys_1(self):
         field = Field(100)
         d = field.keys()
-        self.assertEqual(d, [''])
+        self.assertEqual(d, set())
 
     def test_keys_2(self):
         field = Field(100, 'Value')
         d = field.keys()
-        self.assertEqual(d, [''])
+        self.assertEqual(d, set())
 
     def test_keys_3(self):
         field = Field(100).add('a', 'SubA').add('b', 'SubB')
         d = field.keys()
         self.assertEqual(len(d), 2)
-        self.assertEqual(d[0], 'a')
-        self.assertEqual(d[1], 'b')
+        self.assertIn('a', d)
+        self.assertIn('b', d)
 
     def test_keys_4(self):
         field = Field(100).add('a', 'SubA1').add('a', 'SubA2')
         d = field.keys()
-        self.assertEqual(len(d), 2)
-        self.assertEqual(d[0], 'a')
-        self.assertEqual(d[1], 'a')
+        self.assertEqual(len(d), 1)
+        self.assertIn('a', d)
 
 
 #############################################################################

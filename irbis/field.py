@@ -6,6 +6,7 @@
 
 from typing import Iterable, List, Optional, Set, Union
 from irbis.subfield import SubField
+from irbis.types_ import FieldValue, SubFieldList
 
 
 class Field:
@@ -18,25 +19,21 @@ class Field:
 
     __slots__ = 'tag', 'value', 'subfields'
 
-    def __init__(
-            self,
-            tag: Optional[int] = DEFAULT_TAG,
-            value: Union[List[SubField], SubField, str, dict] = None
-    ) -> None:
+    def __init__(self, tag: Optional[int] = DEFAULT_TAG,
+                 value: FieldValue = None) -> None:
         self.tag: int = tag or self.DEFAULT_TAG
         self.value: Optional[str] = None
         if isinstance(value, str):
             self.value = value
-        self.subfields: List[SubField] = []
+        self.subfields: SubFieldList = []
         if isinstance(value, SubField):
             self.subfields.append(value)
 
         if isinstance(value, list):
-            for element in value:
-                if isinstance(element, SubField):
-                    self.subfields.append(element)
-                else:
-                    raise TypeError('All elements must be of the same Type')
+            if all((isinstance(element, SubField) for element in value)):
+                self.subfields = value
+            else:
+                raise TypeError('All elements must be of the SubField type')
 
         if isinstance(value, dict):
             for code, val in value.items():
@@ -48,7 +45,7 @@ class Field:
                         SubField(code, val)
                     )
                 else:
-                    raise TypeError('Value of SubField must be str Type')
+                    raise TypeError('Value of SubField must be str type')
 
     def add(self, code: str, value: str = '') -> 'Field':
         """
@@ -80,7 +77,7 @@ class Field:
 
         return self
 
-    def all(self, code: str) -> List[SubField]:
+    def all(self, code: str) -> SubFieldList:
         """
         Список всех подполей с указанным кодом.
 
@@ -147,7 +144,7 @@ class Field:
             result.subfields.append(subfield.clone())
         return result
 
-    def first(self, code: str) -> Optional[SubField]:
+    def first(self, code: str) -> 'Optional[SubField]':
         """
         Находит первое подполе с указанным кодом.
         :param code: Код
@@ -418,14 +415,14 @@ class Field:
         else:
             yield '', self.value
 
-    def __iadd__(self, other: Union[SubField, Iterable[SubField]]):
+    def __iadd__(self, other: 'Union[SubField, Iterable[SubField]]'):
         if isinstance(other, SubField):
             self.subfields.append(other)
         else:
             self.subfields.extend(other)
         return self
 
-    def __isub__(self, other: Union[SubField, Iterable[SubField]]):
+    def __isub__(self, other: 'Union[SubField, Iterable[SubField]]'):
         if isinstance(other, SubField):
             if other in self.subfields:
                 self.subfields.remove(other)
@@ -435,7 +432,7 @@ class Field:
                     self.subfields.remove(one)
         return self
 
-    def __getitem__(self, code: Union[str, int]) -> str:
+    def __getitem__(self, code: 'Union[str, int]') -> str:
         """
         Получение значения подполя по индексу
 
@@ -450,7 +447,7 @@ class Field:
 
         return self.first_value(code) or ''
 
-    def __setitem__(self, key: Union[str, int], value: Optional[str]):
+    def __setitem__(self, key: 'Union[str, int]', value: 'Optional[str]'):
         if isinstance(key, int):
             if value:
                 self.subfields[key].value = value

@@ -29,19 +29,24 @@ class Field:
                  value: 'FieldValue' = None) -> None:
         self.tag: int = tag or self.DEFAULT_TAG
         self.value: 'Optional[str]' = None
-        if isinstance(value, str):
-            self.value = value
         self.subfields: 'SubFieldList' = []
-        if isinstance(value, SubField):
+
+        if value is None:
+            pass
+
+        elif isinstance(value, SubField):
             self.subfields.append(value)
 
-        if isinstance(value, list):
+        elif isinstance(value, str):
+            self.headless_parse(value)
+
+        elif isinstance(value, list):
             if all((isinstance(element, SubField) for element in value)):
                 self.subfields = value
             else:
                 raise TypeError('All elements must be of the SubField type')
 
-        if isinstance(value, dict):
+        elif isinstance(value, dict):
             for code, val in value.items():
                 if isinstance(val, str):
                     if code == '':
@@ -52,6 +57,9 @@ class Field:
                     )
                 else:
                     raise TypeError('Value of SubField must be str type')
+
+        else:
+            raise TypeError('Unsupported value type')
 
     def add(self, code: str, value: str = '') -> 'Field':
         """

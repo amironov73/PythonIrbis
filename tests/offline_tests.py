@@ -817,24 +817,25 @@ class TestMarcRecord(unittest.TestCase):
         record.fields.append(f200)
         new_value = 'New value'
         record[100] = new_value
-        self.assertEqual(f100.value, new_value)
+        self.assertEqual(record[100], new_value)
         record[200] = '^aNewA^bNewB'
-        self.assertEqual(f200.subfields[0].value, 'NewA')
-        self.assertEqual(f200.subfields[1].value, 'NewB')
+        self.assertEqual(record[200]['a'], 'NewA')
+        self.assertEqual(record[200]['b'], 'NewB')
         record[300] = new_value
+        print(len(record.fields))
         self.assertEqual(len(record.fields), 3)
-        self.assertEqual(record.fields[2].tag, 300)
+        self.assertIn(300, record.keys())
         self.assertEqual(record.fields[2].value, new_value)
-        record[400] = Field().add('a', 'NewA').add('b', 'NewB')
+        record[400] = Field(tag=400).add('a', 'NewA').add('b', 'NewB')
         self.assertEqual(len(record.fields), 4)
-        self.assertEqual(record.fields[3].tag, 400)
-        self.assertEqual(record.fields[3].subfields[0].value, 'NewA')
-        self.assertEqual(record.fields[3].subfields[1].value, 'NewB')
+        self.assertIn(400, record.keys())
+        self.assertEqual(record[400]['a'], 'NewA')
+        self.assertEqual(record[400]['b'], 'NewB')
         record[300] = SubField('a', 'OtherA')
         self.assertEqual(len(record.fields), 4)
-        self.assertEqual(record.fields[2].tag, 300)
-        self.assertIsNone(record.fields[2].value)
-        self.assertEqual(record.fields[2].subfields[0].value, 'OtherA')
+        self.assertIn(300, record.keys())
+        self.assertNotIn('', record[300])
+        self.assertEqual(record[300]['a'], 'OtherA')
 
     def test_setitem_2(self):
         f100 = Field(100, 'Field 100')

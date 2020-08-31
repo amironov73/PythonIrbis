@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from typing import Iterable, List, Optional, Set, Union
     from irbis.field import FieldList, FieldValue
 
+    RecordValue = Union[Field, FieldList, FieldValue, List[str]]
+
 
 class Record:
     """
@@ -427,48 +429,20 @@ class Record:
 
         return ''
 
-    def __setitem__(
-            self,
-            key: int,
-            value: 'Union[Field, FieldList, FieldValue, List[str]]',
-    ) -> None:
-        if value is None:
-            found: 'FieldList' = self.all(key)
-            for fld in found:
-                self.fields.remove(fld)
-            return None
+    def __setitem__(self, key: int, value: 'RecordValue') -> None:
+        self.fields = [f for f in self.fields if f.tag != key]
+        if value:
+            if isinstance(value, list):
+                if isinstance(value[0], Field):
+                    self.fields += value
+                else:
+                    self.fields += [Field(key, v) for v in value]
 
-        field: 'Optional[Field]' = self.first(key)
-        if isinstance(value, str):
-            if field is None:
-                field = Field(key, value)
-                self.fields.append(field)
+            elif isinstance(value, Field):
+                self.fields.append(value)
+
             else:
-                field.clear()
-                field.headless_parse(value)
-
-        if isinstance(value, Field):
-            if field is None:
-                field = Field(key)
-                self.fields.append(field)
-            value.tag = key
-            field.assign_from(value)
-
-        if isinstance(value, list):
-            self.fields = [f for f in self.fields if f.tag != key]
-            self.fields += [Field(key, v) for v in value]
-
-        if isinstance(value, SubField):
-            if field is None:
-                field = Field(key)
-                self.fields.append(field)
-            field.clear()
-            field.subfields.append(value)
-
-        if isinstance(value, dict):
-            self.fields = [f for f in self.fields if f.tag != key]
-            field = Field(key, value)
-            self.fields.append(field)
+                self.fields.append(Field(key, value))
 
     def __len__(self):
         return len(self.fields)

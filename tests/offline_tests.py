@@ -519,6 +519,39 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(record.fields[0].tag, 100)
         self.assertEqual(record.fields[1].tag, 200)
 
+    def test_set_item_1(self):
+        record = Record()
+        record[100] = 'Field 100'
+        record[200] = 'Field 200'
+        self.assertEqual(len(record.fields), 2)
+        self.assertEqual(record.fields[0].tag, 100)
+        self.assertEqual(record.fields[1].tag, 200)
+        self.assertEqual(record.fields[0].value, 'Field 100')
+        self.assertEqual(record.fields[1].value, 'Field 200')
+
+    def test_set_item_2(self):
+        record = Record()
+        record[100] = 'Field 100-A'
+        record[100] = 'Field 100-B'
+        self.assertEqual(record.fields[0].value, 'Field 100-B')
+
+    def test_set_item_3(self):
+        record = Record()
+        record[100] = ['Field 100-A', 'Field 100-B', 'Field 100-C']
+        record[200] = ['Field 200']
+        self.assertEqual(len(record.fields), 4)
+        self.assertEqual(record.fields[0].value, 'Field 100-A')
+        self.assertEqual(record.fields[1].value, 'Field 100-B')
+        self.assertEqual(record.fields[2].value, 'Field 100-C')
+
+    def test_set_item_4(self):
+        record = Record()
+        record[100] = {'a': 'Field 100-A', 'b': 'Field 100-B', 'c': 'Field 100-C'}
+        self.assertEqual(len(record.fields), 1)
+        self.assertEqual(record[100]['a'], 'Field 100-A')
+        self.assertEqual(record[100]['b'], 'Field 100-B')
+        self.assertEqual(record[100]['c'], 'Field 100-C')
+
     def test_add_1(self):
         record = Record()
         record.add(100, 'Some value')

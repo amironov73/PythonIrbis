@@ -11,7 +11,8 @@ if TYPE_CHECKING:
     from typing import Iterable, List, Optional, Set, Union
 
     FieldList = List['Field']
-    FieldValue = Union[SubField, SubFieldList, SubFieldsDict, str, None]
+    FieldValue = Union[SubField, SubFieldList, List[SubFieldsDict],
+                       SubFieldsDict, str, None]
 
 
 class Field:

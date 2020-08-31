@@ -426,12 +426,16 @@ class Record:
 
         return ''
 
-    def __setitem__(self, key: int, value: 'Union[Field, FieldValue]') -> None:
+    def __setitem__(
+            self,
+            key: int,
+            value: 'Union[Field, FieldList, FieldValue, List[str]]',
+    ) -> None:
         if value is None:
             found: 'FieldList' = self.all(key)
             for fld in found:
                 self.fields.remove(fld)
-            return
+            return None
 
         field: 'Optional[Field]' = self.first(key)
         if isinstance(value, str):
@@ -450,11 +454,8 @@ class Record:
             field.assign_from(value)
 
         if isinstance(value, list):
-            if field is None:
-                if all((isinstance(element, SubField) for element in value)):
-                    field = Field(key, value)
-                else:
-                    raise TypeError('All elements must be of the SubField type')
+            self.fields = [f for f in self.fields if f.tag != key]
+            self.fields += [Field(key, v) for v in value]
 
         if isinstance(value, SubField):
             if field is None:
@@ -464,9 +465,9 @@ class Record:
             field.subfields.append(value)
 
         if isinstance(value, dict):
-            if field is None:
-                field = Field(key, value)
-                self.fields.append(field)
+            self.fields = [f for f in self.fields if f.tag != key]
+            field = Field(key, value)
+            self.fields.append(field)
 
     def __len__(self):
         return len(self.fields)

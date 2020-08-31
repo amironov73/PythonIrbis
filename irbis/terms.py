@@ -101,14 +101,16 @@ class TermPosting:
         """
 
         parts = text.split('#', 4)
-        if len(parts) < 4:
-            return
-        self.mfn = int(parts[0])
-        self.tag = int(parts[1])
-        self.occurrence = int(parts[2])
-        self.count = int(parts[3])
-        if len(parts) > 4:
-            self.text = parts[4]
+        if len(parts) >= 4:
+            self.mfn = int(parts[0])
+            self.tag = int(parts[1])
+            self.occurrence = int(parts[2])
+            self.count = int(parts[3])
+            if len(parts) > 4:
+                self.text = parts[4]
+        else:
+            # TODO: уточнить, требуется ли бросать исключение
+            pass
 
     def __str__(self):
         subst = ''

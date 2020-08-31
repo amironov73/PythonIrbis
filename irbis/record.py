@@ -250,22 +250,23 @@ class Record:
         :param text: Список строк
         :return: None
         """
-        if not text:
-            return
-
-        line = text[0]
-        parts = line.split('#')
-        self.mfn = int(parts[0])
-        if len(parts) != 1 and parts[1]:
-            self.status = int(parts[1])
-        line = text[1]
-        parts = line.split('#')
-        self.version = int(parts[1])
-        self.fields.clear()
-        for line in text[2:]:
-            field = Field()
-            field.parse(line)
-            self.fields.append(field)
+        if text:
+            line = text[0]
+            parts = line.split('#')
+            self.mfn = int(parts[0])
+            if len(parts) != 1 and parts[1]:
+                self.status = int(parts[1])
+            line = text[1]
+            parts = line.split('#')
+            self.version = int(parts[1])
+            self.fields.clear()
+            for line in text[2:]:
+                field = Field()
+                field.parse(line)
+                self.fields.append(field)
+        else:
+            # TODO: уточнить, требуется ли бросать исключение
+            pass
 
     def remove_at(self, index: int) -> 'Record':
         """
@@ -542,20 +543,21 @@ class RawRecord:
         :return: None
         """
 
-        if not text:
-            return
-
-        line = text[0]
-        parts = line.split('#')
-        self.mfn = int(parts[0])
-        if len(parts) != 1 and parts[1]:
-            self.status = int(parts[1])
-        line = text[1]
-        parts = line.split('#')
-        self.version = int(parts[1])
-        self.fields.clear()
-        for line in text[2:]:
-            self.fields.append(line)
+        if text:
+            line = text[0]
+            parts = line.split('#')
+            self.mfn = int(parts[0])
+            if len(parts) != 1 and parts[1]:
+                self.status = int(parts[1])
+            line = text[1]
+            parts = line.split('#')
+            self.version = int(parts[1])
+            self.fields.clear()
+            for line in text[2:]:
+                self.fields.append(line)
+        else:
+            # TODO: уточнить, требуется ли бросать исключение
+            pass
 
     def remove_at(self, index: int) -> 'RawRecord':
         """

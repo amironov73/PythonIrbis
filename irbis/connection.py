@@ -283,13 +283,14 @@ class Connection(ObjectWithError):
 
         :return: None.
         """
-        if not self.connected:
-            return
-
-        query = ClientQuery(self, UNREGISTER_CLIENT)
-        query.ansi(self.username)
-        self.execute_forget(query)
-        self.connected = False
+        if self.connected:
+            query = ClientQuery(self, UNREGISTER_CLIENT)
+            query.ansi(self.username)
+            self.execute_forget(query)
+            self.connected = False
+        else:
+            # TODO: уточнить требуется ли бросать исключение
+            pass
 
     async def disconnect_async(self) -> None:
         """
@@ -297,14 +298,15 @@ class Connection(ObjectWithError):
 
         :return: None.
         """
-        if not self.connected:
-            return
-
-        query = ClientQuery(self, UNREGISTER_CLIENT)
-        query.ansi(self.username)
-        response = await self.execute_async(query)
-        response.close()
-        self.connected = False
+        if self.connected:
+            query = ClientQuery(self, UNREGISTER_CLIENT)
+            query.ansi(self.username)
+            response = await self.execute_async(query)
+            response.close()
+            self.connected = False
+        else:
+            # TODO: уточнить, требуется ли бросать исключение
+            pass
 
     def execute(self, query: ClientQuery) -> ServerResponse:
         """

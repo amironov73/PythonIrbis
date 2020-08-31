@@ -425,19 +425,20 @@ class UpperCaseTable:
         :return: None
         """
         parts = re.findall(r'\d+', text)
-        if not parts:
+        if parts:
+            assert len(parts) == 256
+            first = bytearray(int(x) for x in parts if x and x.isdigit())
+            first = first.replace(b'\x98', b'\x20')  # Этот символ не мапится
+            first_chars = list(first.decode(ANSI))
+            second = bytearray(x for x in range(256))
+            second = second.replace(b'\x98', b'\x20')  # Этот символ не мапится
+            second_chars = list(second.decode(ANSI))
+            for upper, lower in zip(first_chars, second_chars):
+                self.mapping[lower] = upper
+        else:
             # Попалась пустая таблица
-            return
-
-        assert len(parts) == 256
-        first = bytearray(int(x) for x in parts if x and x.isdigit())
-        first = first.replace(b'\x98', b'\x20')  # Этот символ не мапится
-        first_chars = list(first.decode(ANSI))
-        second = bytearray(x for x in range(256))
-        second = second.replace(b'\x98', b'\x20')  # Этот символ не мапится
-        second_chars = list(second.decode(ANSI))
-        for upper, lower in zip(first_chars, second_chars):
-            self.mapping[lower] = upper
+            # TODO: Уточнить, требуется ли бросать исключение
+            pass
 
     def upper(self, text: str) -> str:
         """

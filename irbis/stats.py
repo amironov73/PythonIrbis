@@ -63,22 +63,23 @@ class ServerStat:
         self.total_command_count = response.number()
         self.client_count = response.number()
         lines_per_client = response.number()
-        if not lines_per_client:
-            return
-
-        for _ in range(self.client_count):
-            client = ClientInfo()
-            client.number = response.ansi()
-            client.ip_address = response.ansi()
-            client.port = response.ansi()
-            client.name = response.ansi()
-            client.client_id = response.ansi()
-            client.workstation = response.ansi()
-            client.registered = response.ansi()
-            client.acknowledged = response.ansi()
-            client.last_command = response.ansi()
-            client.command_number = response.ansi()
-            self.running_clients.append(client)
+        if lines_per_client:
+            for _ in range(self.client_count):
+                client = ClientInfo()
+                client.number = response.ansi()
+                client.ip_address = response.ansi()
+                client.port = response.ansi()
+                client.name = response.ansi()
+                client.client_id = response.ansi()
+                client.workstation = response.ansi()
+                client.registered = response.ansi()
+                client.acknowledged = response.ansi()
+                client.last_command = response.ansi()
+                client.command_number = response.ansi()
+                self.running_clients.append(client)
+        else:
+            # TODO: уточнить, требуется ли бросать исключение
+            pass
 
     def __str__(self):
         return str(self.client_count) + ', ' + str(self.total_command_count)

@@ -450,6 +450,12 @@ class Record:
     def __bool__(self):
         return bool(self.fields)
 
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
+    def __hash__(self):
+        return hash(tuple(self.fields))
+
 
 class RawRecord:
     """

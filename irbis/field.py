@@ -476,3 +476,9 @@ class Field:
 
     def __bool__(self):
         return bool(self.tag) and (bool(self.value) or bool(self.subfields))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
+    def __hash__(self):
+        return hash((self.tag, self.value or tuple(self.subfields)))

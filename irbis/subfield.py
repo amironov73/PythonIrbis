@@ -53,3 +53,9 @@ class SubField:
 
     def __bool__(self):
         return self.code != self.DEFAULT_CODE and bool(self.value)
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
+    def __hash__(self):
+        return hash((self.code, self.value))

@@ -4,9 +4,9 @@
 Информация о базах данных.
 """
 
+from typing import TYPE_CHECKING
 from irbis._common import SHORT_DELIMITER
 from irbis.response import ServerResponse
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import List, Optional
 

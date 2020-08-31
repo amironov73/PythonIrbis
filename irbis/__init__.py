@@ -14,8 +14,8 @@ from irbis._common import ADMINISTRATOR, BRIEF, CATALOGER, close_async, \
     NON_ACTUALIZED, NOT_CONNECTED, PHYSICALLY_DELETED, prepare_format, \
     remove_comments
 
-from irbis.alphabet import AlphabetTable, load_alphabet_table, UpperCaseTable, \
-    load_uppercase_table
+from irbis.alphabet import AlphabetTable, load_alphabet_table, \
+    UpperCaseTable, load_uppercase_table
 from irbis.database import DatabaseInfo
 from irbis.direct import DirectAccess, InvertedFile, MstControl, MstField,\
     MstFile, MstEntry, MstLeader, MstRecord, XrfFile, XrfRecord
@@ -35,7 +35,8 @@ from irbis.search import FoundLine, SearchParameters, SearchScenario
 from irbis.specification import FileSpecification
 from irbis.stats import ClientInfo, ServerStat
 from irbis.table import TableDefinition
-from irbis.terms import PostingParameters, TermInfo, TermParameters, TermPosting
+from irbis.terms import PostingParameters, TermInfo, TermParameters, \
+    TermPosting
 from irbis.tree import load_tree_file, TreeFile, TreeNode
 from irbis.user import UserInfo
 from irbis.version import ServerVersion

@@ -5,8 +5,8 @@
 """
 
 from collections import defaultdict
-from irbis._common import ANSI
 from typing import TYPE_CHECKING
+from irbis._common import ANSI
 if TYPE_CHECKING:
     from typing import DefaultDict, Iterable
 

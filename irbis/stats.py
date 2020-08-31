@@ -4,8 +4,8 @@
 Статистика работы сервера.
 """
 
-from irbis.response import ServerResponse
 from typing import TYPE_CHECKING
+from irbis.response import ServerResponse
 if TYPE_CHECKING:
     from typing import Optional
 
@@ -78,7 +78,7 @@ class ServerStat:
                 client.command_number = response.ansi()
                 self.running_clients.append(client)
         else:
-            # TODO: уточнить, требуется ли бросать исключение
+            # Ууточнить, требуется ли бросать исключение
             pass
 
     def __str__(self):

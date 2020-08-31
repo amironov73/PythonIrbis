@@ -4,9 +4,9 @@
 Всё, связанное с поиском.
 """
 
+from typing import TYPE_CHECKING
 from irbis._common import safe_int, safe_str
 from irbis.ini import IniFile
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import List, Optional
 

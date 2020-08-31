@@ -4,9 +4,9 @@
 Пользователи системы.
 """
 
+from typing import TYPE_CHECKING
 from irbis._common import safe_str, same_string
 from irbis.response import ServerResponse
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import List, Optional
 
@@ -42,7 +42,7 @@ class UserInfo:
         :return: List of user infos.
         """
 
-        result: List = []
+        result: 'List' = []
         user_count = response.number()
         lines_per_user = response.number()
         if not user_count or not lines_per_user:

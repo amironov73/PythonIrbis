@@ -8,6 +8,7 @@ import asyncio
 import socket
 import random
 import time
+from typing import TYPE_CHECKING
 
 from irbis._common import ACTUALIZE_RECORD, ALL, CREATE_DATABASE, \
     CREATE_DICTIONARY, DATA, DELETE_DATABASE, EMPTY_DATABASE, FORMAT_RECORD, \
@@ -37,12 +38,11 @@ from irbis.search import FoundLine, SearchParameters, SearchScenario
 from irbis.specification import FileSpecification
 from irbis.stats import ServerStat
 from irbis.table import TableDefinition
-from irbis.terms import PostingParameters, TermInfo, TermPosting, TermParameters
+from irbis.terms import PostingParameters, TermInfo, TermPosting, \
+    TermParameters
 from irbis.tree import TreeFile
 from irbis.version import ServerVersion
 from irbis.user import UserInfo
-
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Any, List, Optional, Tuple, Union
 
@@ -289,7 +289,7 @@ class Connection(ObjectWithError):
             self.execute_forget(query)
             self.connected = False
         else:
-            # TODO: уточнить требуется ли бросать исключение
+            # Ууточнить требуется ли бросать исключение
             pass
 
     async def disconnect_async(self) -> None:
@@ -305,7 +305,7 @@ class Connection(ObjectWithError):
             response.close()
             self.connected = False
         else:
-            # TODO: уточнить, требуется ли бросать исключение
+            # Ууточнить, требуется ли бросать исключение
             pass
 
     def execute(self, query: ClientQuery) -> ServerResponse:
@@ -602,8 +602,10 @@ class Connection(ObjectWithError):
 
         return result
 
-    def list_files(self,
-                   *specification: 'Union[FileSpecification, str]') -> 'List[str]':
+    def list_files(
+        self,
+        *specification: 'Union[FileSpecification, str]',
+    ) -> 'List[str]':
         """
         Получение списка файлов с сервера.
 
@@ -858,8 +860,10 @@ class Connection(ObjectWithError):
                 result = AlphabetTable.get_default()
             return result
 
-    def read_binary_file(self, specification: 'Union[FileSpecification, str]') \
-            -> 'Optional[bytearray]':
+    def read_binary_file(
+        self,
+        specification: 'Union[FileSpecification, str]',
+    ) -> 'Optional[bytearray]':
         """
         Чтение двоичного файла с сервера.
 
@@ -1075,7 +1079,8 @@ class Connection(ObjectWithError):
         response.close()
         return result
 
-    def read_record_postings(self, mfn: int, prefix: str) -> 'List[TermPosting]':
+    def read_record_postings(self, mfn: int, prefix: str) \
+            -> 'List[TermPosting]':
         """
         Получение постингов для указанных записи и префикса.
 
@@ -1232,8 +1237,10 @@ class Connection(ObjectWithError):
         response.close()
         return result
 
-    def read_text_stream(self, specification: 'Union[FileSpecification, str]') \
-            -> ServerResponse:
+    def read_text_stream(
+        self,
+        specification: 'Union[FileSpecification, str]',
+    ) -> ServerResponse:
         """
         Получение текстового файла с сервера в виде потока.
 
@@ -1380,8 +1387,10 @@ class Connection(ObjectWithError):
                 result = AlphabetTable.get_default()
             return result
 
-    def require_menu(self,
-                     specification: 'Union[FileSpecification, str]') -> MenuFile:
+    def require_menu(
+        self,
+        specification: 'Union[FileSpecification, str]',
+    ) -> MenuFile:
         """
         Чтение меню с сервера.
 
@@ -1687,8 +1696,8 @@ class Connection(ObjectWithError):
         return result
 
     # noinspection DuplicatedCode
-    def search_format(self, expression: 'Any',
-                      format_specification: 'Any', limit: int = 0) -> 'List[str]':
+    def search_format(self, expression: 'Any', format_specification: 'Any',
+                      limit: int = 0,) -> 'List[str]':
         """
         Поиск записей с одновременным их расформатированием.
 

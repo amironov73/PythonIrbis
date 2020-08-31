@@ -5,9 +5,9 @@
 """
 
 from typing import TYPE_CHECKING
+from irbis._common import ANSI, STOP_MARKER
 if TYPE_CHECKING:
     from typing import List, Optional
-from irbis._common import ANSI, STOP_MARKER
 
 
 class MenuEntry:

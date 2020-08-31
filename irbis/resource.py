@@ -32,7 +32,7 @@ class ResourceDictionary:
     __slots__ = ('dictionary',)
 
     def __init__(self) -> None:
-        self.dictionary: Dict[str, Resource] = {}
+        self.dictionary: 'Dict[str, Resource]' = {}
 
     def add(self, name: str, content: str) -> 'ResourceDictionary':
         """

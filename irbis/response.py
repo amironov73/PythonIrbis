@@ -5,8 +5,8 @@
 """
 
 import socket
-from irbis._common import ANSI, ObjectWithError, UTF
 from typing import TYPE_CHECKING
+from irbis._common import ANSI, ObjectWithError, UTF
 if TYPE_CHECKING:
     from typing import Any, List, Optional
 

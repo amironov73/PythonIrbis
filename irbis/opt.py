@@ -4,9 +4,9 @@
 Работа с OPT-файлами.
 """
 
-from irbis._common import ANSI, STOP_MARKER
 import re
 from typing import TYPE_CHECKING
+from irbis._common import ANSI, STOP_MARKER
 if TYPE_CHECKING:
     from typing import List, Optional
 

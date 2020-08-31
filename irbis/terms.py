@@ -5,9 +5,9 @@
 """
 
 from typing import TYPE_CHECKING
+from irbis._common import safe_str
 if TYPE_CHECKING:
     from typing import Iterable, List, Optional
-from irbis._common import safe_str
 
 
 class PostingParameters:
@@ -109,7 +109,7 @@ class TermPosting:
             if len(parts) > 4:
                 self.text = parts[4]
         else:
-            # TODO: уточнить, требуется ли бросать исключение
+            # Ууточнить, требуется ли бросать исключение
             pass
 
     def __str__(self):

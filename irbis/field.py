@@ -4,7 +4,7 @@
 Работа с полями.
 """
 
-from typing import TYPE_CHECKING
+from typing import cast, TYPE_CHECKING
 from irbis.subfield import SubField
 if TYPE_CHECKING:
     from irbis.subfield import SubFieldList, SubFieldsDict
@@ -42,7 +42,7 @@ class Field:
 
         elif isinstance(value, list):
             if all((isinstance(element, SubField) for element in value)):
-                self.subfields = value
+                self.subfields = cast('SubFieldList', value)
             else:
                 raise TypeError('All elements must be of the SubField type')
 

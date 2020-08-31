@@ -4,10 +4,10 @@
 Ошибка, специфичная для ИРБИС.
 """
 
-from irbis.specification import FileSpecification
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Union
+    from irbis.specification import FileSpecification
 
 
 def get_error_description(code: int) -> str:

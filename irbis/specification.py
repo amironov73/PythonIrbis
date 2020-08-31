@@ -4,8 +4,8 @@
 Спецификация файла на сервере ИРБИС64.
 """
 
-from irbis._common import SYSTEM
 from typing import TYPE_CHECKING
+from irbis._common import SYSTEM
 if TYPE_CHECKING:
     from typing import Optional
 

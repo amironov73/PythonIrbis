@@ -822,7 +822,6 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(record[200]['a'], 'NewA')
         self.assertEqual(record[200]['b'], 'NewB')
         record[300] = new_value
-        print(len(record.fields))
         self.assertEqual(len(record.fields), 3)
         self.assertIn(300, record.keys())
         self.assertEqual(record.fields[2].value, new_value)

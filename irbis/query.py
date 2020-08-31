@@ -4,9 +4,8 @@
 Клиентский запрос.
 """
 
-
-from irbis._common import ANSI, UTF, prepare_format
 from typing import TYPE_CHECKING
+from irbis._common import ANSI, UTF, prepare_format
 if TYPE_CHECKING:
     from typing import Union, Optional
 

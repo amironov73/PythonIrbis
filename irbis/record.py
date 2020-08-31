@@ -4,10 +4,10 @@
 Работа с записями, полями, подполями.
 """
 
+from typing import cast, TYPE_CHECKING
 from irbis._common import LOGICALLY_DELETED, PHYSICALLY_DELETED
 from irbis.field import Field
 from irbis.subfield import SubField
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Iterable, List, Optional, Set, Union
     from irbis.field import FieldList, FieldValue
@@ -267,7 +267,7 @@ class Record:
                 field.parse(line)
                 self.fields.append(field)
         else:
-            # TODO: уточнить, требуется ли бросать исключение
+            # Ууточнить, требуется ли бросать исключение
             pass
 
     def remove_at(self, index: int) -> 'Record':
@@ -433,10 +433,14 @@ class Record:
         self.fields = [f for f in self.fields if f.tag != key]
         if value:
             if isinstance(value, list):
-                if isinstance(value[0], Field):
+                if all((isinstance(element, Field) for element in value)):
+                    value = cast('FieldList', value)
                     self.fields += value
                 else:
-                    self.fields += [Field(key, v) for v in value]
+                    self.fields += [
+                        Field(key, cast('FieldValue', v))
+                        for v in value
+                    ]
 
             elif isinstance(value, Field):
                 self.fields.append(value)
@@ -536,7 +540,7 @@ class RawRecord:
             for line in text[2:]:
                 self.fields.append(line)
         else:
-            # TODO: уточнить, требуется ли бросать исключение
+            # Ууточнить, требуется ли бросать исключение
             pass
 
     def remove_at(self, index: int) -> 'RawRecord':

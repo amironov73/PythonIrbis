@@ -4,9 +4,9 @@
 Работа с алфавитной таблицей.
 """
 
-from irbis._common import ANSI
 import re
 from typing import TYPE_CHECKING
+from irbis._common import ANSI
 if TYPE_CHECKING:
     from typing import Dict, Generator, List
 
@@ -147,7 +147,7 @@ class UpperCaseTable:
     __slots__ = ('mapping',)
 
     def __init__(self) -> None:
-        self.mapping: Dict = dict()
+        self.mapping: 'Dict' = dict()
 
     @staticmethod
     def get_default():
@@ -437,7 +437,7 @@ class UpperCaseTable:
                 self.mapping[lower] = upper
         else:
             # Попалась пустая таблица
-            # TODO: Уточнить, требуется ли бросать исключение
+            # УУточнить, требуется ли бросать исключение
             pass
 
     def upper(self, text: str) -> str:

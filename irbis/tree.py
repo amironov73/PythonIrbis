@@ -4,8 +4,8 @@
 Работа с TRE-файлами.
 """
 
-from irbis._common import ANSI, safe_str
 from typing import TYPE_CHECKING
+from irbis._common import ANSI, safe_str
 if TYPE_CHECKING:
     from typing import Iterable, List, Optional
 
@@ -18,7 +18,7 @@ class TreeNode:
     __slots__ = 'children', 'value', 'level'
 
     def __init__(self, value: 'Optional[str]' = None, level: int = 0) -> None:
-        self.children: List = []
+        self.children: 'List' = []
         self.value: 'Optional[str]' = value
         self.level: int = level
 

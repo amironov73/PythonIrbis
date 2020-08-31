@@ -7,11 +7,10 @@ Reading and writing plain text files in IRBIS format.
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-statements
 
+from typing import TYPE_CHECKING
 from irbis._common import ANSI, STOP_MARKER, safe_str
 from irbis.error import IrbisError
 from irbis.record import SubField, Field, Record
-
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Iterable, Optional, List
 

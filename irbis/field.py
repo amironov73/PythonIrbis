@@ -453,6 +453,12 @@ class Field:
 
         return self.first_value(code) or ''
 
+    def get(self, key, default=None):
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            return default
+
     def __setitem__(self, key: 'Union[str, int]', value: 'Optional[str]'):
         if isinstance(key, int):
             if value:

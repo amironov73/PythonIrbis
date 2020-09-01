@@ -6,6 +6,7 @@
 
 from typing import cast, TYPE_CHECKING
 from irbis._common import LOGICALLY_DELETED, PHYSICALLY_DELETED
+from irbis.abstract import DictLike, Hashable
 from irbis.field import Field
 from irbis.subfield import SubField
 if TYPE_CHECKING:
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
     RecordValue = Union[Field, FieldList, FieldValue, List[str]]
 
 
-class Record:
+class Record(DictLike, Hashable):
     """
     MARC record with MFN, status, version and fields.
     """
@@ -289,8 +290,7 @@ class Record:
         :param tag: Метка поля.
         :return: Self.
         """
-        assert tag > 0
-        self.fields = [f for f in self.fields if f.tag != tag]
+        self.__delitem__(tag)
         return self
 
     def reset(self) -> 'Record':
@@ -421,12 +421,6 @@ class Record:
 
         return ''
 
-    def get(self, key, default=None):
-        try:
-            return self.__getitem__(key)
-        except KeyError:
-            return default
-
     def __setitem__(self, key: int, value: 'RecordValue') -> None:
         """
         Присвоение поля или полей по указанной метке
@@ -455,14 +449,22 @@ class Record:
             else:
                 self.fields.append(Field(key, value))
 
+    def __delitem__(self, key):
+        """
+        Метод удаления всех полей с указанной меткой. Может вызываться
+        следующим образом -- del field[key].
+
+        :param key: числовая метка
+        :return:
+        """
+        assert key > 0
+        self.fields = [f for f in self.fields if f.tag != key]
+
     def __len__(self):
         return len(self.fields)
 
     def __bool__(self):
         return bool(self.fields)
-
-    def __eq__(self, other):
-        return hash(self) == hash(other)
 
     def __hash__(self):
         return hash(tuple(self.fields))

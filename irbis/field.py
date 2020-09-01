@@ -5,6 +5,7 @@
 """
 
 from typing import cast, TYPE_CHECKING
+from irbis.abstract import DictLike, Hashable
 from irbis.subfield import SubField
 if TYPE_CHECKING:
     from irbis.subfield import SubFieldList, SubFieldsDict
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
                        SubFieldsDict, str, None]
 
 
-class Field:
+class Field(DictLike, Hashable):
     """
     MARC record field with tag, value (up to the first delimiter)
     and subfields.
@@ -336,9 +337,7 @@ class Field:
         :param code: Код для удаления.
         :return: Self
         """
-        assert code
-        code = code.lower()
-        self.subfields = [sf for sf in self.subfields if sf.code != code]
+        self.__delitem__(code)
         return self
 
     def replace_subfield(self, code: str, old_value: 'Optional[str]',
@@ -453,12 +452,6 @@ class Field:
 
         return self.first_value(code) or ''
 
-    def get(self, key, default=None):
-        try:
-            return self.__getitem__(key)
-        except KeyError:
-            return default
-
     def __setitem__(self, key: 'Union[str, int]', value: 'Optional[str]'):
         if isinstance(key, int):
             if value:
@@ -477,14 +470,23 @@ class Field:
                 if found:
                     self.subfields.remove(found)
 
+    def __delitem__(self, key: str):
+        """
+        Метод удаления всех подполей с указанным кодом. Может вызываться
+        следующим образом -- del field[key].
+
+        :param key: строковый код
+        :return:
+        """
+        assert key
+        key = key.lower()
+        self.subfields = [sf for sf in self.subfields if sf.code != key]
+
     def __len__(self):
         return len(self.subfields)
 
     def __bool__(self):
         return bool(self.tag) and (bool(self.value) or bool(self.subfields))
-
-    def __eq__(self, other):
-        return hash(self) == hash(other)
 
     def __hash__(self):
         return hash((self.tag, self.value or tuple(self.subfields)))

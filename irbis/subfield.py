@@ -5,6 +5,7 @@
 """
 
 from typing import TYPE_CHECKING
+from irbis.abstract import Hashable
 if TYPE_CHECKING:
     from typing import Dict, List, Optional
 
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
     SubFieldsDict = Dict[str, str]
 
 
-class SubField:
+class SubField(Hashable):
     """
     MARC record subfield with code and text value.
     """
@@ -53,9 +54,6 @@ class SubField:
 
     def __bool__(self):
         return self.code != self.DEFAULT_CODE and bool(self.value)
-
-    def __eq__(self, other):
-        return hash(self) == hash(other)
 
     def __hash__(self):
         return hash((self.code, self.value))

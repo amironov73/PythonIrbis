@@ -337,16 +337,8 @@ class Field:
         :return: Self
         """
         assert code
-
         code = code.lower()
-        index = 0
-        while index < len(self.subfields):
-            subfield = self.subfields[index]
-            if subfield.code == code:
-                self.subfields.remove(subfield)
-            else:
-                index += 1
-
+        self.subfields = [sf for sf in self.subfields if sf.code != code]
         return self
 
     def replace_subfield(self, code: str, old_value: 'Optional[str]',

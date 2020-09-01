@@ -290,15 +290,7 @@ class Record:
         :return: Self.
         """
         assert tag > 0
-
-        index = 0
-        while index < len(self.fields):
-            field = self.fields[index]
-            if field.tag == tag:
-                self.fields.remove(field)
-            else:
-                index += 1
-
+        self.fields = [f for f in self.fields if f.tag != tag]
         return self
 
     def reset(self) -> 'Record':
@@ -410,8 +402,8 @@ class Record:
         """
         Получение значения поля по индексу
 
-        :param tag: числовая метка поля
-        :return: словарь, список словарей или строку со значением поля
+        :param tag: числовая метка полей
+        :return: значение полей (словарь, список словарей или строка)
         """
         def get_str_or_dict(field):
             if field.subfields:
@@ -430,7 +422,16 @@ class Record:
         return ''
 
     def __setitem__(self, key: int, value: 'RecordValue') -> None:
-        self.fields = [f for f in self.fields if f.tag != key]
+        """
+        Присвоение поля или полей по указанной метке
+
+        :param key: числовая метка полей
+        :param value: поле или список полей (dict, Field и др.)
+        :return: None
+        """
+
+        self.remove_field(key)
+
         if value:
             if isinstance(value, list):
                 if all((isinstance(element, Field) for element in value)):

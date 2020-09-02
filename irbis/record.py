@@ -44,16 +44,12 @@ class Record(DictLike, Hashable):
         :return: Свежедобавленное поле
         """
         assert tag > 0
+        field = Field(tag, value)
 
-        if isinstance(value, str):
-            result = Field(tag, value)
-        else:
-            result = Field(tag)
-            if isinstance(value, SubField):
-                result.subfields.append(value)
-
-        self.fields.append(result)
-        return result
+        if field in self.fields:
+            raise ValueError(f'Field "{field}" already added')
+        self.fields.append(field)
+        return field
 
     def add_non_empty(self, tag: int,
                       value: 'Union[str, SubField]') -> 'Record':

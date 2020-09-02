@@ -72,8 +72,10 @@ class Field(DictLike, Hashable):
         :return: Self
         """
         assert len(code) == 1
-
-        self.subfields.append(SubField(code, value))
+        subfield = SubField(code, value)
+        if subfield in self.subfields:
+            raise ValueError(f'SubField "{subfield}" already added')
+        self.subfields.append(subfield)
         return self
 
     def add_non_empty(self, code: str, value: 'Optional[str]') -> 'Field':

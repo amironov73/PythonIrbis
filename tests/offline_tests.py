@@ -190,6 +190,13 @@ class TestField(unittest.TestCase):
         self.assertEqual(field.subfields[0].code, 'a')
         self.assertEqual(field.subfields[0].value, 'Some text')
 
+    def test_add_duplicate_1(self):
+        field = Field()
+        field.add('a', 'Some text')
+        subfield = SubField('a', 'Some text')
+        self.assertIn(subfield, field.subfields)
+        self.assertRaises(ValueError, field.add, 'a', 'Some text')
+
     def test_add_non_empty_1(self):
         field = Field()
         field.add_non_empty('a', None)
@@ -580,6 +587,13 @@ class TestMarcRecord(unittest.TestCase):
         record.add(100).add('a', 'SubA').add('b', 'SubB')
         self.assertEqual(len(record.fields), 1)
         self.assertEqual(len(record.fields[0].subfields), 2)
+
+    def test_add_duplicate_1(self):
+        record = Record()
+        record.add(100, 'Some value')
+        field = Field(100, 'Some value')
+        self.assertIn(field, record.fields)
+        self.assertRaises(ValueError, record.add, 100, 'Some value')
 
     def test_all_1(self):
         record = Record()

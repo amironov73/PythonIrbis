@@ -410,6 +410,20 @@ class TestField(unittest.TestCase):
         field['c'] = None
         self.assertEqual(len(field.subfields), 0)
 
+    def test_eq_1(self):
+        f1 = Field(100, 'Value 100-A')
+        f2 = Field(100, 'Value 100-A')
+        f3 = Field(100, 'Value 100-B')
+        self.assertEqual(f1, f2)
+        self.assertNotEqual(f2, f3)
+
+    def test_eq_2(self):
+        f1 = Field(700, {'a': 'A', 'g': 'G', 'b': 'B'})
+        f2 = Field(700, {'b': 'B', 'a': 'A', 'g': 'G'})
+        f3 = Field(700, {'a': 'X', 'g': 'G', 'b': 'B'})
+        self.assertEqual(f1, f2)
+        self.assertNotEqual(f2, f3)
+
     def test_len_1(self):
         field = Field(100, SubField('a', 'SubA')).add('b', 'SubB')
         self.assertEqual(len(field), 2)
@@ -518,6 +532,10 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(len(record.fields), 2)
         self.assertEqual(record.fields[0].tag, 100)
         self.assertEqual(record.fields[1].tag, 200)
+
+    def test_init_3(self):
+        subfield = SubField('a', 'A')
+        self.assertRaises(TypeError, Record, subfield)
 
     def test_set_item_1(self):
         record = Record()
@@ -847,6 +865,37 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(len(record.fields), 1)
         record[200] = None
         self.assertEqual(len(record.fields), 0)
+
+    def test_eq_1(self):
+        r1 = Record(
+            Field(100, 'Value 100-A'),
+            Field(701, {'a': 'A1', 'g': 'G1', 'b': 'B1'}),
+            Field(701, {'a': 'A2', 'g': 'G2', 'b': 'B2'}),
+        )
+        r2 = Record(
+            Field(701, {'g': 'G2', 'b': 'B2', 'a': 'A2'}),
+            Field(701, {'b': 'B1', 'a': 'A1', 'g': 'G1'}),
+            Field(100, 'Value 100-A'),
+        )
+        r3 = Record(
+            Field(100, 'Value 100-B'),
+            Field(701, {'g': 'G2', 'b': 'B2', 'a': 'A2'}),
+            Field(701, {'b': 'B1', 'a': 'A1', 'g': 'G1'}),
+        )
+        r4 = Record(
+            Field(100, 'Value 100-A'),
+            Field(701, {'g': 'X', 'b': 'B2', 'a': 'A2'}),
+            Field(701, {'b': 'B1', 'a': 'A1', 'g': 'G1'}),
+        )
+        r5 = Record(
+            Field(100, 'Value 100-A'),
+            Field(701, {'g': 'G2', 'b': 'B2', 'a': 'A2'}),
+            Field(701, {'b': 'B1', 'a': 'A1'}),
+        )
+        self.assertEqual(r1, r2)
+        self.assertNotEqual(r2, r3)
+        self.assertNotEqual(r2, r4)
+        self.assertNotEqual(r2, r5)
 
     def test_len_1(self):
         record = Record()

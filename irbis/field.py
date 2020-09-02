@@ -8,12 +8,12 @@ from typing import cast, TYPE_CHECKING
 from irbis.abstract import DictLike, Hashable
 from irbis.subfield import SubField
 if TYPE_CHECKING:
-    from irbis.subfield import SubFieldList, SubFieldsDict
+    from irbis.subfield import SubFieldList, SubFieldDict
     from typing import Iterable, List, Optional, Set, Union
 
     FieldList = List['Field']
-    FieldValue = Union[SubField, SubFieldList, List[SubFieldsDict],
-                       SubFieldsDict, str, None]
+    FieldValue = Union[SubField, SubFieldList, List[SubFieldDict],
+                       SubFieldDict, str, None]
 
 
 class Field(DictLike, Hashable):
@@ -489,4 +489,8 @@ class Field(DictLike, Hashable):
         return bool(self.tag) and (bool(self.value) or bool(self.subfields))
 
     def __hash__(self):
-        return hash((self.tag, self.value or tuple(self.subfields)))
+        if self.value:
+            return hash((self.tag, self.value))
+        sorted_subfields = sorted(self.subfields, key=lambda sf: sf.code)
+        subfields_hashes = tuple(hash(sf) for sf in sorted_subfields)
+        return hash((self.tag, subfields_hashes))

@@ -10,7 +10,7 @@ from irbis.abstract import DictLike, Hashable
 from irbis.field import Field
 from irbis.subfield import SubField
 if TYPE_CHECKING:
-    from typing import Iterable, List, Optional, Set, Union
+    from typing import List, Optional, Set, Union
     from irbis.field import FieldList, FieldValue
 
     RecordValue = Union[Field, FieldList, FieldValue, List[str]]
@@ -29,7 +29,10 @@ class Record(DictLike, Hashable):
         self.version: int = 0
         self.status: int = 0
         self.fields: 'FieldList' = []
-        self.fields.extend(fields)
+        if all((isinstance(f, Field) for f in fields)):
+            self.fields += list(fields)
+        else:
+            raise TypeError('All args must be Field type')
 
     def add(self, tag: int, value: 'Union[str, SubField]' = None) \
             -> 'Field':
@@ -381,14 +384,14 @@ class Record(DictLike, Hashable):
         for key, value in accumulator.items():
             yield key, value
 
-    def __iadd__(self, other: 'Union[Field, Iterable[Field]]'):
+    def __iadd__(self, other: 'Union[Field, FieldList]'):
         if isinstance(other, Field):
             self.fields.append(other)
         else:
             self.fields.extend(other)
         return self
 
-    def __isub__(self, other: 'Union[Field, Iterable[Field]]'):
+    def __isub__(self, other: 'Union[Field, FieldList]'):
         if isinstance(other, Field):
             if other in self.fields:
                 self.fields.remove(other)
@@ -467,7 +470,9 @@ class Record(DictLike, Hashable):
         return bool(self.fields)
 
     def __hash__(self):
-        return hash(tuple(self.fields))
+        sorted_fields = sorted(self.fields, key=hash)
+        subfields_hashes = tuple(hash(f) for f in sorted_fields)
+        return hash(subfields_hashes)
 
 
 class RawRecord:

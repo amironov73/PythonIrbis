@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from typing import Dict, List, Optional
 
     SubFieldList = List['SubField']
-    SubFieldsDict = Dict[str, str]
+    SubFieldDict = Dict[str, str]
 
 
 class SubField(Hashable):

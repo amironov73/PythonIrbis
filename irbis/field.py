@@ -241,14 +241,11 @@ class Field(DictLike, Hashable):
         :param code: Искомый код подполя (должен быть однобуквенным).
         :return: True, если есть хотя бы одно подполе с указанным кодом.
         """
-        assert len(code) == 1
-
-        code = code.lower()
-        for subfield in self.subfields:
-            if subfield.code == code:
-                return True
-
-        return False
+        if not isinstance(code, str):
+            raise ValueError('сode argument must be str type')
+        if len(code) != 1:
+            raise ValueError('сode argument must be one char')
+        return code.lower() in self.keys()
 
     def headless_parse(self, line: str) -> None:
         """

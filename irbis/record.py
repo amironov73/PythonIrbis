@@ -204,13 +204,11 @@ class Record(DictLike, Hashable):
         :param tag: Искомая метка поля.
         :return: True или False.
         """
-        assert tag > 0
-
-        for field in self.fields:
-            if field.tag == tag:
-                return True
-
-        return False
+        if not isinstance(tag, int):
+            raise ValueError('tag argument must be int type')
+        if tag <= 0:
+            raise ValueError('tag argument must be greater than 0')
+        return tag in self.keys()
 
     def insert_at(self, index: int, tag: int, value: 'Optional[str]' = None) \
             -> 'Field':

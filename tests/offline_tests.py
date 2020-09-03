@@ -802,78 +802,25 @@ class TestMarcRecord(unittest.TestCase):
     @staticmethod
     def get_record():
         return Record(
-            Field(100, 'Value 100-A'),
-            Field(200, 'Value 200-A'),
-            Field(200, 'Value 200-B'),
-            Field(701, {'a': 'A1', 'g': 'G1', 'b': 'B1'}),
-            Field(701, {'a': 'A2', 'g': 'G2', 'b': 'B2'}),
+            Field(101, 'Value 101 1'),
+            Field(610, 'Value 610 1'),
+            Field(610, 'Value 610 2'),
+            Field(700, {'a': '700 1 A', 'g': '700 1 G', 'b': '700 1 B'}),
+            Field(701, {'a': '701 1 A', 'g': '701 1 G', 'b': '701 1 B'}),
+            Field(701, {'a': '701 2 A', 'g': '701 2 G', 'b': '701 2 B'}),
         )
 
     @staticmethod
     def get_record_dict():
         return {
-            100: 'Value 100-A',
-            200: ['Value 200-A', 'Value 200-B'],
-            701: [{'b': 'B1', 'g': 'G1', 'a': 'A1'},
-                  {'b': 'B2', 'g': 'G2', 'a': 'A2'},
+            101: 'Value 101 1',
+            610: ['Value 610 1', 'Value 610 2'],
+            700: {'a': '700 1 A', 'g': '700 1 G', 'b': '700 1 B'},
+            701: [
+                {'a': '701 1 A', 'g': '701 1 G', 'b': '701 1 B'},
+                {'a': '701 2 A', 'g': '701 2 G', 'b': '701 2 B'},
             ],
         }
-
-    def test_eq_1(self):
-        origin = self.get_record()
-        reordered = Record(
-            Field(200, 'Value 200-A'),
-            Field(701, {'g': 'G2', 'b': 'B2', 'a': 'A2'}),
-            Field(200, 'Value 200-B'),
-            Field(701, {'b': 'B1', 'a': 'A1', 'g': 'G1'}),
-            Field(100, 'Value 100-A'),
-        )
-        self.assertEqual(origin, reordered)
-
-    def test_eq_2(self):
-        origin = self.get_record()
-        changed = self.get_record()
-        changed[100] = 'Value 100-B'
-        self.assertNotEqual(origin, changed)
-
-    def test_eq_3(self):
-        origin = self.get_record()
-        changed = self.get_record()
-        changed[200] = 'Value 200-A'
-        self.assertNotEqual(origin, changed)
-
-    def test_eq_4(self):
-        origin = self.get_record()
-        changed = self.get_record()
-        changed[200] = ['Value 200-A', 'Value 200-C']
-        self.assertNotEqual(origin, changed)
-
-    def test_eq_5(self):
-        origin = self.get_record()
-        changed = self.get_record()
-        changed[701] = [
-            {'a': 'A3', 'g': 'G1', 'b': 'B1'},
-            {'a': 'A2', 'g': 'G2', 'b': 'B1'}
-        ]
-        self.assertNotEqual(origin, changed)
-
-    def test_eq_6(self):
-        origin = self.get_record()
-        changed = self.get_record()
-        changed[701] = [
-            {'a': 'A1', 'g': 'G1', 'b': 'B1'},
-            {'a': 'A2', 'g': 'G2'}
-        ]
-        self.assertNotEqual(origin, changed)
-
-    def test_getitem_1(self):
-        record = Record()
-        record.add(100, 'Field 100')
-        field = Field(200).add('a', 'SubA').add('b', 'SubB')
-        record.fields.append(field)
-        self.assertEqual(record[100], 'Field 100')
-        self.assertEqual(record[200]['a'], 'SubA')
-        self.assertEqual(record[300], '')
 
     def test_setitem_1(self):
         d1 = self.get_record_dict()
@@ -885,6 +832,74 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(d1, d2)
         self.assertEqual(r1, r2)
 
+    def test_setitem_and_eq_1(self):
+        origin = self.get_record()
+        reordered = Record()
+        reordered[610] = ['Value 610 2', 'Value 610 1']
+        reordered[700] = {'g': '700 1 G', 'a': '700 1 A', 'b': '700 1 B'}
+        reordered[101] = 'Value 101 1'
+        reordered[701] = [
+            {'a': '701 2 A', 'b': '701 2 B', 'g': '701 2 G'},
+            {'b': '701 1 B', 'a': '701 1 A', 'g': '701 1 G'},
+        ]
+        self.assertEqual(origin, reordered)
+
+    def test_setitem_and_eq_2(self):
+        origin = self.get_record()
+        changed = self.get_record()
+        changed[101] = 'Value 101 3'
+        self.assertNotEqual(origin, changed)
+
+    def test_setitem_and_eq_3(self):
+        origin = self.get_record()
+        changed = self.get_record()
+        changed[610] = 'Value 610 3'
+        self.assertNotEqual(origin, changed)
+
+    def test_setitem_and_eq_4(self):
+        origin = self.get_record()
+        changed = self.get_record()
+        changed[610] = ['Value 610 1', 'Value 610 3']
+        self.assertNotEqual(origin, changed)
+
+    def test_setitem_and_eq_5(self):
+        origin = self.get_record()
+        changed = self.get_record()
+        changed[700] = {'a': '700 3 A', 'g': '700 1 G', 'b': '700 1 B'}
+        self.assertNotEqual(origin, changed)
+
+    def test_setitem_and_eq_6(self):
+        origin = self.get_record()
+        changed = self.get_record()
+        changed[700] = {'g': '700 1 G', 'b': '700 1 B'}
+        self.assertNotEqual(origin, changed)
+
+    def test_setitem_and_eq_7(self):
+        origin = self.get_record()
+        changed = self.get_record()
+        changed[701] = [
+            {'a': '701 3 A', 'g': '701 1 G', 'b': '701 1 B'},
+            {'a': '701 2 A', 'g': '701 2 G', 'b': '701 2 B'},
+        ]
+        self.assertNotEqual(origin, changed)
+
+    def test_setitem_and_eq_8(self):
+        origin = self.get_record()
+        changed = self.get_record()
+        changed[701] = [
+            {'a': '701 1 A', 'g': '701 1 G', 'b': '701 1 B'},
+            {'a': '701 2 A', 'g': '701 2 G'},
+        ]
+        self.assertNotEqual(origin, changed)
+
+    def test_getitem_1(self):
+        record = Record()
+        record.add(100, 'Field 100')
+        field = Field(200).add('a', 'SubA').add('b', 'SubB')
+        record.fields.append(field)
+        self.assertEqual(record[100], 'Field 100')
+        self.assertEqual(record[200]['a'], 'SubA')
+        self.assertEqual(record[300], '')
     def test_len_1(self):
         record = Record()
         self.assertEqual(len(record), 0)

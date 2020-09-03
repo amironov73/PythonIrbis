@@ -4,35 +4,167 @@
 Работа с записями, полями, подполями.
 """
 
+from abc import ABCMeta, abstractmethod
 from typing import cast, TYPE_CHECKING
 from irbis._common import LOGICALLY_DELETED, PHYSICALLY_DELETED
 from irbis.abstract import DictLike, Hashable
 from irbis.field import Field
 from irbis.subfield import SubField
 if TYPE_CHECKING:
-    from typing import List, Optional, Set, Union
+    from typing import Any, List, Optional, Set, Union, Type
     from irbis.field import FieldList, FieldValue
 
     RecordValue = Union[Field, FieldList, FieldValue, List[str]]
 
 
-class Record(DictLike, Hashable):
+class AbstractRecord:
+    """
+    Абстрактный класс с общими свойствами и методами для классов Record
+    и RawRecord.
+    """
+    __metaclass__ = ABCMeta
+    field_type: 'Any'
+
+    @abstractmethod
+    def __init__(self, *fields: 'Union[Field, str]'):
+        self.database: 'Optional[str]' = None
+        self.mfn = 0
+        self.version = 0
+        self.status = 0
+        self.fields: 'Any' = []
+        if all((isinstance(f, self.field_type) for f in fields)):
+            self.fields += list(fields)
+        else:
+            message = f'All args must be {self.field_type.__name__} type'
+            raise TypeError(message)
+
+    def clear(self) -> 'AbstractRecord':
+        """
+        Очистка записи (удаление всех полей).
+
+        :return: Self
+        """
+        self.fields.clear()
+        return self
+
+    def clone(self) -> 'AbstractRecord':
+        """
+        Клонирование записи.
+
+        :return: Полный клон записи
+        """
+        result = RawRecord()
+        result.database = self.database
+        result.mfn = self.mfn
+        result.status = self.status
+        result.version = self.version
+        result.fields = self.clone_fields()
+        return result
+
+    @abstractmethod
+    def clone_fields(self) -> 'List[Any]':
+        """
+        Абстрактный метод клонирования полей записи
+        :return: список полей
+        """
+
+    def encode(self) -> 'List[str]':
+        """
+        Кодирование записи в серверное представление.
+
+        :return: Список строк
+        """
+        result = [str(self.mfn) + '#' + str(self.status),
+                  '0#' + str(self.version)]
+        for field in self.fields:
+            result.append(str(field))
+        return result
+
+    def is_deleted(self) -> bool:
+        """
+        Удалена ли запись?
+        :return: True для удаленной записи
+        """
+        return (self.status & (LOGICALLY_DELETED | PHYSICALLY_DELETED)) != 0
+
+    def parse(self, text: 'List[str]') -> None:
+        """
+        Разбор текстового представления записи (в серверном формате).
+
+        :param text: Список строк
+        :return: None
+        """
+        if text:
+            line = text[0]
+            parts = line.split('#')
+            self.mfn = int(parts[0])
+            if len(parts) != 1 and parts[1]:
+                self.status = int(parts[1])
+            line = text[1]
+            parts = line.split('#')
+            self.version = int(parts[1])
+            self.fields.clear()
+            for line in text[2:]:
+                self.parse_line(line)
+        else:
+            raise ValueError('text argument is empty')
+
+    @abstractmethod
+    def parse_line(self, line: str) -> None:
+        """
+        Абстрактный метод разбора строки из текстового представления записи
+        (в серверном формате). Реализуется у дочерних классов Record
+        и RawRecord.
+
+        :param line: строка
+        :return: None
+        """
+
+    def remove_at(self, index: int) -> 'AbstractRecord':
+        """
+        Удаление поля в указанной позиции.
+
+        :param index: Позиция для удаления.
+        :return: self
+        """
+        assert 0 <= index < len(self.fields)
+
+        self.fields.remove(self.fields[index])
+        return self
+
+    def reset(self) -> 'AbstractRecord':
+        """
+        Сбрасывает состояние записи, отвязывая её от базы данных.
+        Поля при этом остаются нетронутыми.
+        :return: Self.
+        """
+        self.mfn = 0
+        self.status = 0
+        self.version = 0
+        self.database = None
+        return self
+
+    def __bool__(self):
+        return bool(len(self.fields))
+
+    def __len__(self):
+        return len(self.fields)
+
+    def __str__(self):
+        result = [str(field) for field in self.fields]
+        return '\n'.join(result)
+
+
+class Record(AbstractRecord, DictLike, Hashable):
     """
     MARC record with MFN, status, version and fields.
     """
-
     __slots__ = 'database', 'mfn', 'version', 'status', 'fields'
+    fields: 'List[Field]'
 
     def __init__(self, *fields: 'Field') -> None:
-        self.database: 'Optional[str]' = None
-        self.mfn: int = 0
-        self.version: int = 0
-        self.status: int = 0
-        self.fields: 'FieldList' = []
-        if all((isinstance(f, Field) for f in fields)):
-            self.fields += list(fields)
-        else:
-            raise TypeError('All args must be Field type')
+        self.field_type: 'Type[Field]' = Field
+        super().__init__(*fields)
 
     def add(self, tag: int, value: 'Union[str, SubField]' = None) \
             -> 'Field':
@@ -44,7 +176,7 @@ class Record(DictLike, Hashable):
         :return: Свежедобавленное поле
         """
         assert tag > 0
-        field = Field(tag, value)
+        field = self.field_type(tag, value)
 
         if field in self.fields:
             raise ValueError(f'Field "{field}" already added')
@@ -64,9 +196,9 @@ class Record(DictLike, Hashable):
 
         if value:
             if isinstance(value, str):
-                field = Field(tag, value)
+                field = self.field_type(tag, value)
             else:
-                field = Field(tag)
+                field = self.field_type(tag)
                 if isinstance(value, SubField):
                     field.subfields.append(value)
 
@@ -96,40 +228,8 @@ class Record(DictLike, Hashable):
 
         return [f.to_dict() for f in self.fields if f.tag == tag]
 
-    def clear(self) -> 'Record':
-        """
-        Очистка записи (удаление всех полей).
-
-        :return: Self
-        """
-        self.fields.clear()
-        return self
-
-    def clone(self) -> 'Record':
-        """
-        Клонирование записи.
-
-        :return: Полный клон записи
-        """
-        result = Record()
-        result.database = self.database
-        result.mfn = self.mfn
-        result.status = self.status
-        result.version = self.version
-        result.fields = [field.clone() for field in self.fields]
-        return result
-
-    def encode(self) -> 'List[str]':
-        """
-        Кодирование записи в серверное представление.
-
-        :return: Список строк
-        """
-        result = [str(self.mfn) + '#' + str(self.status),
-                  '0#' + str(self.version)]
-        for field in self.fields:
-            result.append(str(field))
-        return result
+    def clone_fields(self) -> 'FieldList':
+        return [field.clone() for field in self.fields]
 
     def fm(self, tag: int, code: str = '') -> 'Optional[str]':
         """
@@ -223,16 +323,9 @@ class Record(DictLike, Hashable):
         assert 0 <= index < len(self.fields)
         assert tag > 0
 
-        result = Field(tag, value)
+        result = self.field_type(tag, value)
         self.fields.insert(index, result)
         return result
-
-    def is_deleted(self) -> bool:
-        """
-        Удалена ли запись?
-        :return: True для удаленной записи
-        """
-        return (self.status & (LOGICALLY_DELETED | PHYSICALLY_DELETED)) != 0
 
     def keys(self) -> 'Set[int]':
         """
@@ -242,43 +335,10 @@ class Record(DictLike, Hashable):
         """
         return set(field.tag for field in self.fields)
 
-    # noinspection DuplicatedCode
-    def parse(self, text: 'List[str]') -> None:
-        """
-        Разбор текстового представления записи (в серверном формате).
-
-        :param text: Список строк
-        :return: None
-        """
-        if text:
-            line = text[0]
-            parts = line.split('#')
-            self.mfn = int(parts[0])
-            if len(parts) != 1 and parts[1]:
-                self.status = int(parts[1])
-            line = text[1]
-            parts = line.split('#')
-            self.version = int(parts[1])
-            self.fields.clear()
-            for line in text[2:]:
-                field = Field()
-                field.parse(line)
-                self.fields.append(field)
-        else:
-            # Ууточнить, требуется ли бросать исключение
-            pass
-
-    def remove_at(self, index: int) -> 'Record':
-        """
-        Удаление поля в указанной позиции.
-
-        :param index: Позиция для удаления.
-        :return: Self
-        """
-        assert 0 <= index < len(self.fields)
-
-        self.fields.remove(self.fields[index])
-        return self
+    def parse_line(self, line: str) -> None:
+        field = self.field_type()
+        field.parse(line)
+        self.fields.append(field)
 
     def remove_field(self, tag: int) -> 'Record':
         """
@@ -288,18 +348,6 @@ class Record(DictLike, Hashable):
         :return: Self.
         """
         self.__delitem__(tag)
-        return self
-
-    def reset(self) -> 'Record':
-        """
-        Сбрасывает состояние записи, отвязывая её от базы данных.
-        Поля при этом остаются нетронутыми.
-        :return: Self.
-        """
-        self.mfn = 0
-        self.status = 0
-        self.version = 0
-        self.database = None
         return self
 
     def set_field(self, tag: int, value: 'Optional[str]') -> 'Record':
@@ -316,7 +364,7 @@ class Record(DictLike, Hashable):
         found = self.first(tag)
         if value:
             if not found:
-                found = Field(tag)
+                found = self.field_type(tag)
                 self.fields.append(found)
             found.value = value
         else:
@@ -342,16 +390,12 @@ class Record(DictLike, Hashable):
         found = self.first(tag)
         if value:
             if not found:
-                found = Field(tag)
+                found = self.field_type(tag)
                 self.fields.append(found)
         if found:
             found.set_subfield(code, value)
 
         return self
-
-    def __str__(self):
-        result = [str(field) for field in self.fields]
-        return '\n'.join(result)
 
     def __iter__(self):
         """
@@ -426,9 +470,7 @@ class Record(DictLike, Hashable):
         :param value: поле или список полей (dict, Field и др.)
         :return: None
         """
-
         self.remove_field(key)
-
         if value:
             if isinstance(value, list):
                 if all((isinstance(element, Field) for element in value)):
@@ -436,15 +478,12 @@ class Record(DictLike, Hashable):
                     self.fields += value
                 else:
                     self.fields += [
-                        Field(key, cast('FieldValue', v))
-                        for v in value
-                    ]
-
+                        self.field_type(key, cast('FieldValue', v))
+                        for v in value]
             elif isinstance(value, Field):
                 self.fields.append(value)
-
             else:
-                self.fields.append(Field(key, value))
+                self.fields.append(self.field_type(key, value))
 
     def __delitem__(self, key):
         """
@@ -457,136 +496,28 @@ class Record(DictLike, Hashable):
         assert key > 0
         self.fields = [f for f in self.fields if f.tag != key]
 
-    def __len__(self):
-        return len(self.fields)
-
-    def __bool__(self):
-        return bool(self.fields)
-
     def __hash__(self):
         sorted_fields = sorted(self.fields, key=hash)
         subfields_hashes = tuple(hash(f) for f in sorted_fields)
         return hash(subfields_hashes)
 
 
-class RawRecord:
+class RawRecord(AbstractRecord):
     """
     Запись с нераскодированными полями/подполями.
     """
-
     __slots__ = 'database', 'mfn', 'status', 'version', 'fields'
+    fields: 'List[str]'
 
     def __init__(self, *fields: str) -> None:
-        self.database: 'Optional[str]' = None
-        self.mfn: int = 0
-        self.version: int = 0
-        self.status: int = 0
-        self.fields: 'List[str]' = []
-        self.fields.extend(fields)
+        self.field_type = str
+        super().__init__(*fields)
 
-    def clear(self) -> 'RawRecord':
-        """
-        Очистка записи (удаление всех полей).
+    def clone_fields(self) -> 'List[str]':
+        return self.fields.copy()
 
-        :return: Self
-        """
-        self.fields.clear()
-        return self
-
-    def clone(self) -> 'RawRecord':
-        """
-        Клонирование записи.
-
-        :return: Полный клон записи
-        """
-        result = RawRecord()
-        result.database = self.database
-        result.mfn = self.mfn
-        result.status = self.status
-        result.version = self.version
-        result.fields = list(field for field in self.fields)
-        return result
-
-    def encode(self) -> 'List[str]':
-        """
-        Кодирование записи в серверное представление.
-
-        :return: Список строк
-        """
-        result = [str(self.mfn) + '#' + str(self.status),
-                  '0#' + str(self.version)]
-        for field in self.fields:
-            result.append(field)
-        return result
-
-    def is_deleted(self) -> bool:
-        """
-        Удалена ли запись?
-        :return: True для удаленной записи
-        """
-        return (self.status & (LOGICALLY_DELETED | PHYSICALLY_DELETED)) != 0
-
-    # noinspection DuplicatedCode
-    def parse(self, text: 'List[str]') -> None:
-        """
-        Разбор текстового представления записи (в серверном формате).
-
-        :param text: Список строк
-        :return: None
-        """
-
-        if text:
-            line = text[0]
-            parts = line.split('#')
-            self.mfn = int(parts[0])
-            if len(parts) != 1 and parts[1]:
-                self.status = int(parts[1])
-            line = text[1]
-            parts = line.split('#')
-            self.version = int(parts[1])
-            self.fields.clear()
-            for line in text[2:]:
-                self.fields.append(line)
-        else:
-            # Ууточнить, требуется ли бросать исключение
-            pass
-
-    def remove_at(self, index: int) -> 'RawRecord':
-        """
-        Удаление поля в указанной позиции.
-
-        :param index: Позиция для удаления.
-        :return: Self
-        """
-        assert 0 <= index < len(self.fields)
-
-        self.fields.remove(self.fields[index])
-        return self
-
-    def reset(self) -> 'RawRecord':
-        """
-        Сбрасывает состояние записи, отвязывая её от базы данных.
-        Поля при этом остаются нетронутыми.
-        :return: Self.
-        """
-        self.mfn = 0
-        self.status = 0
-        self.version = 0
-        self.database = None
-        return self
-
-    def __str__(self):
-        result = [str(field) for field in self.fields]
-        return '\n'.join(result)
+    def parse_line(self, line: str) -> None:
+        self.fields.append(line)
 
     def __iter__(self):
         yield from self.fields
-
-    def __len__(self):
-        return len(self.fields)
-
-    def __bool__(self):
-        return bool(len(self.fields))
-
-
-__all__ = ['Field', 'RawRecord', 'Record', 'SubField']

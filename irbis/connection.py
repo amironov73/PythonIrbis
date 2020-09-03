@@ -288,9 +288,6 @@ class Connection(ObjectWithError):
             query.ansi(self.username)
             self.execute_forget(query)
             self.connected = False
-        else:
-            # Ууточнить требуется ли бросать исключение
-            pass
 
     async def disconnect_async(self) -> None:
         """
@@ -304,9 +301,6 @@ class Connection(ObjectWithError):
             response = await self.execute_async(query)
             response.close()
             self.connected = False
-        else:
-            # Ууточнить, требуется ли бросать исключение
-            pass
 
     def execute(self, query: ClientQuery) -> ServerResponse:
         """

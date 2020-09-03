@@ -4,155 +4,16 @@
 Работа с записями, полями, подполями.
 """
 
-from abc import ABCMeta, abstractmethod
 from typing import cast, TYPE_CHECKING
-from irbis._common import LOGICALLY_DELETED, PHYSICALLY_DELETED
 from irbis.abstract import DictLike, Hashable
+from irbis.records.abstract import AbstractRecord
 from irbis.records.field import Field
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
-    from typing import Any, List, Optional, Set, Union, Type
+    from typing import List, Optional, Set, Union, Type
     from irbis.records.field import FieldList, FieldValue
 
     RecordValue = Union[Field, FieldList, FieldValue, List[str]]
-
-
-class AbstractRecord:
-    """
-    Абстрактный класс с общими свойствами и методами для классов Record
-    и RawRecord.
-    """
-    __metaclass__ = ABCMeta
-    field_type: 'Any'
-
-    @abstractmethod
-    def __init__(self, *fields: 'Union[Field, str]'):
-        self.database: 'Optional[str]' = None
-        self.mfn = 0
-        self.version = 0
-        self.status = 0
-        self.fields: 'Any' = []
-        if all((isinstance(f, self.field_type) for f in fields)):
-            self.fields += list(fields)
-        else:
-            message = f'All args must be {self.field_type.__name__} type'
-            raise TypeError(message)
-
-    def clear(self) -> 'AbstractRecord':
-        """
-        Очистка записи (удаление всех полей).
-
-        :return: Self
-        """
-        self.fields.clear()
-        return self
-
-    def clone(self) -> 'AbstractRecord':
-        """
-        Клонирование записи.
-
-        :return: Полный клон записи
-        """
-        result = RawRecord()
-        result.database = self.database
-        result.mfn = self.mfn
-        result.status = self.status
-        result.version = self.version
-        result.fields = self.clone_fields()
-        return result
-
-    @abstractmethod
-    def clone_fields(self) -> 'List[Any]':
-        """
-        Абстрактный метод клонирования полей записи
-        :return: список полей
-        """
-
-    def encode(self) -> 'List[str]':
-        """
-        Кодирование записи в серверное представление.
-
-        :return: Список строк
-        """
-        result = [str(self.mfn) + '#' + str(self.status),
-                  '0#' + str(self.version)]
-        for field in self.fields:
-            result.append(str(field))
-        return result
-
-    def is_deleted(self) -> bool:
-        """
-        Удалена ли запись?
-        :return: True для удаленной записи
-        """
-        return (self.status & (LOGICALLY_DELETED | PHYSICALLY_DELETED)) != 0
-
-    def parse(self, text: 'List[str]') -> None:
-        """
-        Разбор текстового представления записи (в серверном формате).
-
-        :param text: Список строк
-        :return: None
-        """
-        if text:
-            line = text[0]
-            parts = line.split('#')
-            self.mfn = int(parts[0])
-            if len(parts) != 1 and parts[1]:
-                self.status = int(parts[1])
-            line = text[1]
-            parts = line.split('#')
-            self.version = int(parts[1])
-            self.fields.clear()
-            for line in text[2:]:
-                self.parse_line(line)
-        else:
-            raise ValueError('text argument is empty')
-
-    @abstractmethod
-    def parse_line(self, line: str) -> None:
-        """
-        Абстрактный метод разбора строки из текстового представления записи
-        (в серверном формате). Реализуется у дочерних классов Record
-        и RawRecord.
-
-        :param line: строка
-        :return: None
-        """
-
-    def remove_at(self, index: int) -> 'AbstractRecord':
-        """
-        Удаление поля в указанной позиции.
-
-        :param index: Позиция для удаления.
-        :return: self
-        """
-        assert 0 <= index < len(self.fields)
-
-        self.fields.remove(self.fields[index])
-        return self
-
-    def reset(self) -> 'AbstractRecord':
-        """
-        Сбрасывает состояние записи, отвязывая её от базы данных.
-        Поля при этом остаются нетронутыми.
-        :return: Self.
-        """
-        self.mfn = 0
-        self.status = 0
-        self.version = 0
-        self.database = None
-        return self
-
-    def __bool__(self):
-        return bool(len(self.fields))
-
-    def __len__(self):
-        return len(self.fields)
-
-    def __str__(self):
-        result = [str(field) for field in self.fields]
-        return '\n'.join(result)
 
 
 class Record(AbstractRecord, DictLike, Hashable):
@@ -500,24 +361,3 @@ class Record(AbstractRecord, DictLike, Hashable):
         sorted_fields = sorted(self.fields, key=hash)
         subfields_hashes = tuple(hash(f) for f in sorted_fields)
         return hash(subfields_hashes)
-
-
-class RawRecord(AbstractRecord):
-    """
-    Запись с нераскодированными полями/подполями.
-    """
-    __slots__ = 'database', 'mfn', 'status', 'version', 'fields'
-    fields: 'List[str]'
-
-    def __init__(self, *fields: str) -> None:
-        self.field_type = str
-        super().__init__(*fields)
-
-    def clone_fields(self) -> 'List[str]':
-        return self.fields.copy()
-
-    def parse_line(self, line: str) -> None:
-        self.fields.append(line)
-
-    def __iter__(self):
-        yield from self.fields

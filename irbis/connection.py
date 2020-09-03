@@ -32,7 +32,7 @@ from irbis.opt import OptFile
 from irbis.par import ParFile
 from irbis.process import Process
 from irbis.query import ClientQuery
-from irbis.record import RawRecord, Record
+from irbis.records import RawRecord, Record
 from irbis.response import ServerResponse
 from irbis.search import FoundLine, SearchParameters, SearchScenario
 from irbis.specification import FileSpecification

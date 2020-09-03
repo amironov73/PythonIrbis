@@ -10,7 +10,7 @@ Reading and writing plain text files in IRBIS format.
 from typing import TYPE_CHECKING
 from irbis._common import ANSI, STOP_MARKER, safe_str
 from irbis.error import IrbisError
-from irbis.record import SubField, Field, Record
+from irbis.records import SubField, Field, Record
 if TYPE_CHECKING:
     from typing import Iterable, Optional, List
 

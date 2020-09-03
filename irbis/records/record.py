@@ -8,11 +8,11 @@ from abc import ABCMeta, abstractmethod
 from typing import cast, TYPE_CHECKING
 from irbis._common import LOGICALLY_DELETED, PHYSICALLY_DELETED
 from irbis.abstract import DictLike, Hashable
-from irbis.field import Field
-from irbis.subfield import SubField
+from irbis.records.field import Field
+from irbis.records.subfield import SubField
 if TYPE_CHECKING:
     from typing import Any, List, Optional, Set, Union, Type
-    from irbis.field import FieldList, FieldValue
+    from irbis.records.field import FieldList, FieldValue
 
     RecordValue = Union[Field, FieldList, FieldValue, List[str]]
 

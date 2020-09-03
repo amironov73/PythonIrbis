@@ -6,9 +6,9 @@
 
 from typing import cast, TYPE_CHECKING
 from irbis.abstract import DictLike, Hashable
-from irbis.subfield import SubField
+from irbis.records.subfield import SubField
 if TYPE_CHECKING:
-    from irbis.subfield import SubFieldList, SubFieldDict
+    from irbis.records.subfield import SubFieldList, SubFieldDict
     from typing import Iterable, List, Optional, Set, Union
 
     FieldList = List['Field']

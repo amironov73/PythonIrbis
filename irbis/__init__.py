@@ -28,7 +28,7 @@ from irbis.opt import load_opt_file, OptFile
 from irbis.par import load_par_file, ParFile
 from irbis.process import Process
 from irbis.query import ClientQuery
-from irbis.record import Field, RawRecord, Record, SubField
+from irbis.records import Field, RawRecord, Record, SubField
 from irbis.resource import Resource, ResourceDictionary
 from irbis.response import ServerResponse
 from irbis.search import FoundLine, SearchParameters, SearchScenario

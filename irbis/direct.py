@@ -8,7 +8,7 @@ from io import SEEK_SET
 from ctypes import BigEndianStructure, c_int32, c_uint16, c_uint32
 from typing import TYPE_CHECKING
 from irbis._common import change_extension, UTF
-from irbis.record import Field, RawRecord, Record
+from irbis.records import Field, RawRecord, Record
 if TYPE_CHECKING:
     from typing import List
 

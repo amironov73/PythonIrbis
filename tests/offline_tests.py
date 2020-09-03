@@ -892,14 +892,32 @@ class TestMarcRecord(unittest.TestCase):
         ]
         self.assertNotEqual(origin, changed)
 
-    def test_getitem_1(self):
-        record = Record()
-        record.add(100, 'Field 100')
-        field = Field(200).add('a', 'SubA').add('b', 'SubB')
-        record.fields.append(field)
-        self.assertEqual(record[100], 'Field 100')
-        self.assertEqual(record[200]['a'], 'SubA')
-        self.assertEqual(record[300], '')
+    #def test_getitem_1(self):
+    #    record = self.get_record()
+    #    record.add(100, 'Field 100')
+    #    field = Field(200).add('a', 'SubA').add('b', 'SubB')
+    #    record.fields.append(field)
+    #    self.assertEqual(record[100], 'Field 100')
+    #    self.assertEqual(record[200]['a'], 'SubA')
+    #    self.assertEqual(record[300], '')
+
+    def test_delitem_and_eq_1(self):
+        r1 = self.get_record()
+        r2 = self.get_record()
+        self.assertEqual(r1, r2)
+        r1[101] = None
+        self.assertNotEqual(r1, r2)
+        r2[101] = None
+        self.assertEqual(r1, r2)
+
+    def test_delitem_and_eq_2(self):
+        r1 = self.get_record()
+        r2 = self.get_record()
+        del r1[610]
+        self.assertNotEqual(r1, r2)
+        del r2[610]
+        self.assertEqual(r1, r2)
+
     def test_len_1(self):
         record = Record()
         self.assertEqual(len(record), 0)

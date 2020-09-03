@@ -5,7 +5,53 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Any, Iterable
+    from typing import Any, Dict, Iterable
+
+
+class AttrRedirect:
+    """
+    Абстрактный класс для поддержки обратной совместимости при переименовании
+    атрибутов классов и объектов. Атрибут __aliases__ должен содержать словарь
+    с именами старых атрибутов как ключей словаря и именами новых атрибутов
+    как значений словаря.
+
+    Тестируемый пример:
+
+    >>> class MyClass(AttrRedirect):
+    ...     __aliases__ = {'old_attr': 'new_attr'}
+    ...     new_attr = 'value A'
+
+    >>> my_object = MyClass()
+    >>> my_object.old_attr
+    'value A'
+
+    >>> my_object.old_attr = 'value B'
+    >>> my_object.old_attr
+    'value B'
+    """
+    __aliases__: 'Dict[str, str]' = {}
+
+    def __getattr__(self, name: str) -> 'Any':
+        """
+        Дескриптор получения атрибутов.
+
+        :param name: имя запрашиваемого атрибута
+        :return: возвращаемый атрибут
+        """
+        if name != '__aliases__':
+            name = self.__aliases__.get(name, name)
+        return object.__getattribute__(self, name)
+
+    def __setattr__(self, name: str, value: 'Any'):
+        """
+        Дескриптор установки значений атрибутов.
+
+        :param name: имя атрибута
+        :param value: значение атрибута
+        :return: ничегошеньки
+        """
+        name = self.__aliases__.get(name, name)
+        object.__setattr__(self, name, value)
 
 
 class DictLike:
@@ -116,8 +162,13 @@ class Hashable:
         :param other: другой объект для сравнения с текущим
         :return: True или False
         """
-        return all((
-            isinstance(self, type(other)),
-            isinstance(other, type(self)),
-            hash(self) == hash(other),
-        ))
+        if isinstance(self, type(other)):
+            if isinstance(other, type(self)):
+                if hash(self) == hash(other):
+                    return True
+        return False
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

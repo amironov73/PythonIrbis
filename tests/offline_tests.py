@@ -177,11 +177,12 @@ class TestField(unittest.TestCase):
         self.assertIsNone(field.value)
         self.assertEqual(1, len(field.subfields))
 
-    # def test_init_5(self):
-    #     field = Field(100, SubField('a', 'Some value'), SubField('b', 'Other value'))
-    #     self.assertEqual(field.tag, 100)
-    #     self.assertIsNone(field.value)
-    #     self.assertEqual(2, len(field.subfields))
+    def test_init_5(self):
+        field = Field(100, [SubField('a', 'Some value'),
+                            SubField('b', 'Other value')])
+        self.assertEqual(field.tag, 100)
+        self.assertIsNone(field.value)
+        self.assertEqual(2, len(field.subfields))
 
     def test_add_1(self):
         field = Field()
@@ -369,23 +370,13 @@ class TestField(unittest.TestCase):
         field = Field(100)
         field.subfields.append(sfa)
         field.subfields.append(sfb)
-        found = field['a']
-        self.assertEqual(found, 'SubA')
-        found = field['b']
-        self.assertEqual(found, 'SubB')
-        found = field['c']
-        self.assertEqual(found, '')
-
-    def test_getitem_2(self):
-        sfa = SubField('a', 'SubA')
-        sfb = SubField('b', 'SubB')
-        field = Field(100)
-        field.subfields.append(sfa)
-        field.subfields.append(sfb)
-        found = field[0]
-        self.assertEqual(found, sfa.value)
-        found = field[1]
-        self.assertEqual(found, sfb.value)
+        data = field.data
+        value = data['a']
+        self.assertEqual(value, 'SubA')
+        value = data['b']
+        self.assertEqual(value, 'SubB')
+        value = data.get('c', '')
+        self.assertEqual(value, '')
 
     def test_setitem_1(self):
         sfa = SubField('a', 'SubA')
@@ -497,12 +488,12 @@ class TestField(unittest.TestCase):
     def test_keys_1(self):
         field = Field(100)
         d = field.keys()
-        self.assertEqual(d, set())
+        self.assertEqual(d, [])
 
     def test_keys_2(self):
         field = Field(100, 'Value')
         d = field.keys()
-        self.assertEqual(d, set())
+        self.assertEqual(d, [])
 
     def test_keys_3(self):
         field = Field(100).add('a', 'SubA').add('b', 'SubB')
@@ -739,11 +730,11 @@ class TestMarcRecord(unittest.TestCase):
         record = Record()
         record.add(100, 'Field 100')
         record.add(200).add('a', 'SubA').add('b', 'SubB')
-        s = dict(record)
+        s = record.data
         self.assertEqual(len(s), 2)
-        self.assertEqual(s[100], 'Field 100')
-        self.assertEqual(s[200]['a'], 'SubA')
-        self.assertEqual(s[200]['b'], 'SubB')
+        self.assertEqual(s[100][0][''], 'Field 100')
+        self.assertEqual(s[200][0]['a'], 'SubA')
+        self.assertEqual(s[200][0]['b'], 'SubB')
 
     def test_iter_2(self):
         record = Record()
@@ -813,9 +804,16 @@ class TestMarcRecord(unittest.TestCase):
     @staticmethod
     def get_record_dict():
         return {
-            101: 'Value 101 1',
-            610: ['Value 610 1', 'Value 610 2'],
-            700: {'a': '700 1 A', 'g': '700 1 G', 'b': '700 1 B'},
+            101: [
+                {'': 'Value 101 1'},
+            ],
+            610: [
+                {'': 'Value 610 1'},
+                {'': 'Value 610 2'},
+            ],
+            700: [
+                {'a': '700 1 A', 'g': '700 1 G', 'b': '700 1 B'},
+            ],
             701: [
                 {'a': '701 1 A', 'g': '701 1 G', 'b': '701 1 B'},
                 {'a': '701 2 A', 'g': '701 2 G', 'b': '701 2 B'},
@@ -828,7 +826,7 @@ class TestMarcRecord(unittest.TestCase):
         for tag in d1:
             r1[tag] = d1[tag]
         r2 = self.get_record()
-        d2 = dict(r2)
+        d2 = r2.data
         self.assertEqual(d1, d2)
         self.assertEqual(r1, r2)
 
@@ -892,14 +890,17 @@ class TestMarcRecord(unittest.TestCase):
         ]
         self.assertNotEqual(origin, changed)
 
-    #def test_getitem_1(self):
-    #    record = self.get_record()
-    #    record.add(100, 'Field 100')
-    #    field = Field(200).add('a', 'SubA').add('b', 'SubB')
-    #    record.fields.append(field)
-    #    self.assertEqual(record[100], 'Field 100')
-    #    self.assertEqual(record[200]['a'], 'SubA')
-    #    self.assertEqual(record[300], '')
+    def test_getitem_1(self):
+        record = self.get_record()
+        record.add(100, 'Field 100')
+        field = Field(200).add('a', 'SubA').add('b', 'SubB')
+        record.fields.append(field)
+        data = record.data
+        self.assertEqual(data[100][0][''], 'Field 100')
+        self.assertEqual(data[200][0]['a'], 'SubA')
+        self.assertEqual(data[200][0]['b'], 'SubB')
+        self.assertEqual(data[200][0].get('c', ''), '')
+        self.assertEqual(data.get(300, ''), '')
 
     def test_delitem_and_eq_1(self):
         r1 = self.get_record()

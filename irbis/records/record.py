@@ -10,7 +10,7 @@ from irbis.records.abstract import AbstractRecord
 from irbis.records.field import Field
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
-    from typing import List, Optional, Set, Union, Type
+    from typing import Dict, List, Optional, Union, Type
     from irbis.records.field import FieldList, FieldValue
 
     RecordValue = Union[Field, FieldList, FieldValue, List[str]]
@@ -74,9 +74,10 @@ class Record(AbstractRecord, DictLike, Hashable):
         :param tag: Тег
         :return: Список полей (возможно, пустой)
         """
-        assert tag > 0
-
-        return [f for f in self.fields if f.tag == tag]
+        result = self[tag]
+        if isinstance(result, Field):
+            return [result]
+        return result
 
     def all_as_dict(self, tag: int) -> 'List[dict]':
         """
@@ -91,6 +92,18 @@ class Record(AbstractRecord, DictLike, Hashable):
 
     def clone_fields(self) -> 'FieldList':
         return [field.clone() for field in self.fields]
+
+    @property
+    def data(self) -> 'Dict[int, List[Dict]]':
+        """
+        Динамическое свойство извлечения данных в представлении стандартных
+        типов данных Python.
+        """
+        result = {}
+        for key in self.keys():
+            fields = self[key]
+            result[key] = [f.data for f in fields]
+        return result
 
     def fm(self, tag: int, code: str = '') -> 'Optional[str]':
         """
@@ -188,13 +201,13 @@ class Record(AbstractRecord, DictLike, Hashable):
         self.fields.insert(index, result)
         return result
 
-    def keys(self) -> 'Set[int]':
+    def keys(self) -> 'List[int]':
         """
         Получение множества меток полей
 
         :return: множество меток
         """
-        return set(field.tag for field in self.fields)
+        return list(set(field.tag for field in self.fields))
 
     def parse_line(self, line: str) -> None:
         field = self.field_type()
@@ -271,7 +284,7 @@ class Record(AbstractRecord, DictLike, Hashable):
             else:
                 value = field.value
 
-            value_count = len(self.all(key))
+            value_count = len(self[key])
             if value_count == 1:
                 accumulator[key] = value
             elif value_count > 1:
@@ -300,28 +313,14 @@ class Record(AbstractRecord, DictLike, Hashable):
                     self.fields.remove(one)
         return self
 
-    def __getitem__(self, tag: int) -> 'Union[dict, List[dict], str]':
+    def __getitem__(self, tag: int) -> 'FieldList':
         """
         Получение значения поля по индексу
 
         :param tag: числовая метка полей
-        :return: значение полей (словарь, список словарей или строка)
+        :return: поле, список полей или ничего
         """
-        def get_str_or_dict(field):
-            if field.subfields:
-                return dict(field)
-            return field.value
-
-        fields = self.all(tag)
-        count = len(fields)
-
-        if count == 1:
-            return get_str_or_dict(fields[0])
-
-        if count > 1:
-            return [get_str_or_dict(field) for field in fields]
-
-        return ''
+        return [f for f in self.fields if f.tag == tag]
 
     def __setitem__(self, key: int, value: 'RecordValue') -> None:
         """

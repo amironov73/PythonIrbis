@@ -9,7 +9,7 @@ from irbis.abstract import DictLike, Hashable
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
     from irbis.records.subfield import SubFieldList, SubFieldDict
-    from typing import Iterable, List, Optional, Set, Union
+    from typing import Iterable, List, Optional, Union
 
     FieldList = List['Field']
     FieldValue = Union[SubField, SubFieldList, List[SubFieldDict],
@@ -161,6 +161,16 @@ class Field(DictLike, Hashable):
             result.subfields.append(subfield.clone())
         return result
 
+    @property
+    def data(self) -> dict:
+        """
+        Динамическое свойство извлечения данных в представлении стандартных
+        типов данных Python.
+        """
+        if self.value:
+            return {'': self.value}
+        return {key: self[key] for key in self.keys()}
+
     def first(self, code: str) -> 'Optional[SubField]':
         """
         Находит первое подполе с указанным кодом.
@@ -284,15 +294,15 @@ class Field(DictLike, Hashable):
         self.subfields.insert(index, subfield)
         return self
 
-    def keys(self) -> 'Set[str]':
+    def keys(self) -> 'List[str]':
         """
         Получение множества кодов подполей
 
         :return: множество кодов
         """
         if self.subfields:
-            return set(subfield.code for subfield in self.subfields)
-        return set('')
+            return list(set(sf.code for sf in self.subfields))
+        return []
 
     def parse(self, line: str) -> None:
         """
@@ -436,20 +446,19 @@ class Field(DictLike, Hashable):
                     self.subfields.remove(one)
         return self
 
-    def __getitem__(self, code: 'Union[str, int]') -> str:
+    def __getitem__(self, code: 'Union[str, int]') ->\
+            'Optional[Union[str, SubField]]':
         """
         Получение значения подполя по индексу
 
         :param code: строковый код подполя
-        :return: строковое значение подполя
+        :return: подполе или строка
         """
         if isinstance(code, int):
-            return self.subfields[code].value or ''
-
-        if code == '':
-            return self.value or ''
-
-        return self.first_value(code) or ''
+            return self.subfields[code] or None
+        if isinstance(code, str):
+            return self.first_value(code) or None
+        return self.value or ''
 
     def __setitem__(self, key: 'Union[str, int]', value: 'Optional[str]'):
         if isinstance(key, int):

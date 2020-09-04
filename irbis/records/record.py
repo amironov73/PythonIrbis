@@ -27,18 +27,23 @@ class Record(AbstractRecord, DictLike, Hashable):
         self.field_type: 'Type[Field]' = Field
         super().__init__(*args)
 
-    def set_values(self, *args: 'Field'):
+    def set_values(self,
+                   *args: 'Union[Field, Dict[int, List[Dict[str, str]]]]'):
         """
         Установка значений записи
 
         :param args: список полей или словарь
         :return: ничего
         """
-        if all((isinstance(arg, self.field_type) for arg in args)):
-            self.fields += list(args)
-        else:
-            message = f'All args must be {self.field_type.__name__} type'
-            raise TypeError(message)
+        if args:
+            arg = args[0]
+            if isinstance(arg, dict):
+                for key in arg:
+                    self[key] = arg[key]
+            elif all((isinstance(arg, self.field_type) for arg in args)):
+                self.fields += [cast('Field', arg) for arg in args]
+            else:
+                raise TypeError('Unsupported arg type')
 
     def add(self, tag: int, value: 'Union[str, SubField]' = None) \
             -> 'Field':

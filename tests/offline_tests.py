@@ -732,35 +732,6 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual('100#Field 100\n200#Field 200^aSubfield A',
                          str(record))
 
-    def test_iter_1(self):
-        record = Record()
-        record.add(100, 'Field 100')
-        record.add(200).add('a', 'SubA').add('b', 'SubB')
-        s = record.data
-        self.assertEqual(len(s), 2)
-        self.assertEqual(s[100][0][''], 'Field 100')
-        self.assertEqual(s[200][0]['a'], 'SubA')
-        self.assertEqual(s[200][0]['b'], 'SubB')
-
-    def test_iter_2(self):
-        record = Record()
-        record.add(100, 'Field 100')
-        record.add(200).add('a', 'SubA').add('b', 'SubB')
-        i = iter(record)
-        f = next(i)
-        self.assertEqual(f[0], 100)
-        self.assertEqual(f[1], 'Field 100')
-        f = next(i)
-        self.assertEqual(f[0], 200)
-        self.assertEqual(f[1]['a'], 'SubA')
-        self.assertEqual(f[1]['b'], 'SubB')
-        ok = False
-        try:
-            next(i)
-        except StopIteration:
-            ok = True
-        self.assertTrue(ok)
-
     def test_iadd_1(self):
         record = Record()
         self.assertEqual(len(record.fields), 0)

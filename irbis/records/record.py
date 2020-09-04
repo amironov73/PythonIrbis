@@ -289,29 +289,7 @@ class Record(AbstractRecord, DictLike, Hashable):
         return self
 
     def __iter__(self):
-        """
-        Перебор полей записи для формирования словаря "код - поля".
-        """
-        accumulator = {}
-        for field in self.fields:
-            key = field.tag
-
-            if field.subfields:
-                value = dict(field)
-            else:
-                value = field.value
-
-            value_count = len(self[key])
-            if value_count == 1:
-                accumulator[key] = value
-            elif value_count > 1:
-                if key not in accumulator:
-                    accumulator[key] = [value]
-                else:
-                    accumulator[key].append(value)
-
-        for key, value in accumulator.items():
-            yield key, value
+        yield from self.fields
 
     def __iadd__(self, other: 'Union[Field, FieldList]'):
         if isinstance(other, Field):

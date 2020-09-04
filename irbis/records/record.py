@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from typing import Dict, List, Optional, Union, Type
     from irbis.records.field import FieldList, FieldValue
 
+    RecordArg = Union[Field, Dict[int, List[Dict[str, str]]]]
     RecordValue = Union[Field, FieldList, FieldValue, List[str]]
 
 
@@ -23,12 +24,11 @@ class Record(AbstractRecord, DictLike, Hashable):
     __slots__ = 'database', 'mfn', 'version', 'status', 'fields'
     fields: 'List[Field]'
 
-    def __init__(self, *args: 'Field') -> None:
+    def __init__(self, *args: 'RecordArg') -> None:
         self.field_type: 'Type[Field]' = Field
         super().__init__(*args)
 
-    def set_values(self,
-                   *args: 'Union[Field, Dict[int, List[Dict[str, str]]]]'):
+    def set_values(self, *args: 'RecordArg'):
         """
         Установка значений записи
 
@@ -43,10 +43,9 @@ class Record(AbstractRecord, DictLike, Hashable):
             elif all((isinstance(arg, self.field_type) for arg in args)):
                 self.fields += [cast('Field', arg) for arg in args]
             else:
-                raise TypeError('Unsupported arg type')
+                raise TypeError('One or more args have unsupported type')
 
-    def add(self, tag: int, value: 'Union[str, SubField]' = None) \
-            -> 'Field':
+    def add(self, tag: int, value: 'Union[str, SubField]' = None) -> 'Field':
         """
         Добавление поля (возможно, с значением и подполями) к записи.
 

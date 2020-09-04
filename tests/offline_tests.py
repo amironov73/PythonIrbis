@@ -532,6 +532,12 @@ class TestMarcRecord(unittest.TestCase):
         self.assertEqual(record.fields[1].tag, 200)
 
     def test_init_3(self):
+        input_data = self.get_record_dict()
+        r1 = Record(input_data)
+        r2 = self.get_record()
+        self.assertEqual(r1, r2)
+
+    def test_init_4(self):
         subfield = SubField('a', 'A')
         self.assertRaises(TypeError, Record, subfield)
 

@@ -18,9 +18,22 @@ class RawRecord(AbstractRecord):
     __slots__ = 'database', 'mfn', 'status', 'version', 'fields'
     fields: 'List[str]'
 
-    def __init__(self, *fields: str) -> None:
+    def __init__(self, *args: str) -> None:
         self.field_type = str
-        super().__init__(*fields)
+        super().__init__(*args)
+
+    def set_values(self, *args: str):
+        """
+        Установка значений записи
+
+        :param args: список строк
+        :return: ничего
+        """
+        if all((isinstance(arg, self.field_type) for arg in args)):
+            self.fields += list(args)
+        else:
+            message = f'All args must be {self.field_type.__name__} type'
+            raise TypeError(message)
 
     def clone_fields(self) -> 'List[str]':
         return self.fields.copy()

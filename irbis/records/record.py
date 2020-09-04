@@ -23,9 +23,22 @@ class Record(AbstractRecord, DictLike, Hashable):
     __slots__ = 'database', 'mfn', 'version', 'status', 'fields'
     fields: 'List[Field]'
 
-    def __init__(self, *fields: 'Field') -> None:
+    def __init__(self, *args: 'Field') -> None:
         self.field_type: 'Type[Field]' = Field
-        super().__init__(*fields)
+        super().__init__(*args)
+
+    def set_values(self, *args: 'Field'):
+        """
+        Установка значений записи
+
+        :param args: список полей или словарь
+        :return: ничего
+        """
+        if all((isinstance(arg, self.field_type) for arg in args)):
+            self.fields += list(args)
+        else:
+            message = f'All args must be {self.field_type.__name__} type'
+            raise TypeError(message)
 
     def add(self, tag: int, value: 'Union[str, SubField]' = None) \
             -> 'Field':

@@ -8,8 +8,7 @@ from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 from irbis._common import LOGICALLY_DELETED, PHYSICALLY_DELETED
 if TYPE_CHECKING:
-    from typing import Any, List, Optional, Union
-    from irbis.records.field import Field
+    from typing import Any, List, Optional
 
 
 class AbstractRecord:
@@ -21,17 +20,13 @@ class AbstractRecord:
     field_type: 'Any'
 
     @abstractmethod
-    def __init__(self, *fields: 'Union[Field, str]'):
+    def __init__(self, *args: 'Any'):
         self.database: 'Optional[str]' = None
         self.mfn = 0
         self.version = 0
         self.status = 0
         self.fields: 'Any' = []
-        if all((isinstance(f, self.field_type) for f in fields)):
-            self.fields += list(fields)
-        else:
-            message = f'All args must be {self.field_type.__name__} type'
-            raise TypeError(message)
+        self.set_values(*args)
 
     def clear(self) -> 'AbstractRecord':
         """
@@ -138,6 +133,16 @@ class AbstractRecord:
         self.version = 0
         self.database = None
         return self
+
+    @abstractmethod
+    def set_values(self, *args):
+        """
+        Абстрактный метод, установливающий self.fields. Реализуется
+        у дочерних классов.
+
+        :param args: Аргументы для [пере]создания полей
+        :return: ничего
+        """
 
     def __bool__(self):
         return bool(len(self.fields))

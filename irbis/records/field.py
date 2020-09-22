@@ -56,9 +56,13 @@ class Field(DictLike, Hashable):
                     self.subfields.append(
                         SubField(code, val)
                     )
+                elif isinstance(val, list):
+                    if all((isinstance(element, str) for element in val)):
+                        self.subfields += [SubField(code, v) for v in val]
+                    else:
+                        raise TypeError('Unsupported value type')
                 else:
-                    raise TypeError('Value of SubField must be str type')
-
+                    raise TypeError('Unsupported value type')
         else:
             raise TypeError('Unsupported value type')
 
@@ -167,9 +171,13 @@ class Field(DictLike, Hashable):
         Динамическое свойство извлечения данных в представлении стандартных
         типов данных Python.
         """
+        result = {}
         if self.value:
-            return {'': self.value}
-        return {key: self[key] for key in self.keys()}
+            result[''] = [self.value]
+        for key in self.keys():
+            fields = self[key]
+            result[key] = [f.data for f in fields]
+        return result
 
     def first(self, code: str) -> 'Optional[SubField]':
         """
@@ -447,18 +455,18 @@ class Field(DictLike, Hashable):
         return self
 
     def __getitem__(self, code: 'Union[str, int]') ->\
-            'Optional[Union[str, SubField]]':
+            'List[Union[str, SubField]]':
         """
         Получение значения подполя по индексу
 
         :param code: строковый код подполя
         :return: подполе или строка
         """
-        if isinstance(code, int):
-            return self.subfields[code] or None
+        if code == '':
+            return [self.value] or []
         if isinstance(code, str):
-            return self.first_value(code) or None
-        return self.value or ''
+            return [sf for sf in self.subfields if sf.code == code]
+        return [self.subfields[code]] or []
 
     def __setitem__(self, key: 'Union[str, int]', value: 'Optional[str]'):
         if isinstance(key, int):
@@ -499,6 +507,7 @@ class Field(DictLike, Hashable):
     def __hash__(self):
         if self.value:
             return hash((self.tag, self.value))
-        sorted_subfields = sorted(self.subfields, key=lambda sf: sf.code)
-        subfields_hashes = tuple(hash(sf) for sf in sorted_subfields)
+        #print('вызов')
+        #sorted_subfields = sorted(self.subfields, key=lambda sf: (sf.code, sf.value))
+        subfields_hashes = tuple(hash(sf) for sf in self.subfields)
         return hash((self.tag, subfields_hashes))

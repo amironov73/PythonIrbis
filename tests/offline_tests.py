@@ -371,9 +371,10 @@ class TestField(unittest.TestCase):
         field.subfields.append(sfa)
         field.subfields.append(sfb)
         data = field.data
-        value = data['a']
+        print(data)
+        value = data['a'][0]
         self.assertEqual(value, 'SubA')
-        value = data['b']
+        value = data['b'][0]
         self.assertEqual(value, 'SubB')
         value = data.get('c', '')
         self.assertEqual(value, '')
@@ -782,18 +783,18 @@ class TestMarcRecord(unittest.TestCase):
     def get_record_dict():
         return {
             101: [
-                {'': 'Value 101 1'},
+                {'': ['Value 101 1']},
             ],
             610: [
-                {'': 'Value 610 1'},
-                {'': 'Value 610 2'},
+                {'': ['Value 610 1']},
+                {'': ['Value 610 2']},
             ],
             700: [
-                {'a': '700 1 A', 'g': '700 1 G', 'b': '700 1 B'},
+                {'a': ['700 1 A'], 'g': ['700 1 G'], 'b': ['700 1 B']},
             ],
             701: [
-                {'a': '701 1 A', 'g': '701 1 G', 'b': '701 1 B'},
-                {'a': '701 2 A', 'g': '701 2 G', 'b': '701 2 B'},
+                {'a': ['701 1 A'], 'g': ['701 1 G'], 'b': ['701 1 B']},
+                {'a': ['701 2 A'], 'g': ['701 2 G'], 'b': ['701 2 B']},
             ],
         }
 
@@ -874,8 +875,8 @@ class TestMarcRecord(unittest.TestCase):
         record.fields.append(field)
         data = record.data
         self.assertEqual(data[100][0][''], 'Field 100')
-        self.assertEqual(data[200][0]['a'], 'SubA')
-        self.assertEqual(data[200][0]['b'], 'SubB')
+        self.assertEqual(data[200][0]['a'][0], 'SubA')
+        self.assertEqual(data[200][0]['b'][0], 'SubB')
         self.assertEqual(data[200][0].get('c', ''), '')
         self.assertEqual(data.get(300, ''), '')
 

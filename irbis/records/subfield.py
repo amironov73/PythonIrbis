@@ -47,6 +47,10 @@ class SubField(Hashable):
         """
         return SubField(self.code, self.value)
 
+    @property
+    def data(self):
+        return self.value
+
     def __str__(self):
         if self.code == self.DEFAULT_CODE:
             return ''

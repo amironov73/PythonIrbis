@@ -352,6 +352,6 @@ class Record(AbstractRecord, DictLike, Hashable):
         self.fields = [f for f in self.fields if f.tag != key]
 
     def __hash__(self):
-        sorted_fields = sorted(self.fields, key=hash)
-        subfields_hashes = tuple(hash(f) for f in sorted_fields)
-        return hash(subfields_hashes)
+        sorted_fields = sorted(self.fields, key=lambda f: (f.tag, hash(f)))
+        fields_hashes = tuple(hash(f) for f in sorted_fields)
+        return hash(fields_hashes)

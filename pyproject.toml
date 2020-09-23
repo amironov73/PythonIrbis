@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "irbis"
+version = "0.2.0"
+description = "Framework for client development for popular Russian library computer system IRBIS64"
+authors = [
+    "Alexey Mironov <amironov73@gmail.com>",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+]
+keywords = [
+    "IRBIS64",
+]
+homepage = "https://github.com/amironov73/PythonIrbis"
+documentation = "https://github.com/amironov73/PythonIrbis"
+repository = "https://github.com/amironov73/PythonIrbis"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+
+[tool.poetry.dev-dependencies]
+mypy = "^0.782"
+pytest = "^6.0"
+Sphinx = "^3.2"
+sphinx_rtd_theme = "^0.5"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

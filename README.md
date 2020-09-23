@@ -61,10 +61,10 @@ client.disconnect()
 
 #### Documentation (in russian)
 
-* [**Introduction**](docs/chapter1.md)
-* [**Connection class**](docs/chapter2.md)
-* [**Record, Field and SubField classes**](docs/chapter3.md)
-* [**Other classes and functions**](docs/chapter4.md)
-* [**Request builder**](docs/chapter5.md)
-* [**Import/export**](docs/chapter6.md)
+* [**Introduction**](old_docs/chapter1.md)
+* [**Connection class**](old_docs/chapter2.md)
+* [**Record, Field and SubField classes**](old_docs/chapter3.md)
+* [**Other classes and functions**](old_docs/chapter4.md)
+* [**Request builder**](old_docs/chapter5.md)
+* [**Import/export**](old_docs/chapter6.md)
 

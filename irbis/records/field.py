@@ -9,7 +9,7 @@ from irbis.abstract import DictLike, Hashable
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
     from irbis.records.subfield import SubFieldList, SubFieldDict
-    from typing import Iterable, List, Optional, Union
+    from typing import Iterable, List, Optional, Set, Union
 
     FieldList = List['Field']
     FieldValue = Union[SubField, SubFieldList, List[SubFieldDict],
@@ -304,13 +304,14 @@ class Field(DictLike, Hashable):
 
     def keys(self) -> 'List[str]':
         """
-        Получение множества кодов подполей
+        Получение списка кодов подполей без повторений и с сохранением порядка
 
-        :return: множество кодов
+        :return: список кодов
         """
-        if self.subfields:
-            return list(set(sf.code for sf in self.subfields))
-        return []
+        unique: 'Set' = set()
+        add = unique.add
+        return [sf.code for sf in self.subfields
+                if not (sf.code in unique or add(sf.code))]
 
     def parse(self, line: str) -> None:
         """

@@ -10,7 +10,7 @@ from irbis.records.abstract import AbstractRecord
 from irbis.records.field import Field
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
-    from typing import Dict, List, Optional, Union, Type
+    from typing import Dict, List, Optional, Set, Union, Type
     from irbis.records.field import FieldList, FieldValue
 
     RecordArg = Union[Field, Dict[int, List[Dict[str, str]]]]
@@ -220,11 +220,14 @@ class Record(AbstractRecord, DictLike, Hashable):
 
     def keys(self) -> 'List[int]':
         """
-        Получение множества меток полей
+        Получение списка меток полей без повторений и с сохранением порядка
 
-        :return: множество меток
+        :return: список меток
         """
-        return list(set(field.tag for field in self.fields))
+        unique: 'Set' = set()
+        add = unique.add
+        return [f.tag for f in self.fields
+                if not (f.tag in unique or add(f.tag))]
 
     def parse_line(self, line: str) -> None:
         field = self.field_type()

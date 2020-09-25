@@ -58,7 +58,10 @@ class Field(DictLike, Hashable):
                     )
                 elif isinstance(val, list):
                     if all((isinstance(element, str) for element in val)):
-                        self.subfields += [SubField(code, v) for v in val]
+                        if code == '':
+                            self.value = val[0]
+                        else:
+                            self.subfields += [SubField(code, v) for v in val]
                     else:
                         raise TypeError('Unsupported value type')
                 else:
@@ -508,7 +511,5 @@ class Field(DictLike, Hashable):
     def __hash__(self):
         if self.value:
             return hash((self.tag, self.value))
-        #print('вызов')
-        #sorted_subfields = sorted(self.subfields, key=lambda sf: (sf.code, sf.value))
         subfields_hashes = tuple(hash(sf) for sf in self.subfields)
         return hash((self.tag, subfields_hashes))

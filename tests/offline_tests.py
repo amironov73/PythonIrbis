@@ -420,7 +420,7 @@ class TestField(unittest.TestCase):
         f1 = Field(700, {'a': 'A', 'g': 'G', 'b': 'B'})
         f2 = Field(700, {'b': 'B', 'a': 'A', 'g': 'G'})
         f3 = Field(700, {'a': 'X', 'g': 'G', 'b': 'B'})
-        self.assertEqual(f1, f2)
+        self.assertNotEqual(f1, f2)
         self.assertNotEqual(f2, f3)
 
     def test_len_1(self):
@@ -812,11 +812,11 @@ class TestMarcRecord(unittest.TestCase):
         origin = self.get_record()
         reordered = Record()
         reordered[610] = ['Value 610 2', 'Value 610 1']
-        reordered[700] = {'g': '700 1 G', 'a': '700 1 A', 'b': '700 1 B'}
+        reordered[700] = {'a': '700 1 A', 'g': '700 1 G', 'b': '700 1 B'}
         reordered[101] = 'Value 101 1'
         reordered[701] = [
-            {'a': '701 2 A', 'b': '701 2 B', 'g': '701 2 G'},
-            {'b': '701 1 B', 'a': '701 1 A', 'g': '701 1 G'},
+            {'a': ['701 2 A'], 'g': ['701 2 G'], 'b': ['701 2 B']},
+            {'a': ['701 1 A'], 'g': ['701 1 G'], 'b': ['701 1 B']},
         ]
         self.assertEqual(origin, reordered)
 
@@ -874,7 +874,7 @@ class TestMarcRecord(unittest.TestCase):
         field = Field(200).add('a', 'SubA').add('b', 'SubB')
         record.fields.append(field)
         data = record.data
-        self.assertEqual(data[100][0][''], 'Field 100')
+        self.assertEqual(data[100][0][''][0], 'Field 100')
         self.assertEqual(data[200][0]['a'][0], 'SubA')
         self.assertEqual(data[200][0]['b'][0], 'SubB')
         self.assertEqual(data[200][0].get('c', ''), '')

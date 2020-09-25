@@ -7,10 +7,10 @@
 from typing import TYPE_CHECKING
 from irbis.abstract import Hashable
 if TYPE_CHECKING:
-    from typing import Dict, List, Optional
+    from typing import Dict, List, Optional, Union
 
     SubFieldList = List['SubField']
-    SubFieldDict = Dict[str, str]
+    SubFieldDict = Dict[str, Union[str, List[str]]]
 
 
 class SubField(Hashable):

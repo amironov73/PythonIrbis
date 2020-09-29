@@ -818,7 +818,7 @@ class TestMarcRecord(unittest.TestCase):
             {'a': ['701 2 A'], 'g': ['701 2 G'], 'b': ['701 2 B']},
             {'a': ['701 1 A'], 'g': ['701 1 G'], 'b': ['701 1 B']},
         ]
-        self.assertEqual(origin, reordered)
+        self.assertNotEqual(origin, reordered)
 
     def test_setitem_and_eq_2(self):
         origin = self.get_record()

@@ -4,6 +4,7 @@
 Работа с полями.
 """
 
+from collections import OrderedDict
 from typing import cast, TYPE_CHECKING
 from irbis.abstract import DictLike, Hashable
 from irbis.records.subfield import SubField
@@ -169,17 +170,22 @@ class Field(DictLike, Hashable):
         return result
 
     @property
-    def data(self) -> dict:
+    def data(self) -> OrderedDict:
         """
         Динамическое свойство извлечения данных в представлении стандартных
         типов данных Python.
         """
-        result = {}
+        result = OrderedDict()
         if self.value:
             result[''] = [self.value]
         for key in self.keys():
-            fields = self[key]
-            result[key] = [f.data for f in fields]
+            subfields = self[key]
+            result[key] = []
+            for sf in subfields:
+                if isinstance(sf, SubField):
+                    result[key].append(sf.data)
+                elif isinstance(sf, str):
+                    result[key].append(sf)
         return result
 
     def first(self, code: str) -> 'Optional[SubField]':
@@ -414,12 +420,12 @@ class Field(DictLike, Hashable):
         result += ''.join(str(s) for s in self.subfields)
         return result
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> OrderedDict:
         """
         Выдает словарь "код - значение подполя".
         :return:
         """
-        result = {}
+        result = OrderedDict()
         for subfield in self.subfields:
             result[subfield.code] = subfield.value
         return result

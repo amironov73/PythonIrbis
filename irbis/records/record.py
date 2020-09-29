@@ -4,6 +4,7 @@
 Работа с записями, полями, подполями.
 """
 
+from collections import OrderedDict
 from typing import cast, TYPE_CHECKING
 from irbis.abstract import DictLike, Hashable
 from irbis.records.abstract import AbstractRecord
@@ -111,12 +112,12 @@ class Record(AbstractRecord, DictLike, Hashable):
         return [field.clone() for field in self.fields]
 
     @property
-    def data(self) -> 'Dict[int, List[Dict]]':
+    def data(self) -> 'OrderedDict[int, List[OrderedDict]]':
         """
         Динамическое свойство извлечения данных в представлении стандартных
         типов данных Python.
         """
-        result = {}
+        result = OrderedDict()
         for key in self.keys():
             fields = self[key]
             result[key] = [f.data for f in fields]
@@ -176,7 +177,7 @@ class Record(AbstractRecord, DictLike, Hashable):
                 return field
         return None
 
-    def first_as_dict(self, tag: int) -> dict:
+    def first_as_dict(self, tag: int) -> OrderedDict:
         """
         Первое из полей с указанной меткой в виде словаря
         "код - значение".
@@ -186,7 +187,7 @@ class Record(AbstractRecord, DictLike, Hashable):
         for field in self.fields:
             if field.tag == tag:
                 return field.to_dict()
-        return {}
+        return OrderedDict()
 
     def have_field(self, tag: int) -> bool:
         """
@@ -355,6 +356,5 @@ class Record(AbstractRecord, DictLike, Hashable):
         self.fields = [f for f in self.fields if f.tag != key]
 
     def __hash__(self):
-        sorted_fields = sorted(self.fields, key=lambda f: (f.tag, hash(f)))
-        fields_hashes = tuple(hash(f) for f in sorted_fields)
+        fields_hashes = tuple(hash(f) for f in self.fields)
         return hash(fields_hashes)

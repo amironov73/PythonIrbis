@@ -181,11 +181,11 @@ class Field(DictLike, Hashable):
         for key in self.keys():
             subfields = self[key]
             result[key] = []
-            for sf in subfields:
-                if isinstance(sf, SubField):
-                    result[key].append(sf.data)
-                elif isinstance(sf, str):
-                    result[key].append(sf)
+            for subfield in subfields:
+                if isinstance(subfield, SubField):
+                    result[key].append(subfield.data)
+                elif isinstance(subfield, str):
+                    result[key].append(subfield)
         return result
 
     def first(self, code: str) -> 'Optional[SubField]':
@@ -473,7 +473,8 @@ class Field(DictLike, Hashable):
         :return: подполе или строка
         """
         if code == '':
-            return [self.value] or []
+            if self.value:
+                return [self.value]
         if isinstance(code, str):
             return [sf for sf in self.subfields if sf.code == code]
         return [self.subfields[code]] or []

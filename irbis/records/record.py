@@ -15,7 +15,8 @@ if TYPE_CHECKING:
     from irbis.records.field import FieldList, FieldValue
 
     RecordArg = Union[Field, Dict[int, List[Dict[str, str]]]]
-    RecordValue = Union[Field, FieldList, FieldValue, List[str]]
+    RecordValue = Union[Field, FieldList, FieldValue, List[str],
+                        List[Dict[str, str]]]
 
 
 class Record(AbstractRecord, DictLike, Hashable):

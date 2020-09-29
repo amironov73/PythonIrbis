@@ -49,6 +49,12 @@ class SubField(Hashable):
 
     @property
     def data(self):
+        """
+        Динамическое свойство извлечения данных в представлении стандартных
+        типов данных Python.
+
+        :return: строка со значением подполя
+        """
         return self.value
 
     def __str__(self):

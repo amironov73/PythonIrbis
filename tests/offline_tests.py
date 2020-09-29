@@ -371,7 +371,6 @@ class TestField(unittest.TestCase):
         field.subfields.append(sfa)
         field.subfields.append(sfb)
         data = field.data
-        print(data)
         value = data['a'][0]
         self.assertEqual(value, 'SubA')
         value = data['b'][0]

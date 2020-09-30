@@ -95,7 +95,8 @@ class AbstractRecord:
             self.version = int(parts[1])
             self.fields.clear()
             for line in text[2:]:
-                self.parse_line(line)
+                if line:
+                    self.parse_line(line)
         else:
             raise ValueError('text argument is empty')
 

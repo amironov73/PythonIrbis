@@ -331,19 +331,7 @@ class Field(DictLike, Hashable):
         """
         parts = line.split('#', 1)
         self.tag = int(parts[0])
-        if '^' not in parts[1]:
-            self.value = parts[1]
-        else:
-            if parts[1][0] != '^':
-                parts = parts[1].split('^', 1)
-                self.value = parts[0]
-                parts = parts[1].split('^')
-            else:
-                parts = parts[1].split('^')
-            for raw_item in parts:
-                if raw_item:
-                    subfield = SubField(raw_item[:1], raw_item[1:])
-                    self.subfields.append(subfield)
+        self.headless_parse(parts[1])
 
     def remove_at(self, index: int) -> 'Field':
         """

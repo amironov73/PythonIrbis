@@ -10,7 +10,7 @@ from irbis.abstract import DictLike, Hashable
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
     from irbis.records.subfield import SubFieldList, SubFieldDict
-    from typing import Iterable, List, Optional, Set, Union
+    from typing import Any, Iterable, List, Optional, Set, Union
 
     FieldList = List['Field']
     FieldValue = Union[SubField, SubFieldList, List[SubFieldDict],
@@ -188,11 +188,12 @@ class Field(DictLike, Hashable):
                     result[key].append(subfield)
         return result
 
-    def first(self, code: str) -> 'Optional[SubField]':
+    def first(self, code: str, default: 'Any' = None) -> 'Optional[SubField]':
         """
         Находит первое подполе с указанным кодом.
         :param code: Код
-        :return: Подполе или None
+        :default: Результат по-умолчанию
+        :return: Подполе или результат по-умолчанию
         """
         assert len(code) == 1
 
@@ -202,13 +203,15 @@ class Field(DictLike, Hashable):
         for subfield in self.subfields:
             if subfield.code == code:
                 return subfield
-        return None
+        return default
 
-    def first_value(self, code: str) -> 'Optional[str]':
+    def first_value(self, code: str, default: 'Any' = None)\
+            -> 'Optional[str]':
         """
         Находит первое подполе с указанным кодом.
         :param code: Код
-        :return: Значение подполя или None
+        :default: Результат по-умолчанию
+        :return: Значение подполя или результат по-умолчанию
         """
         assert len(code) <= 1
 
@@ -218,7 +221,7 @@ class Field(DictLike, Hashable):
         for subfield in self.subfields:
             if subfield.code == code:
                 return subfield.value
-        return None
+        return default
 
     def get_embedded_fields(self) -> 'List[Field]':
         """

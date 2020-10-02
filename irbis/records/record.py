@@ -11,7 +11,7 @@ from irbis.records.abstract import AbstractRecord
 from irbis.records.field import Field
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
-    from typing import Dict, List, Optional, Set, Union, Type
+    from typing import Any, Dict, List, Optional, Set, Union, Type
     from irbis.records.field import FieldList, FieldValue
 
     RecordArg = Union[Field, Dict[int, List[Dict[str, str]]]]
@@ -124,12 +124,14 @@ class Record(AbstractRecord, DictLike, Hashable):
             result[key] = [f.data for f in fields]
         return result
 
-    def fm(self, tag: int, code: str = '') -> 'Optional[str]':
+    def fm(self, tag: int, code: str = '', default: 'Any' = None)\
+            -> 'Optional[str]':
         """
         Текст первого поля с указанной меткой.
         :param tag: Искомая метка поля
         :param code: Код (опционально)
-        :return: Текст или None
+        :default: Результат по-умолчанию
+        :return: Текст или результат по-умолчанию
         """
         assert tag > 0
 
@@ -138,7 +140,7 @@ class Record(AbstractRecord, DictLike, Hashable):
                 if code:
                     return field.first_value(code)
                 return field.value
-        return None
+        return default
 
     def fma(self, tag: int, code: str = '') -> 'List[str]':
         """
@@ -164,19 +166,20 @@ class Record(AbstractRecord, DictLike, Hashable):
                         result.append(one)
         return result
 
-    def first(self, tag: int) -> 'Optional[Field]':
+    def first(self, tag: int, default: 'Any' = None) -> 'Optional[Field]':
         """
         Первое из полей с указанной меткой.
 
         :param tag: Искомая метка поля
-        :return: Поле либо None
+        :default: Результат по-умолчанию
+        :return: Поле или результат по-умолчанию
         """
         assert tag > 0
 
         for field in self.fields:
             if field.tag == tag:
                 return field
-        return None
+        return default
 
     def first_as_dict(self, tag: int) -> OrderedDict:
         """

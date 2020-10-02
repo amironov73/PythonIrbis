@@ -32,37 +32,43 @@ class Field(DictLike, Hashable):
         self.tag: int = tag or self.DEFAULT_TAG
         self.value: 'Optional[str]' = None
         self.subfields: 'SubFieldList' = []
+        self.set_values(value)
 
-        if value is None:
+    def set_values(self, values: 'FieldValue' = None):
+        """
+        Установка значений поля
+
+        :value: Переменная или структура для создания подполей
+        """
+        if values is None:
             pass
 
-        elif isinstance(value, SubField):
-            self.subfields.append(value)
+        elif isinstance(values, SubField):
+            self.subfields.append(values)
 
-        elif isinstance(value, str):
-            self.headless_parse(value)
+        elif isinstance(values, str):
+            self.headless_parse(values)
 
-        elif isinstance(value, list):
-            if all((isinstance(element, SubField) for element in value)):
-                self.subfields = cast('SubFieldList', value)
+        elif isinstance(values, list):
+            if all((isinstance(element, SubField) for element in values)):
+                self.subfields = cast('SubFieldList', values)
             else:
                 raise TypeError('All elements must be of the SubField type')
 
-        elif isinstance(value, dict):
-            for code, val in value.items():
-                if isinstance(val, str):
+        elif isinstance(values, dict):
+            for code, value in values.items():
+                if isinstance(value, str):
                     if code == '':
-                        self.value = val
+                        self.value = value
                         continue
-                    self.subfields.append(
-                        SubField(code, val)
-                    )
-                elif isinstance(val, list):
-                    if all((isinstance(element, str) for element in val)):
+                    self.add(code, value)
+                elif isinstance(value, list):
+                    if all((isinstance(element, str) for element in value)):
                         if code == '':
-                            self.value = val[0]
+                            self.value = value[0]
                         else:
-                            self.subfields += [SubField(code, v) for v in val]
+                            for val in value:
+                                self.add(code, val)
                     else:
                         raise TypeError('Unsupported value type')
                 else:
@@ -79,7 +85,7 @@ class Field(DictLike, Hashable):
         :param value: Значение подполя (опционально)
         :return: Self
         """
-        assert len(code) == 1
+        code = SubField.validate_code(code)
         subfield = SubField(code, value)
         if subfield in self.subfields:
             raise ValueError(f'SubField "{subfield}" already added')
@@ -95,11 +101,9 @@ class Field(DictLike, Hashable):
         :param value: Значение подполя (опциональное).
         :return: Self
         """
-        assert len(code) == 1
-
+        code = SubField.validate_code(code)
         if value:
-            self.subfields.append(SubField(code, value))
-
+            self.add(code, value)
         return self
 
     def all(self, code: str) -> 'SubFieldList':
@@ -109,9 +113,7 @@ class Field(DictLike, Hashable):
         :param code: Код подполя (однобуквенный).
         :return: Список подполей (возможно, пустой).
         """
-        assert len(code) == 1
-
-        code = code.lower()
+        code = SubField.validate_code(code)
         # if code == '*':
         #    return [self.get_value_or_first_subfield()]
         return [sf for sf in self.subfields if sf.code == code]
@@ -124,9 +126,7 @@ class Field(DictLike, Hashable):
         :param code: Код подполя (однобуквенный).
         :return: Список значений (возможно, пустой).
         """
-        assert len(code) == 1
-
-        code = code.lower()
+        code = SubField.validate_code(code)
         if code == '*':
             return [self.get_value_or_first_subfield() or '']
         return [sf.value for sf in self.subfields
@@ -195,9 +195,7 @@ class Field(DictLike, Hashable):
         :default: Результат по-умолчанию
         :return: Подполе или результат по-умолчанию
         """
-        assert len(code) == 1
-
-        code = code.lower()
+        code = SubField.validate_code(code)
         # if code == '*':
         #    return self.get_value_or_first_subfield()
         for subfield in self.subfields:
@@ -213,9 +211,7 @@ class Field(DictLike, Hashable):
         :default: Результат по-умолчанию
         :return: Значение подполя или результат по-умолчанию
         """
-        assert len(code) <= 1
-
-        code = code.lower()
+        code = SubField.validate_code(code)
         if code == '*':
             return self.get_value_or_first_subfield()
         for subfield in self.subfields:
@@ -271,11 +267,8 @@ class Field(DictLike, Hashable):
         :param code: Искомый код подполя (должен быть однобуквенным).
         :return: True, если есть хотя бы одно подполе с указанным кодом.
         """
-        if not isinstance(code, str):
-            raise ValueError('сode argument must be str type')
-        if len(code) != 1:
-            raise ValueError('сode argument must be one char')
-        return code.lower() in self.keys()
+        code = SubField.validate_code(code)
+        return code in self.keys()
 
     def headless_parse(self, line: str) -> None:
         """
@@ -288,8 +281,7 @@ class Field(DictLike, Hashable):
         self.value = parts[0] or None
         for raw_item in parts[1:]:
             if raw_item:
-                subfield = SubField(raw_item[:1], raw_item[1:])
-                self.subfields.append(subfield)
+                self.add(raw_item[:1], raw_item[1:])
 
     def insert_at(self, index: int, code: str, value: str) -> 'Field':
         """
@@ -301,7 +293,7 @@ class Field(DictLike, Hashable):
         :return: Self
         """
         assert index >= 0
-        assert len(code) == 1
+        code = SubField.validate_code(code)
 
         subfield = SubField(code, value)
         self.subfields.insert(index, subfield)
@@ -361,9 +353,7 @@ class Field(DictLike, Hashable):
         :param new_value: Новое значение.
         :return: Self.
         """
-        assert code
-
-        code = code.lower()
+        code = SubField.validate_code(code)
         for subfield in self.subfields:
             if subfield.code == code and subfield.value == old_value:
                 subfield.value = new_value
@@ -379,9 +369,7 @@ class Field(DictLike, Hashable):
         :param value: Устанавливаемое значение подполя (опционально).
         :return: Self
         """
-        assert code
-
-        code = code.lower()
+        code = SubField.validate_code(code)
         if not value:
             return self.remove_subfield(code)
 
@@ -489,8 +477,7 @@ class Field(DictLike, Hashable):
         :param key: строковый код
         :return:
         """
-        assert key
-        key = key.lower()
+        key = SubField.validate_code(key)
         self.subfields = [sf for sf in self.subfields if sf.code != key]
 
     def __len__(self):

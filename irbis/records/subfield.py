@@ -24,8 +24,7 @@ class SubField(Hashable):
 
     def __init__(self, code: str = DEFAULT_CODE,
                  value: 'Optional[str]' = None) -> None:
-        code = code or SubField.DEFAULT_CODE
-        self.code: str = code.lower()
+        self.code: str = self.validate_code(code) or SubField.DEFAULT_CODE
         self.value: 'Optional[str]' = value
 
     def assign_from(self, other: 'SubField') -> None:
@@ -67,3 +66,17 @@ class SubField(Hashable):
 
     def __hash__(self):
         return hash((self.code, self.value))
+
+    @staticmethod
+    def validate_code(code: str) -> str:
+        """
+        Валидация кода подполя на тип (строка) и длинну (1 символ)
+
+        :code: код подполя
+        :return: код подполя
+        """
+        if isinstance(code, str) is False:
+            raise ValueError('Код подполя должен быть строкой')
+        if len(code) != 1:
+            raise ValueError('Код подполя должен быть односимвольным')
+        return code.lower()

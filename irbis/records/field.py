@@ -284,19 +284,12 @@ class Field(DictLike, Hashable):
         :param line: Строка с текстовым представлением.
         :return: None.
         """
-        if '^' not in line:
-            self.value = line
-        else:
-            if line[0] != '^':
-                parts = line.split('^', 1)
-                self.value = parts[0]
-                parts = parts[1].split('^')
-            else:
-                parts = line.split('^')
-            for raw_item in parts:
-                if raw_item:
-                    subfield = SubField(raw_item[:1], raw_item[1:])
-                    self.subfields.append(subfield)
+        parts = line.split('^')
+        self.value = parts[0] or None
+        for raw_item in parts[1:]:
+            if raw_item:
+                subfield = SubField(raw_item[:1], raw_item[1:])
+                self.subfields.append(subfield)
 
     def insert_at(self, index: int, code: str, value: str) -> 'Field':
         """

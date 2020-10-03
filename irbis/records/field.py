@@ -191,9 +191,10 @@ class Field(DictLike, Hashable):
     def first(self, code: str, default: 'Any' = None) -> 'Optional[SubField]':
         """
         Находит первое подполе с указанным кодом.
-        :param code: Код
-        :default: Результат по-умолчанию
-        :return: Подполе или результат по-умолчанию
+
+        :param code: Искомый код.
+        :param default: Значение по умолчанию.
+        :return: Подполе или значение по умолчанию.
         """
         code = SubField.validate_code(code)
         # if code == '*':
@@ -206,10 +207,11 @@ class Field(DictLike, Hashable):
     def first_value(self, code: str, default: 'Any' = None)\
             -> 'Optional[str]':
         """
-        Находит первое подполе с указанным кодом.
-        :param code: Код
-        :default: Результат по-умолчанию
-        :return: Значение подполя или результат по-умолчанию
+        Находит первое подполе с указанным кодом и выдает его значение.
+
+        :param code: Искомый код.
+        :param default: Значение по умолчанию.
+        :return: Значение подполя или значение по умолчанию.
         """
         code = SubField.validate_code(code)
         if code == '*':

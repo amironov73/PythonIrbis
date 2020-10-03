@@ -10,7 +10,7 @@ from irbis.abstract import DictLike, Hashable
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
     from irbis.records.subfield import SubFieldList, SubFieldDict
-    from typing import Any, Iterable, List, Optional, Set, Union
+    from typing import Iterable, List, Optional, Set, Union
 
     FieldList = List['Field']
     FieldValue = Union[SubField, SubFieldList, List[SubFieldDict],
@@ -188,7 +188,8 @@ class Field(DictLike, Hashable):
                     result[key].append(subfield)
         return result
 
-    def first(self, code: str, default: 'Any' = None) -> 'Optional[SubField]':
+    def first(self, code: str, default: 'Optional[SubField]' = None)\
+            -> 'Optional[SubField]':
         """
         Находит первое подполе с указанным кодом.
 
@@ -204,7 +205,7 @@ class Field(DictLike, Hashable):
                 return subfield
         return default
 
-    def first_value(self, code: str, default: 'Any' = None)\
+    def first_value(self, code: str, default: 'Optional[str]' = None)\
             -> 'Optional[str]':
         """
         Находит первое подполе с указанным кодом и выдает его значение.

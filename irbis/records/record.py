@@ -11,7 +11,7 @@ from irbis.records.abstract import AbstractRecord
 from irbis.records.field import Field
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
-    from typing import Any, Dict, List, Optional, Set, Union, Type
+    from typing import Dict, List, Optional, Set, Union, Type
     from irbis.records.field import FieldList, FieldValue
 
     RecordArg = Union[Field, Dict[int, List[Dict[str, str]]]]
@@ -125,7 +125,7 @@ class Record(AbstractRecord, DictLike, Hashable):
             result[key] = [f.data for f in fields]
         return result
 
-    def fm(self, tag: int, code: str = '', default: 'Any' = None)\
+    def fm(self, tag: int, code: str = '', default: 'Optional[str]' = None)\
             -> 'Optional[str]':
         """
         Текст первого поля с указанной меткой.
@@ -170,7 +170,8 @@ class Record(AbstractRecord, DictLike, Hashable):
                         result.append(one)
         return result
 
-    def first(self, tag: int, default: 'Any' = None) -> 'Optional[Field]':
+    def first(self, tag: int, default: 'Optional[Field]' = None)\
+            -> 'Optional[Field]':
         """
         Первое из полей с указанной меткой.
 

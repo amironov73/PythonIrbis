@@ -192,13 +192,6 @@ class TestField(unittest.TestCase):
         self.assertEqual(field.subfields[0].code, 'a')
         self.assertEqual(field.subfields[0].value, 'Some text')
 
-    def test_add_duplicate_1(self):
-        field = Field()
-        field.add('a', 'Some text')
-        subfield = SubField('a', 'Some text')
-        self.assertIn(subfield, field.subfields)
-        self.assertRaises(ValueError, field.add, 'a', 'Some text')
-
     def test_add_non_empty_1(self):
         field = Field()
         field.add_non_empty('a', None)
@@ -348,7 +341,7 @@ class TestField(unittest.TestCase):
         field.add('f', 'Бондарин С. А.')
         field.add('v', 'С. 76-132')
         field.add('1', '200#1')
-        field.add('a'  'Руслан и Людмила')
+        field.add('a',  'Руслан и Людмила')
         field.add('f', 'Пушкин А. С.')
         found = field.get_embedded_fields()
         self.assertEqual(len(found), 2)

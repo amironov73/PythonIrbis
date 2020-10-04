@@ -492,7 +492,4 @@ class Field(DictLike, Hashable):
         return bool(self.tag) and (bool(self.value) or bool(self.subfields))
 
     def __hash__(self):
-        if self.value:
-            return hash((self.tag, self.value))
-        subfields_hashes = tuple(hash(sf) for sf in self.subfields)
-        return hash((self.tag, subfields_hashes))
+        return hash((self.tag, self.value, *self.subfields))

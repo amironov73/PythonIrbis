@@ -162,7 +162,7 @@ class Field(DictLike, Hashable):
         """
         Создание полного клона поля.
 
-        :return: Клон поля
+        :return: Клон поля.
         """
         result = Field(self.tag, self.value)
         for subfield in self.subfields:
@@ -174,6 +174,10 @@ class Field(DictLike, Hashable):
         """
         Динамическое свойство извлечения данных в представлении стандартных
         типов данных Python.
+
+        :return: Упорядоченный словарь, "код подполя" => "список подполей".
+        Значение до первого разделителя попадает в словарь
+        с ключом "пустая строка".
         """
         result = OrderedDict()
         if self.value:

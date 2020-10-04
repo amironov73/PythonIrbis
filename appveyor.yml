@@ -22,6 +22,8 @@ install:
 before_build:
   - python utils\patch_version.py irbis\__init__.py %APPVEYOR_BUILD_VERSION%
   - python utils\patch_version.py setup.py %APPVEYOR_BUILD_VERSION%
+  - pip install --upgrade pygount
+  - pygount irbis -f summary
 
 build_script:
   - cd c:\projects\pythonirbis

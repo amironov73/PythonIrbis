@@ -9,6 +9,7 @@ import os
 import os.path
 import unittest
 from sys import platform
+from collections import OrderedDict
 
 from irbis import *
 from irbis._common import same_string, safe_str, safe_int, irbis_to_dos, \
@@ -219,6 +220,45 @@ class TestField(unittest.TestCase):
         self.assertEqual(2, len(field.all_values('A')))
         self.assertEqual(1, len(field.all_values('B')))
 
+    def test_all_values_2(self):
+        field = Field()
+        field.add('a', 'A1').add('a', 'A2')
+        # Если нет значения до первого разделителя,
+        # вернётся значение первого подполя
+        self.assertEqual('A1', field.all_values('*')[0])
+
+    def test_all_values_3(self):
+        field = Field()
+        # У совсем пустого поля всё равно будет 1 элемент в списке
+        self.assertEqual('', field.all_values('*')[0])
+
+    def test_all_values_4(self):
+        field = Field()
+        field.value = 'V1'
+        field.add('a', 'A1').add('a', 'A2')
+        self.assertEqual('V1', field.all_values('*')[0])
+
+    def test_data_1(self):
+        field = Field()
+        result = field.data
+        # Пустое поле выдает пустой словарь
+        self.assertEqual(OrderedDict(), result)
+
+    def test_data_2(self):
+        field = Field(100, 'Value')
+        result = field.data
+        # Значение попадет в словарь с ключем ''
+        self.assertEqual([field.value], result[''])
+
+    def test_data_3(self):
+        field = Field()
+        field.add('a', 'A1').add('a', 'A2').add('a', 'A3')
+        result = field.data['a']
+        # Порядок подполей сохраняется
+        self.assertEqual('A1', result[0])
+        self.assertEqual('A2', result[1])
+        self.assertEqual('A3', result[2])
+
     def test_assign_from_1(self):
         first = Field(100, 'Some value').add('a', 'SubA')
         second = Field(200, 'Other value').add('b', 'SubB')
@@ -263,6 +303,26 @@ class TestField(unittest.TestCase):
         self.assertEqual(field.first_value('b'), sf2.value)
         self.assertIsNone(field.first_value('c'))
 
+    def test_first_value_2(self):
+        field = Field()
+        result = field.first_value('*')
+        # Совсем пустое поле выдаст None
+        self.assertIsNone(result)
+
+    def test_first_value_3(self):
+        field = Field(100, 'Value')
+        result = field.first_value('*')
+        # Поле со значением до первого разделителя выдаст именно его
+        self.assertEqual(field.value, result)
+
+    def test_first_value_4(self):
+        field = Field()
+        field.add('a', 'A1').add('a', 'A2')
+        result = field.first_value('*')
+        # Поле без значения до первого разделителя
+        # выдаст значение первого подполя
+        self.assertEqual('A1', result)
+
     def test_get_embedded_fields_1(self):
         field = Field(200)
         found = field.get_embedded_fields()
@@ -278,6 +338,20 @@ class TestField(unittest.TestCase):
         field.add('v', 'С. 76-132')
         found = field.get_embedded_fields()
         self.assertEqual(len(found), 1)
+
+    def test_get_embedded_fields_3(self):
+        field = Field(461)
+        field.add('a', 'SubA')
+        field.add('1', '200#1')
+        field.add('a', 'Златая цепь')
+        field.add('e', 'Записки. Повести. Рассказы')
+        field.add('f', 'Бондарин С. А.')
+        field.add('v', 'С. 76-132')
+        field.add('1', '200#1')
+        field.add('a'  'Руслан и Людмила')
+        field.add('f', 'Пушкин А. С.')
+        found = field.get_embedded_fields()
+        self.assertEqual(len(found), 2)
 
     def test_str_1(self):
         field = Field(100, 'Some value')

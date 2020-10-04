@@ -87,8 +87,6 @@ class Field(DictLike, Hashable):
         """
         code = SubField.validate_code(code)
         subfield = SubField(code, value)
-        if subfield in self.subfields:
-            raise ValueError(f'SubField "{subfield}" already added')
         self.subfields.append(subfield)
         return self
 

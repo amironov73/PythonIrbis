@@ -453,6 +453,7 @@ class Field(DictLike, Hashable):
             if self.value:
                 return [self.value]
         if isinstance(code, str):
+            code = SubField.validate_code(code)
             return [sf for sf in self.subfields if sf.code == code]
         return [self.subfields[code]] or []
 
@@ -463,6 +464,7 @@ class Field(DictLike, Hashable):
             else:
                 self.subfields.pop(key)
         else:
+            key = SubField.validate_code(key)
             found = self.first(key)
             if value:
                 if found:

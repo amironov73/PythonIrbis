@@ -185,6 +185,23 @@ class TestField(unittest.TestCase):
         self.assertIsNone(field.value)
         self.assertEqual(2, len(field.subfields))
 
+    def test_init_6(self):
+        def wrong_initialization():
+            # noinspection PyTypeChecker
+            field = Field(100, [200, 300])
+        # Должно выбрасывать TypeError
+        self.assertRaises(TypeError, wrong_initialization)
+
+    def test_init_7(self):
+        field = Field(100, { 'a': 'SubA', 'b': 'SubB'})
+        self.assertEqual(field.tag, 100)
+        self.assertIsNone(field.value)
+        self.assertEqual(2, len(field.subfields))
+        self.assertEqual(1, len(field['a']))
+        self.assertEqual(1, len(field['b']))
+        self.assertEqual(1, len(field['A']))
+        self.assertEqual(1, len(field['B']))
+
     def test_add_1(self):
         field = Field()
         field.add('a', 'Some text')

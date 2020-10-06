@@ -88,7 +88,7 @@ class Field(DictLike, Hashable):
         """
         code = SubField.validate_code(code)
         if code == '*':
-            if self.value is None:
+            if not self.value  and value and isinstance(self.value, str):
                 self.value = value
             else:
                 raise ValueError('Значение до первого разделителя уже задано')
@@ -462,6 +462,7 @@ class Field(DictLike, Hashable):
         elif isinstance(key, int):
             return self.subfields[key]
         raise KeyError
+        #return [self.subfields[code]]
 
     def get(self, key: 'Union[str, int]', default: 'FieldGetReturn' = list)\
             -> 'FieldGetReturn':

@@ -16,18 +16,19 @@ class ValueMixin:
     Примесь для проверки атрибута value
     """
     @staticmethod
-    def validate_value(value: 'Optional[str]') -> 'Optional[bool]':
+    def validate_value(value: 'Any') -> 'Optional[str]':
         """
         Валидация Field.value и SubField.value
 
         :value: значение
         """
         if value is None:
-            return True
-        if isinstance(value, str) and value:
-            return True
-        message = 'value должно быть непустой строкой или None'
-        raise TypeError(message)
+            return value
+        if isinstance(value, str):
+            if value:
+                return value
+            raise ValueError('value не может быть пустой строкой')
+        raise TypeError('Не поддерживаемый тип value')
 
 
 class AbstractRecord:

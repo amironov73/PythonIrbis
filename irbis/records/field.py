@@ -5,19 +5,25 @@
 """
 
 from collections import OrderedDict
-from collections.abc import Iterable, Sized
+from collections.abc import Iterable, Sequence
 from typing import TYPE_CHECKING
 from irbis.abstract import DictLike, Hashable
 from irbis.records.abstract import ValueMixin
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
-    from irbis.records.subfield import SubFieldList, SubFieldDict
-    from typing import List, Optional, Sequence, Set, Union
+    from irbis.records.subfield import SubFieldList
+    from typing import Dict, List, Optional, Set, Union, Tuple
+
+    SubFieldValues = Union[str, Sequence[str]]
+    UserSubField = Union[
+        SubField,
+        Dict[str, SubFieldValues],
+        Tuple[str, SubFieldValues],
+    ]
+    FieldSetValue = Union[Optional[str], UserSubField, List[UserSubField]]
 
     FieldList = List['Field']
-    FieldValue = Union[SubField, SubFieldList, List[SubFieldDict],
-                       SubFieldDict, str, None]
-    FieldGetReturn = Union[str, SubField, SubFieldList]
+    FieldGetReturn = Union[str, SubField, SubFieldList, None]
 
 
 class Field(DictLike, Hashable, ValueMixin):
@@ -31,13 +37,13 @@ class Field(DictLike, Hashable, ValueMixin):
     __slots__ = 'tag', 'value', 'subfields'
 
     def __init__(self, tag: 'Optional[int]' = DEFAULT_TAG,
-                 value: 'FieldValue' = None) -> None:
+                 value: 'FieldSetValue' = None) -> None:
         self.tag: int = tag or self.DEFAULT_TAG
         self.value: 'Optional[str]' = None
         self.subfields: 'SubFieldList' = []
         self.set_values(value)
 
-    def set_values(self, values: 'FieldValue' = None):
+    def set_values(self, values: 'FieldSetValue' = None):
         """
         Установка значений поля
 
@@ -58,13 +64,12 @@ class Field(DictLike, Hashable, ValueMixin):
                         if isinstance(value, SubField):
                             self.subfields.append(value)
                             continue
-                        if isinstance(value, Sized) and len(value) == 2:
-                            code, val = value
-                            self.add(code, val)
+                        if isinstance(value, Sequence) and len(value) == 2:
+                            self.add(value[0], value[1])
                             continue
                         raise TypeError('Unsupported value type')
 
-    def add(self, code: str, value: 'Union[str, Sequence[str]]' = '')\
+    def add(self, code: str, value: 'SubFieldValues' = '')\
             -> 'Field':
         """
         Добавление подполя с указанным кодом (и, возможно, значением)
@@ -78,8 +83,8 @@ class Field(DictLike, Hashable, ValueMixin):
         if code == '*':
             if value and isinstance(value, (list, tuple)):
                 value = value[0]
-            if not self.value and self.validate_value(value):
-                self.value = value
+            if not self.value:
+                self.value = self.validate_value(value)
             else:
                 raise ValueError('Значение до первого разделителя уже задано')
         else:
@@ -104,7 +109,7 @@ class Field(DictLike, Hashable, ValueMixin):
             self.add(code, value)
         return self
 
-    def all(self, code: str) -> 'SubFieldList':
+    def all(self, code: str) -> 'FieldGetReturn':
         """
         Список всех подполей с указанным кодом.
 
@@ -166,7 +171,7 @@ class Field(DictLike, Hashable, ValueMixin):
         return result
 
     @property
-    def data(self) -> OrderedDict:
+    def data(self) -> 'OrderedDict[str, Union[str, SubFieldList]]':
         """
         Динамическое свойство извлечения данных в представлении стандартных
         типов данных Python.
@@ -175,17 +180,13 @@ class Field(DictLike, Hashable, ValueMixin):
         Значение до первого разделителя попадает в словарь
         с ключом "пустая строка".
         """
-        result = OrderedDict()
-        if self.value:
-            result['*'] = [self.value]
+        result: 'OrderedDict[str, Union[str, SubFieldList]]' = OrderedDict()
         for key in self.keys():
-            subfields = self[key]
-            result[key] = []
-            for subfield in subfields:
-                if isinstance(subfield, SubField):
-                    result[key].append(subfield.data)
-                elif isinstance(subfield, str):
-                    result[key].append(subfield)
+            values = self[key]
+            if isinstance(values, str):
+                result[key] = values
+            elif isinstance(values, list):
+                result[key] = [subfield.data for subfield in values]
         return result
 
     def first(self, code: str, default: 'Optional[SubField]' = None)\
@@ -308,10 +309,14 @@ class Field(DictLike, Hashable, ValueMixin):
 
         :return: список кодов
         """
+        result = []
+        if self.value:
+            result.append('*')
         unique: 'Set' = set()
         add = unique.add
-        return [sf.code for sf in self.subfields
-                if not (sf.code in unique or add(sf.code))]
+        result.extend([sf.code for sf in self.subfields
+                       if not (sf.code in unique or add(sf.code))])
+        return result
 
     def parse(self, line: str) -> None:
         """
@@ -472,14 +477,13 @@ class Field(DictLike, Hashable, ValueMixin):
             default = None
         return super().get(key, default)
 
-    def __setitem__(self, key: 'Union[str, int]', value: 'FieldValue'):
+    def __setitem__(self, key: 'Union[str, int]', value: 'FieldSetValue'):
         if key == '*':
-            if self.validate_value(value):
-                self.value = value
+            self.value = self.validate_value(value)
 
         elif isinstance(key, int):
             if value:
-                self.subfields[key].value = value
+                self.subfields[key].value = self.validate_value(value)
             else:
                 self.subfields.pop(key)
 
@@ -489,7 +493,7 @@ class Field(DictLike, Hashable, ValueMixin):
             values = value
             if not isinstance(value, list):
                 values = [values]
-            if isinstance(values, list):
+            if isinstance(values, (list, tuple)):
                 for val in values:
                     if val:
                         self.add(key, val)

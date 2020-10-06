@@ -8,10 +8,9 @@ from typing import TYPE_CHECKING
 from irbis.abstract import Hashable
 from irbis.records.abstract import ValueMixin
 if TYPE_CHECKING:
-    from typing import Dict, List, Optional, Union
+    from typing import List, Optional
 
     SubFieldList = List['SubField']
-    SubFieldDict = Dict[str, Union[str, List[str]]]
 
 
 class SubField(Hashable, ValueMixin):
@@ -26,8 +25,7 @@ class SubField(Hashable, ValueMixin):
     def __init__(self, code: str = DEFAULT_CODE,
                  value: 'Optional[str]' = None) -> None:
         self.code: str = self.validate_code(code) or SubField.DEFAULT_CODE
-        self.validate_value(value)
-        self.value: 'Optional[str]' = value
+        self.value: 'Optional[str]' = self.validate_value(value)
 
     def assign_from(self, other: 'SubField') -> None:
         """

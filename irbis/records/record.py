@@ -12,10 +12,10 @@ from irbis.records.field import Field
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
     from typing import Dict, List, Optional, Set, Union, Type
-    from irbis.records.field import FieldList, FieldValue
+    from irbis.records.field import FieldList, FieldSetValue
 
     RecordArg = Union[Field, Dict[int, List[Dict[str, str]]]]
-    RecordValue = Union[Field, FieldList, FieldValue, List[str],
+    RecordValue = Union[Field, FieldList, FieldSetValue, List[str],
                         List[Dict[str, str]]]
 
 
@@ -114,12 +114,12 @@ class Record(AbstractRecord, DictLike, Hashable):
         return [field.clone() for field in self.fields]
 
     @property
-    def data(self) -> 'OrderedDict[int, List[OrderedDict]]':
+    def data(self) -> 'Dict[int, List[OrderedDict]]':
         """
         Динамическое свойство извлечения данных в представлении стандартных
         типов данных Python.
         """
-        result = OrderedDict()
+        result = {}
         for key in self.keys():
             fields = self[key]
             result[key] = [f.data for f in fields]
@@ -360,7 +360,7 @@ class Record(AbstractRecord, DictLike, Hashable):
                     self.fields += value
                 else:
                     self.fields += [
-                        self.field_type(key, cast('FieldValue', v))
+                        self.field_type(key, cast('FieldSetValue', v))
                         for v in value]
             elif isinstance(value, Field):
                 self.fields.append(value)

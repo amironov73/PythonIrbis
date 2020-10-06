@@ -540,12 +540,13 @@ class TestField(unittest.TestCase):
         field = Field(100)
         field.subfields.append(sfa)
         field.subfields.append(sfb)
+        self.assertEqual(field.get('a')[0].value, 'SubA')
+        self.assertEqual(field.get('b')[0].value, 'SubB')
         new_value = 'New value'
         field['a'] = new_value
-        # noinspection PyTypeChecker
-        self.assertEqual(sfa.value, new_value)
+        self.assertEqual(field.get('a')[0].value, new_value)
         field['b'] = new_value
-        self.assertEqual(sfb.value, new_value)
+        self.assertEqual(field.get('b')[0].value, new_value)
         field['c'] = new_value
         self.assertEqual(len(field.subfields), 3)
         sfc = field.subfields[2]

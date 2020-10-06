@@ -500,7 +500,7 @@ class Field(DictLike, Hashable, ValueMixin):
             values = value
             if not isinstance(value, list):
                 values = [values]
-            if isinstance(value, list):
+            if isinstance(values, list):
                 for value in values:
                     if value:
                         self.add(key, value)

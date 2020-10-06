@@ -10,6 +10,7 @@ from irbis.records.abstract import ValueMixin
 if TYPE_CHECKING:
     from typing import List, Optional
 
+    Value = Optional[str]
     SubFieldList = List['SubField']
 
 
@@ -23,9 +24,9 @@ class SubField(Hashable, ValueMixin):
     __slots__ = 'code', 'value'
 
     def __init__(self, code: str = DEFAULT_CODE,
-                 value: 'Optional[str]' = None) -> None:
+                 value: 'Value' = None) -> None:
         self.code: str = self.validate_code(code) or SubField.DEFAULT_CODE
-        self.value: 'Optional[str]' = self.validate_value(value)
+        self.value: 'Value' = self.validate_value(value)
 
     def assign_from(self, other: 'SubField') -> None:
         """

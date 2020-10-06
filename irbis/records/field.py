@@ -5,23 +5,25 @@
 """
 
 from collections import OrderedDict
-from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING
+from typing import cast, TYPE_CHECKING
 from irbis.abstract import DictLike, Hashable
 from irbis.records.abstract import ValueMixin
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
-    from irbis.records.subfield import SubFieldList
-    from typing import Dict, List, Optional, Set, Union, Tuple
+    from irbis.records.subfield import SubFieldList, Value
+    from typing import Dict, Iterable, List, Optional, Set, Union, Tuple
+    from typing import Sequence
 
-    SubFieldValues = Union[str, Sequence[str]]
+    Code = str
+    SubFieldValues = Union[Value, Sequence[Value]]
     UserSubField = Union[
+        str,
         SubField,
-        Dict[str, SubFieldValues],
-        Tuple[str, SubFieldValues],
+        Dict[Code, SubFieldValues],
+        Tuple[Code, SubFieldValues],
     ]
-    FieldSetValue = Union[Optional[str], UserSubField, List[UserSubField]]
-
+    UserSubFields = Sequence[UserSubField]
+    FieldSetValues = Union[Optional[str], UserSubField, UserSubFields]
     FieldList = List['Field']
     FieldGetReturn = Union[str, SubField, SubFieldList, None]
 
@@ -37,13 +39,13 @@ class Field(DictLike, Hashable, ValueMixin):
     __slots__ = 'tag', 'value', 'subfields'
 
     def __init__(self, tag: 'Optional[int]' = DEFAULT_TAG,
-                 value: 'FieldSetValue' = None) -> None:
+                 value: 'FieldSetValues' = None) -> None:
         self.tag: int = tag or self.DEFAULT_TAG
         self.value: 'Optional[str]' = None
         self.subfields: 'SubFieldList' = []
         self.set_values(value)
 
-    def set_values(self, values: 'FieldSetValue' = None):
+    def set_values(self, values: 'FieldSetValues' = None):
         """
         Установка значений поля
 
@@ -56,15 +58,23 @@ class Field(DictLike, Hashable, ValueMixin):
                 if isinstance(values, dict):
                     values = list(values.items())
 
-                if not isinstance(values, Iterable):
-                    values = [values]
-
-                if isinstance(values, Iterable):
+                if not isinstance(values, (list, tuple)):
+                    values = cast('UserSubFields', [values])
+                if isinstance(values, (list, tuple)):
+                    if (
+                        len(values) == 2
+                        and isinstance(values[0], str)
+                        and isinstance(values[1], (str, list, tuple))
+                    ):
+                        values = cast('UserSubFields', [values])
                     for value in values:
                         if isinstance(value, SubField):
                             self.subfields.append(value)
                             continue
-                        if isinstance(value, Sequence) and len(value) == 2:
+                        if (
+                            isinstance(value, (list, tuple))
+                            and len(value) == 2
+                        ):
                             self.add(value[0], value[1])
                             continue
                         raise TypeError('Unsupported value type')
@@ -88,11 +98,12 @@ class Field(DictLike, Hashable, ValueMixin):
             else:
                 raise ValueError('Значение до первого разделителя уже задано')
         else:
-            if isinstance(value, str):
-                value = [value]
-            for val in value:
-                subfield = SubField(code, val)
-                self.subfields.append(subfield)
+            if value:
+                if isinstance(value, str):
+                    value = [value]
+                for val in value:
+                    subfield = SubField(code, val)
+                    self.subfields.append(subfield)
         return self
 
     def add_non_empty(self, code: str, value: 'Optional[str]') -> 'Field':
@@ -462,7 +473,7 @@ class Field(DictLike, Hashable, ValueMixin):
             return self.subfields[key]
         raise KeyError
 
-    def get(self, key: 'Union[str, int]', default: 'FieldGetReturn' = list)\
+    def get(self, key: 'Union[str, int]', default: 'FieldGetReturn' = None)\
             -> 'FieldGetReturn':
         """
         Получение значения подполя по индексу
@@ -477,7 +488,7 @@ class Field(DictLike, Hashable, ValueMixin):
             default = None
         return super().get(key, default)
 
-    def __setitem__(self, key: 'Union[str, int]', value: 'FieldSetValue'):
+    def __setitem__(self, key: 'Union[str, int]', value: 'UserSubField'):
         if key == '*':
             self.value = self.validate_value(value)
 
@@ -490,13 +501,9 @@ class Field(DictLike, Hashable, ValueMixin):
         elif isinstance(key, str):
             key = SubField.validate_code(key)
             del self[key]
-            values = value
-            if not isinstance(value, list):
-                values = [values]
-            if isinstance(values, (list, tuple)):
-                for val in values:
-                    if val:
-                        self.add(key, val)
+            if value is not None:
+                values = key, value
+                self.set_values(values)
 
     def __delitem__(self, key: 'Union[str, int]'):
         """

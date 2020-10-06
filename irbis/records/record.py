@@ -12,10 +12,10 @@ from irbis.records.field import Field
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
     from typing import Dict, List, Optional, Set, Union, Type
-    from irbis.records.field import FieldList, FieldSetValue
+    from irbis.records.field import FieldList, FieldSetValues
 
     RecordArg = Union[Field, Dict[int, List[Dict[str, str]]]]
-    RecordValue = Union[Field, FieldList, FieldSetValue, List[str],
+    RecordValue = Union[Field, FieldList, FieldSetValues, List[str],
                         List[Dict[str, str]]]
 
 
@@ -328,18 +328,15 @@ class Record(AbstractRecord, DictLike, Hashable):
         :param tag: числовая метка полей
         :return: поле, список полей или ничего
         """
-        result = [f for f in self.fields if f.tag == tag]
-        if result:
-            return result
-        raise KeyError
+        return [f for f in self.fields if f.tag == tag]
 
-    def get(self, key: int, default: 'Optional[FieldList]' = list)\
+    def get(self, key: int, default: 'Optional[FieldList]' = None)\
             -> 'FieldList':
         """
         Получение значения подполя по индексу
 
         :param key: числовая метка полей
-        :default: значение по-умолчанию
+        :param default: значение по-умолчанию
         :return: список полей или default
         """
         return super().get(key, default)
@@ -360,7 +357,7 @@ class Record(AbstractRecord, DictLike, Hashable):
                     self.fields += value
                 else:
                     self.fields += [
-                        self.field_type(key, cast('FieldSetValue', v))
+                        self.field_type(key, cast('FieldSetValues', v))
                         for v in value]
             elif isinstance(value, Field):
                 self.fields.append(value)

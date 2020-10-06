@@ -12,7 +12,7 @@ from irbis.records.abstract import ValueMixin
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
     from irbis.records.subfield import SubFieldList, SubFieldDict
-    from typing import List, Optional, Set, Union
+    from typing import List, Optional, Sequence, Set, Union
 
     FieldList = List['Field']
     FieldValue = Union[SubField, SubFieldList, List[SubFieldDict],
@@ -60,21 +60,12 @@ class Field(DictLike, Hashable, ValueMixin):
                             continue
                         if isinstance(value, Sized) and len(value) == 2:
                             code, val = value
-                            if code == '*':
-                                if val and isinstance(val, (list, tuple)):
-                                    val = val[0]
-                                if self.validate_value(val):
-                                    self.value = val
-                                    continue
-                            else:
-                                if isinstance(val, str):
-                                    val = [val]
-                                for sf_value in val:
-                                    self.add(code, sf_value)
-                                continue
+                            self.add(code, val)
+                            continue
                         raise TypeError('Unsupported value type')
 
-    def add(self, code: str, value: str = '') -> 'Field':
+    def add(self, code: str, value: 'Union[str, Sequence[str]]' = '')\
+            -> 'Field':
         """
         Добавление подполя с указанным кодом (и, возможно, значением)
         к записи.
@@ -85,12 +76,18 @@ class Field(DictLike, Hashable, ValueMixin):
         """
         code = SubField.validate_code(code)
         if code == '*':
+            if value and isinstance(value, (list, tuple)):
+                value = value[0]
             if not self.value and self.validate_value(value):
                 self.value = value
             else:
                 raise ValueError('Значение до первого разделителя уже задано')
-        subfield = SubField(code, value)
-        self.subfields.append(subfield)
+        else:
+            if isinstance(value, str):
+                value = [value]
+            for val in value:
+                subfield = SubField(code, val)
+                self.subfields.append(subfield)
         return self
 
     def add_non_empty(self, code: str, value: 'Optional[str]') -> 'Field':
@@ -466,7 +463,7 @@ class Field(DictLike, Hashable, ValueMixin):
         Получение значения подполя по индексу
 
         :param key: строковый код или позиция подполя
-        :default: значение по-умолчанию
+        :param default: значение по-умолчанию
         :return: список подполей, подполе, строка или default
         """
         if default == list and key == '*':  # [] != list

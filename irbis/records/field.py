@@ -455,7 +455,7 @@ class Field(DictLike, Hashable):
         if isinstance(code, str):
             code = SubField.validate_code(code)
             return [sf for sf in self.subfields if sf.code == code]
-        return [self.subfields[code]] or []
+        return [self.subfields[code]]
 
     def __setitem__(self, key: 'Union[str, int]', value: 'Optional[str]'):
         if isinstance(key, int):

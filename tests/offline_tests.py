@@ -188,12 +188,12 @@ class TestField(unittest.TestCase):
     def test_init_6(self):
         def wrong_initialization():
             # noinspection PyTypeChecker
-            field = Field(100, [200, 300])
+            Field(100, [200, 300])
         # Должно выбрасывать TypeError
         self.assertRaises(TypeError, wrong_initialization)
 
     def test_init_7(self):
-        field = Field(100, { 'a': 'SubA', 'b': 'SubB'})
+        field = Field(100, {'a': 'SubA', 'b': 'SubB'})
         self.assertEqual(field.tag, 100)
         self.assertIsNone(field.value)
         self.assertEqual(2, len(field.subfields))
@@ -201,6 +201,61 @@ class TestField(unittest.TestCase):
         self.assertEqual(1, len(field['b']))
         self.assertEqual(1, len(field['A']))
         self.assertEqual(1, len(field['B']))
+
+    def test_init_8(self):
+        field = Field(100, {'': 'Value', 'a': 'SubA'})
+        self.assertEqual(field.tag, 100)
+        self.assertEqual('Value', field.value)
+        self.assertEqual(1, len(field.subfields))
+        self.assertEqual(1, len(field['a']))
+        self.assertEqual(0, len(field['b']))
+        self.assertEqual(1, len(field['A']))
+        self.assertEqual(0, len(field['B']))
+
+    def test_init_9(self):
+        field = Field(100, {'a': ['A1', 'A2']})
+        self.assertEqual(field.tag, 100)
+        self.assertIsNone(field.value)
+        self.assertEqual(2, len(field.subfields))
+        self.assertEqual(2, len(field['a']))
+        self.assertEqual(0, len(field['b']))
+        self.assertEqual(2, len(field['A']))
+        self.assertEqual(0, len(field['B']))
+
+    def test_init_10(self):
+        field = Field(100, {'': ['A1', 'A2']})
+        self.assertEqual(field.tag, 100)
+        # Выбирает первое из перечисленных значений
+        self.assertEqual('A1', field.value)
+        self.assertEqual(0, len(field.subfields))
+
+    def test_init_11(self):
+        def wrong_initialization():
+            # noinspection PyTypeChecker
+            Field(100, {'': []})
+        # Должно выбрасывать TypeError
+        self.assertRaises(TypeError, wrong_initialization)
+
+    def test_init_12(self):
+        def wrong_initialization():
+            # noinspection PyTypeChecker
+            Field(100, {'': [3.14]})
+        # Должно выбрасывать TypeError
+        self.assertRaises(TypeError, wrong_initialization)
+
+    def test_init_13(self):
+        def wrong_initialization():
+            # noinspection PyTypeChecker
+            Field(100, {'a': 3.14})
+        # Должно выбрасывать TypeError
+        self.assertRaises(TypeError, wrong_initialization)
+
+    def test_init_14(self):
+        def wrong_initialization():
+            # noinspection PyTypeChecker
+            Field(100, 3.14)
+        # Должно выбрасывать TypeError
+        self.assertRaises(TypeError, wrong_initialization)
 
     def test_add_1(self):
         field = Field()
@@ -462,6 +517,23 @@ class TestField(unittest.TestCase):
         value = data.get('c', '')
         self.assertEqual(value, '')
 
+    def test_getitem_2(self):
+        field = Field(100, 'Value')
+        self.assertEqual([field.value], field[''])
+
+    def test_getitem_3(self):
+        field = Field(100)
+        self.assertEqual([], field['c'])
+
+    def test_getitem_4(self):
+        sfa = SubField('a', 'SubA')
+        sfb = SubField('b', 'SubB')
+        field = Field(100)
+        field.subfields.append(sfa)
+        field.subfields.append(sfb)
+        self.assertEqual([sfa], field[0])
+        self.assertEqual([sfb], field[1])
+
     def test_setitem_1(self):
         sfa = SubField('a', 'SubA')
         sfb = SubField('b', 'SubB')
@@ -491,6 +563,27 @@ class TestField(unittest.TestCase):
         self.assertEqual(len(field.subfields), 0)
         field['c'] = None
         self.assertEqual(len(field.subfields), 0)
+
+    def test_setitem_3(self):
+        sfa = SubField('a', 'SubA1')
+        sfb = SubField('b', 'SubB')
+        field = Field(100)
+        field.subfields.append(sfa)
+        field.subfields.append(sfb)
+        self.assertEqual(len(field.subfields), 2)
+        field[0] = 'SubA2'
+        self.assertEqual('SubA2', field.subfields[0].value)
+
+    def test_setitem_4(self):
+        sfa = SubField('a', 'SubA1')
+        sfb = SubField('b', 'SubB')
+        field = Field(100)
+        field.subfields.append(sfa)
+        field.subfields.append(sfb)
+        self.assertEqual(len(field.subfields), 2)
+        field[0] = None
+        self.assertEqual(1, len(field.subfields))
+        self.assertEqual('b', field.subfields[0].code)
 
     def test_eq_1(self):
         f1 = Field(100, 'Value 100-A')
@@ -591,6 +684,130 @@ class TestField(unittest.TestCase):
         d = field.keys()
         self.assertEqual(len(d), 1)
         self.assertIn('a', d)
+
+    def test_have_subfield_1(self):
+        field = Field(100).add('a', 'SubA').add('b', 'SubB')
+        self.assertTrue(field.have_subfield('a'))
+        self.assertTrue(field.have_subfield('b'))
+        self.assertFalse(field.have_subfield('c'))
+
+    def test_headless_parse_1(self):
+        field = Field()
+        field.headless_parse('Value^aSubA^bSubB')
+        self.assertEqual('Value', field.value)
+        self.assertEqual(2, len(field.subfields))
+        self.assertEqual('a', field.subfields[0].code)
+        self.assertEqual('SubA', field.subfields[0].value)
+        self.assertEqual('b', field.subfields[1].code)
+        self.assertEqual('SubB', field.subfields[1].value)
+
+    def test_headless_parse_2(self):
+        field = Field()
+        field.headless_parse('^aSubA^bSubB')
+        self.assertIsNone(field.value)
+        self.assertEqual(2, len(field.subfields))
+        self.assertEqual('a', field.subfields[0].code)
+        self.assertEqual('SubA', field.subfields[0].value)
+        self.assertEqual('b', field.subfields[1].code)
+        self.assertEqual('SubB', field.subfields[1].value)
+
+    def test_headless_parse_3(self):
+        field = Field()
+        field.headless_parse('Value')
+        self.assertEqual('Value', field.value)
+        self.assertEqual(0, len(field.subfields))
+
+    def test_headless_parse_4(self):
+        field = Field()
+        field.headless_parse('')
+        self.assertIsNone(field.value)
+        self.assertEqual(0, len(field.subfields))
+
+    def test_insert_at_1(self):
+        field = Field(100).add('a', 'SubA').add('b', 'SubB')
+        self.assertIs(field, field.insert_at(1, 'c', 'SubC'))
+        self.assertEqual(3, len(field.subfields))
+        self.assertEqual('a', field.subfields[0].code)
+        self.assertEqual('c', field.subfields[1].code)
+        self.assertEqual('b', field.subfields[2].code)
+
+    def test_parse_1(self):
+        field = Field()
+        field.parse('100#Value^aSubA^bSubB')
+        self.assertEqual('Value', field.value)
+        self.assertEqual(2, len(field.subfields))
+        self.assertEqual('a', field.subfields[0].code)
+        self.assertEqual('SubA', field.subfields[0].value)
+        self.assertEqual('b', field.subfields[1].code)
+        self.assertEqual('SubB', field.subfields[1].value)
+
+    def test_parse_2(self):
+        field = Field()
+        field.parse('100#Value')
+        self.assertEqual('Value', field.value)
+        self.assertEqual(0, len(field.subfields))
+
+    def test_parse_3(self):
+        field = Field()
+        field.parse('100#^aSubA^bSubB')
+        self.assertIsNone(field.value)
+        self.assertEqual(2, len(field.subfields))
+        self.assertEqual('a', field.subfields[0].code)
+        self.assertEqual('SubA', field.subfields[0].value)
+        self.assertEqual('b', field.subfields[1].code)
+        self.assertEqual('SubB', field.subfields[1].value)
+
+    def test_parse_4(self):
+        field = Field()
+        field.parse('100#')
+        self.assertIsNone(field.value)
+        self.assertEqual(0, len(field.subfields))
+
+    def test_remove_at_1(self):
+        field = Field(100).add('a', 'SubA').add('b', 'SubB')
+        self.assertIs(field, field.remove_at(0))
+        self.assertEqual(1, len(field.subfields))
+        self.assertEqual('b', field.subfields[0].code)
+        self.assertIs(field, field.remove_at(0))
+        self.assertEqual(0, len(field.subfields))
+
+    def test_remove_subfield_1(self):
+        field = Field(100).add('a', 'SubA').add('b', 'SubB')
+        self.assertIs(field, field.remove_subfield('a'))
+        self.assertEqual(1, len(field.subfields))
+        self.assertEqual('b', field.subfields[0].code)
+
+    def test_replace_subfield_1(self):
+        field = Field(100).add('a', 'SubA1').add('b', 'SubB')
+        self.assertIs(field, field.replace_subfield('a', 'SubA1', 'SubA2'))
+        self.assertEqual(2, len(field.subfields))
+        self.assertEqual('SubA2', field.subfields[0].value)
+
+    def test_set_subfield_1(self):
+        field = Field(100).add('a', 'SubA1').add('b', 'SubB')
+        self.assertEqual(field, field.set_subfield('a', None))
+        self.assertEqual(1, len(field.subfields))
+        self.assertEqual('b', field.subfields[0].code)
+
+    def test_set_subfield_2(self):
+        field = Field(100).add('a', 'SubA1').add('b', 'SubB')
+        self.assertEqual(field, field.set_subfield('a', ''))
+        self.assertEqual(1, len(field.subfields))
+        self.assertEqual('b', field.subfields[0].code)
+
+    def test_set_subfield_3(self):
+        field = Field(100).add('a', 'SubA1').add('b', 'SubB')
+        self.assertEqual(field, field.set_subfield('a', 'SubA2'))
+        self.assertEqual(2, len(field.subfields))
+        self.assertEqual('a', field.subfields[0].code)
+        self.assertEqual('SubA2', field.subfields[0].value)
+
+    def test_set_subfield_4(self):
+        field = Field(100).add('a', 'SubA1').add('b', 'SubB')
+        self.assertEqual(field, field.set_subfield('c', 'SubC'))
+        self.assertEqual(3, len(field.subfields))
+        self.assertEqual('c', field.subfields[2].code)
+        self.assertEqual('SubC', field.subfields[2].value)
 
 
 #############################################################################

@@ -11,6 +11,22 @@ if TYPE_CHECKING:
     from typing import Any, List, Optional
 
 
+class ValueMixin:
+    @staticmethod
+    def validate_value(value: 'Optional[str]') -> 'Optional[bool]':
+        """
+        Валидация Field.value и SubField.value
+
+        :value: значение
+        """
+        if value is None:
+            return True
+        elif isinstance(value, str) and len(value):
+            return True
+        message = 'value должно быть непустой строкой или None'
+        raise TypeError(message)
+
+
 class AbstractRecord:
     """
     Абстрактный класс с общими свойствами и методами для классов Record

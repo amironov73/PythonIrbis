@@ -7,6 +7,7 @@
 from collections import OrderedDict
 from typing import cast, TYPE_CHECKING
 from irbis.abstract import DictLike, Hashable
+from irbis.records.abstract import ValueMixin
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
     from irbis.records.subfield import SubFieldList, SubFieldDict
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
     FieldGetReturn = Union[str, SubField, SubFieldList]
 
 
-class Field(DictLike, Hashable):
+class Field(DictLike, Hashable, ValueMixin):
     """
     MARC record field with tag, value (up to the first delimiter)
     and subfields.
@@ -58,15 +59,19 @@ class Field(DictLike, Hashable):
 
         elif isinstance(values, dict):
             for code, value in values.items():
-                if isinstance(value, str):
+                if not isinstance(value, list):
                     if code == '*':
-                        self.value = value
-                        continue
+                        if self.validate_value(value):
+                            self.value = value
+                            continue
                     self.add(code, value)
                 elif isinstance(value, list):
                     if all((isinstance(element, str) for element in value)):
                         if code == '*':
-                            self.value = value[0]
+                            if value:
+                                self.value = value[0]
+                            else:
+                                raise TypeError('Unsupported value type')
                         else:
                             for val in value:
                                 self.add(code, val)
@@ -88,7 +93,7 @@ class Field(DictLike, Hashable):
         """
         code = SubField.validate_code(code)
         if code == '*':
-            if not self.value  and value and isinstance(self.value, str):
+            if not self.value and value and isinstance(self.value, str):
                 self.value = value
             else:
                 raise ValueError('Значение до первого разделителя уже задано')
@@ -462,7 +467,6 @@ class Field(DictLike, Hashable):
         elif isinstance(key, int):
             return self.subfields[key]
         raise KeyError
-        #return [self.subfields[code]]
 
     def get(self, key: 'Union[str, int]', default: 'FieldGetReturn' = list)\
             -> 'FieldGetReturn':
@@ -481,11 +485,8 @@ class Field(DictLike, Hashable):
 
     def __setitem__(self, key: 'Union[str, int]', value: 'FieldValue'):
         if key == '*':
-            if value is None or isinstance(value, str):
+            if self.validate_value(value):
                 self.value = value
-            else:
-                message = 'Field.value должно быть непустой строкой или None'
-                raise TypeError(message)
 
         elif isinstance(key, int):
             if value:
@@ -503,7 +504,6 @@ class Field(DictLike, Hashable):
                 for value in values:
                     if value:
                         self.add(key, value)
-
 
     def __delitem__(self, key: 'Union[str, int]'):
         """

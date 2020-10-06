@@ -7,7 +7,7 @@
 from collections import OrderedDict
 from typing import cast, TYPE_CHECKING
 from irbis.abstract import DictLike, Hashable
-from irbis.records.abstract import AbstractRecord
+from irbis.records.abstract import AbstractRecord, ValueMixin
 from irbis.records.field import Field
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:

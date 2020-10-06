@@ -5,13 +5,14 @@
 """
 
 from collections import OrderedDict
-from typing import cast, TYPE_CHECKING
+from collections.abc import Iterable, Sized
+from typing import TYPE_CHECKING
 from irbis.abstract import DictLike, Hashable
 from irbis.records.abstract import ValueMixin
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
     from irbis.records.subfield import SubFieldList, SubFieldDict
-    from typing import Iterable, List, Optional, Set, Union
+    from typing import List, Optional, Set, Union
 
     FieldList = List['Field']
     FieldValue = Union[SubField, SubFieldList, List[SubFieldDict],
@@ -42,47 +43,38 @@ class Field(DictLike, Hashable, ValueMixin):
 
         :value: Переменная или структура для создания подполей
         """
-        if values is None:
-            pass
-
-        elif isinstance(values, SubField):
-            self.subfields.append(values)
-
-        elif isinstance(values, str):
-            self.headless_parse(values)
-
-        elif isinstance(values, list):
-            if all((isinstance(element, SubField) for element in values)):
-                self.subfields = cast('SubFieldList', values)
+        if values:
+            if isinstance(values, str):
+                self.headless_parse(values)
             else:
-                raise TypeError('All elements must be of the SubField type')
+                if isinstance(values, dict):
+                    values = list(values.items())
 
-        elif isinstance(values, dict):
-            for code, value in values.items():
-                if not isinstance(value, list):
-                    if code == '*':
-                        if self.validate_value(value):
-                            self.value = value
+                if not isinstance(values, Iterable):
+                    values = [values]
+
+                if isinstance(values, Iterable):
+                    for value in values:
+                        if isinstance(value, SubField):
+                            self.subfields.append(value)
                             continue
-                    self.add(code, value)
-                elif isinstance(value, list):
-                    if all((isinstance(element, str) for element in value)):
-                        if code == '*':
-                            if value:
-                                self.value = value[0]
+                        if isinstance(value, Sized) and len(value) == 2:
+                            code, val = value
+                            if code == '*':
+                                if val and isinstance(val, (list, tuple)):
+                                    val = val[0]
+                                if self.validate_value(val):
+                                    self.value = val
+                                    continue
                             else:
-                                raise TypeError('Unsupported value type')
-                        else:
-                            for val in value:
-                                self.add(code, val)
-                    else:
+                                if isinstance(val, str):
+                                    val = [val]
+                                for sf_value in val:
+                                    self.add(code, sf_value)
+                                continue
                         raise TypeError('Unsupported value type')
-                else:
-                    raise TypeError('Unsupported value type')
-        else:
-            raise TypeError('Unsupported value type')
 
-    def add(self, code: str, value: str = '*') -> 'Field':
+    def add(self, code: str, value: str = '') -> 'Field':
         """
         Добавление подполя с указанным кодом (и, возможно, значением)
         к записи.
@@ -93,7 +85,7 @@ class Field(DictLike, Hashable, ValueMixin):
         """
         code = SubField.validate_code(code)
         if code == '*':
-            if not self.value and value and isinstance(self.value, str):
+            if not self.value and self.validate_value(value):
                 self.value = value
             else:
                 raise ValueError('Значение до первого разделителя уже задано')
@@ -501,9 +493,9 @@ class Field(DictLike, Hashable, ValueMixin):
             if not isinstance(value, list):
                 values = [values]
             if isinstance(values, list):
-                for value in values:
-                    if value:
-                        self.add(key, value)
+                for val in values:
+                    if val:
+                        self.add(key, val)
 
     def __delitem__(self, key: 'Union[str, int]'):
         """

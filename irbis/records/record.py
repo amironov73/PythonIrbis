@@ -333,16 +333,16 @@ class Record(AbstractRecord, DictLike, Hashable):
             return result
         raise KeyError
 
-    def get(self, tag: int, default: 'Optional[FieldList]' = list)\
+    def get(self, key: int, default: 'Optional[FieldList]' = list)\
             -> 'FieldList':
         """
         Получение значения подполя по индексу
 
-        :param tag: числовая метка полей
+        :param key: числовая метка полей
         :default: значение по-умолчанию
         :return: список полей или default
         """
-        return super().get(tag, default)
+        return super().get(key, default)
 
     def __setitem__(self, key: int, value: 'RecordValue') -> None:
         """

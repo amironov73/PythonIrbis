@@ -12,6 +12,9 @@ if TYPE_CHECKING:
 
 
 class ValueMixin:
+    """
+    Примесь для проверки атрибута value
+    """
     @staticmethod
     def validate_value(value: 'Optional[str]') -> 'Optional[bool]':
         """
@@ -21,7 +24,7 @@ class ValueMixin:
         """
         if value is None:
             return True
-        elif isinstance(value, str) and len(value):
+        if isinstance(value, str) and value:
             return True
         message = 'value должно быть непустой строкой или None'
         raise TypeError(message)

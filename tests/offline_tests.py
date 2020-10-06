@@ -239,7 +239,7 @@ class TestField(unittest.TestCase):
     def test_init_12(self):
         def wrong_initialization():
             # noinspection PyTypeChecker
-            Field(100, {'': [3.14]})
+            Field(100, {'*': [3.14]})
         # Должно выбрасывать TypeError
         self.assertRaises(TypeError, wrong_initialization)
 

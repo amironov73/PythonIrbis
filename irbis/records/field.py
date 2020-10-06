@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     FieldList = List['Field']
     FieldValue = Union[SubField, SubFieldList, List[SubFieldDict],
                        SubFieldDict, str, None]
+    FieldGetReturn = Union[str, SubField, SubFieldList]
 
 
 class Field(DictLike, Hashable):
@@ -58,13 +59,13 @@ class Field(DictLike, Hashable):
         elif isinstance(values, dict):
             for code, value in values.items():
                 if isinstance(value, str):
-                    if code == '':
+                    if code == '*':
                         self.value = value
                         continue
                     self.add(code, value)
                 elif isinstance(value, list):
                     if all((isinstance(element, str) for element in value)):
-                        if code == '':
+                        if code == '*':
                             self.value = value[0]
                         else:
                             for val in value:
@@ -76,7 +77,7 @@ class Field(DictLike, Hashable):
         else:
             raise TypeError('Unsupported value type')
 
-    def add(self, code: str, value: str = '') -> 'Field':
+    def add(self, code: str, value: str = '*') -> 'Field':
         """
         Добавление подполя с указанным кодом (и, возможно, значением)
         к записи.
@@ -86,6 +87,11 @@ class Field(DictLike, Hashable):
         :return: Self
         """
         code = SubField.validate_code(code)
+        if code == '*':
+            if self.value is None:
+                self.value = value
+            else:
+                raise ValueError('Значение до первого разделителя уже задано')
         subfield = SubField(code, value)
         self.subfields.append(subfield)
         return self
@@ -112,9 +118,7 @@ class Field(DictLike, Hashable):
         :return: Список подполей (возможно, пустой).
         """
         code = SubField.validate_code(code)
-        # if code == '*':
-        #    return [self.get_value_or_first_subfield()]
-        return [sf for sf in self.subfields if sf.code == code]
+        return self.get(code)
 
     def all_values(self, code: str) -> 'List[str]':
         """
@@ -179,7 +183,7 @@ class Field(DictLike, Hashable):
         """
         result = OrderedDict()
         if self.value:
-            result[''] = [self.value]
+            result['*'] = [self.value]
         for key in self.keys():
             subfields = self[key]
             result[key] = []
@@ -441,42 +445,66 @@ class Field(DictLike, Hashable):
                     self.subfields.remove(one)
         return self
 
-    def __getitem__(self, code: 'Union[str, int]') ->\
-            'List[Union[str, SubField]]':
+    def __getitem__(self, key: 'Union[str, int]')\
+            -> 'FieldGetReturn':
         """
         Получение значения подполя по индексу
 
-        :param code: строковый код подполя
-        :return: подполе или строка
+        :param key: строковый код или позиция подполя
+        :return: список подполей, подполе или строка
         """
-        if code == '':
+        if key == '*':
             if self.value:
-                return [self.value]
-        if isinstance(code, str):
-            code = SubField.validate_code(code)
+                return self.value
+        elif isinstance(key, str):
+            code = SubField.validate_code(key)
             return [sf for sf in self.subfields if sf.code == code]
-        return [self.subfields[code]] or []
+        elif isinstance(key, int):
+            return self.subfields[key]
+        raise KeyError
 
-    def __setitem__(self, key: 'Union[str, int]', value: 'Optional[str]'):
-        if isinstance(key, int):
+    def get(self, key: 'Union[str, int]', default: 'FieldGetReturn' = list)\
+            -> 'FieldGetReturn':
+        """
+        Получение значения подполя по индексу
+
+        :param key: строковый код или позиция подполя
+        :default: значение по-умолчанию
+        :return: список подполей, подполе, строка или default
+        """
+        if default == list and key == '*':  # [] != list
+            default = ''
+        elif default == list and isinstance(key, int):
+            default = None
+        return super().get(key, default)
+
+    def __setitem__(self, key: 'Union[str, int]', value: 'FieldValue'):
+        if key == '*':
+            if value is None or isinstance(value, str):
+                self.value = value
+            else:
+                message = 'Field.value должно быть непустой строкой или None'
+                raise TypeError(message)
+
+        elif isinstance(key, int):
             if value:
                 self.subfields[key].value = value
             else:
                 self.subfields.pop(key)
-        else:
-            key = SubField.validate_code(key)
-            found = self.first(key)
-            if value:
-                if found:
-                    found.value = value
-                else:
-                    found = SubField(key, value)
-                    self.subfields.append(found)
-            else:
-                if found:
-                    self.subfields.remove(found)
 
-    def __delitem__(self, key: str):
+        elif isinstance(key, str):
+            key = SubField.validate_code(key)
+            del self[key]
+            values = value
+            if not isinstance(value, list):
+                values = [values]
+            if isinstance(value, list):
+                for value in values:
+                    if value:
+                        self.add(key, value)
+
+
+    def __delitem__(self, key: 'Union[str, int]'):
         """
         Метод удаления всех подполей с указанным кодом. Может вызываться
         следующим образом -- del field[key].
@@ -484,8 +512,11 @@ class Field(DictLike, Hashable):
         :param key: строковый код
         :return:
         """
-        key = SubField.validate_code(key)
-        self.subfields = [sf for sf in self.subfields if sf.code != key]
+        if isinstance(key, int):
+            self.subfields.pop(key)
+        elif isinstance(key, str):
+            key = SubField.validate_code(key)
+            self.subfields = [sf for sf in self.subfields if sf.code != key]
 
     def __len__(self):
         return len(self.subfields)

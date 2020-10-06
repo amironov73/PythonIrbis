@@ -93,7 +93,7 @@ class Record(AbstractRecord, DictLike, Hashable):
         :param tag: Тег
         :return: Список полей (возможно, пустой)
         """
-        result = self[tag]
+        result = self.get(tag)
         if isinstance(result, Field):
             return [result]
         return result
@@ -125,7 +125,7 @@ class Record(AbstractRecord, DictLike, Hashable):
             result[key] = [f.data for f in fields]
         return result
 
-    def fm(self, tag: int, code: str = '', default: 'Optional[str]' = None)\
+    def fm(self, tag: int, code: str = '*', default: 'Optional[str]' = None)\
             -> 'Optional[str]':
         """
         Текст первого поля с указанной меткой.
@@ -145,7 +145,7 @@ class Record(AbstractRecord, DictLike, Hashable):
                 return field.value
         return default
 
-    def fma(self, tag: int, code: str = '') -> 'List[str]':
+    def fma(self, tag: int, code: str = '*') -> 'List[str]':
         """
         Спосок значений полей с указанной меткой.
         Пустые значения в список не включаются.
@@ -328,7 +328,21 @@ class Record(AbstractRecord, DictLike, Hashable):
         :param tag: числовая метка полей
         :return: поле, список полей или ничего
         """
-        return [f for f in self.fields if f.tag == tag]
+        result = [f for f in self.fields if f.tag == tag]
+        if result:
+            return result
+        raise KeyError
+
+    def get(self, tag: int, default: 'Optional[FieldList]' = list)\
+            -> 'FieldList':
+        """
+        Получение значения подполя по индексу
+
+        :param tag: числовая метка полей
+        :default: значение по-умолчанию
+        :return: список полей или default
+        """
+        return super().get(tag, default)
 
     def __setitem__(self, key: int, value: 'RecordValue') -> None:
         """

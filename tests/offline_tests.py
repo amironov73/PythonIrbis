@@ -258,7 +258,7 @@ class TestField(unittest.TestCase):
         field = Field(100, 'Value')
         result = field.data
         # Значение попадет в словарь с ключем ''
-        self.assertEqual([field.value], result[''])
+        self.assertEqual([field.value], result['*'])
 
     def test_data_3(self):
         field = Field()
@@ -866,11 +866,11 @@ class TestMarcRecord(unittest.TestCase):
     def get_record_dict():
         return {
             101: [
-                {'': ['Value 101 1']},
+                {'*': ['Value 101 1']},
             ],
             610: [
-                {'': ['Value 610 1']},
-                {'': ['Value 610 2']},
+                {'*': ['Value 610 1']},
+                {'*': ['Value 610 2']},
             ],
             700: [
                 {'a': ['700 1 A'], 'g': ['700 1 G'], 'b': ['700 1 B']},
@@ -957,7 +957,7 @@ class TestMarcRecord(unittest.TestCase):
         field = Field(200).add('a', 'SubA').add('b', 'SubB')
         record.fields.append(field)
         data = record.data
-        self.assertEqual(data[100][0][''][0], 'Field 100')
+        self.assertEqual(data[100][0]['*'][0], 'Field 100')
         self.assertEqual(data[200][0]['a'][0], 'SubA')
         self.assertEqual(data[200][0]['b'][0], 'SubB')
         self.assertEqual(data[200][0].get('c', ''), '')

@@ -92,6 +92,8 @@ class DictLike:
         try:
             return self.__getitem__(key)
         except KeyError:
+            if callable(default):
+                return default()
             return default
 
     @abstractmethod

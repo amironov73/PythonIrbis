@@ -201,20 +201,20 @@ class Field(DictLike, Hashable, ValueMixin):
         return result
 
     def first(self, code: str, default: 'Optional[SubField]' = None)\
-            -> 'Optional[SubField]':
+            -> 'Optional[Union[SubField, Value]]':
         """
         Находит первое подполе с указанным кодом.
 
         :param code: Искомый код.
         :param default: Значение по умолчанию.
-        :return: Подполе или значение по умолчанию.
+        :return: Подполе, значение до разделителя или default.
         """
         code = SubField.validate_code(code)
-        # if code == '*':
-        #    return self.get_value_or_first_subfield()
-        for subfield in self.subfields:
-            if subfield.code == code:
-                return subfield
+        result = self.get(code)
+        if result:
+            if isinstance(result, list):
+                return result[0]
+            return result
         return default
 
     def first_value(self, code: str, default: 'Optional[str]' = None)\
@@ -389,15 +389,17 @@ class Field(DictLike, Hashable, ValueMixin):
         :return: Self
         """
         code = SubField.validate_code(code)
-        if not value:
+        if value:
+            found = self.first(code)
+            if found:
+                if isinstance(found, str):
+                    self.value = value
+                elif isinstance(found, SubField):
+                    found.value = value
+            else:
+                self.add(code, value)
+        else:
             return self.remove_subfield(code)
-
-        found = self.first(code)
-        if not found:
-            found = SubField(code)
-            self.subfields.append(found)
-        found.value = value
-
         return self
 
     def text(self) -> str:

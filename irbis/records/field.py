@@ -494,7 +494,12 @@ class Field(DictLike, Hashable, ValueMixin):
 
         elif isinstance(key, int):
             if value:
-                self.subfields[key].value = self.validate_value(value)
+                if isinstance(value, str):
+                    self.subfields[key].value = self.validate_value(value)
+                elif isinstance(value, Field):
+                    self.subfields[key] = value
+                else:
+                    raise TypeError
             else:
                 self.subfields.pop(key)
 

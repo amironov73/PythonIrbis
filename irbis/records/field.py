@@ -16,14 +16,14 @@ if TYPE_CHECKING:
 
     Code = str
     SubFieldValues = Union[Value, Sequence[Value]]
-    UserSubField = Union[
-        str,
-        SubField,
-        Dict[Code, SubFieldValues],
-        Tuple[Code, SubFieldValues],
-    ]
-    UserSubFields = Sequence[UserSubField]
-    FieldSetValues = Union[Optional[str], UserSubField, UserSubFields]
+    FieldSetItemValue = Union[None, SubField, SubFieldValues]
+    FieldSetItemValues = Sequence[FieldSetItemValue]
+    SubFieldDict = Dict[Code, SubFieldValues]
+    SubFieldTuple = Tuple[Code, SubFieldValues]
+    SubFieldTuples = List[SubFieldTuple]
+    NotDictFieldSetValues = Union[FieldSetItemValue, FieldSetItemValues,
+                                  SubFieldTuple, SubFieldTuples]
+    FieldSetValues = Union[NotDictFieldSetValues, SubFieldDict]
     FieldList = List['Field']
     FieldGetReturn = Union[str, SubField, SubFieldList, None]
 
@@ -59,14 +59,14 @@ class Field(DictLike, Hashable, ValueMixin):
                     values = list(values.items())
 
                 if not isinstance(values, (list, tuple)):
-                    values = cast('UserSubFields', [values])
+                    values = cast('NotDictFieldSetValues', [values])
                 if isinstance(values, (list, tuple)):
                     if (
                         len(values) == 2
                         and isinstance(values[0], str)
                         and isinstance(values[1], (str, list, tuple))
                     ):
-                        values = cast('UserSubFields', [values])
+                        values = cast('SubFieldTuples', [values])
                     for value in values:
                         if isinstance(value, SubField):
                             self.subfields.append(value)
@@ -488,7 +488,7 @@ class Field(DictLike, Hashable, ValueMixin):
             default = None
         return super().get(key, default)
 
-    def __setitem__(self, key: 'Union[str, int]', value: 'UserSubField'):
+    def __setitem__(self, key: 'Union[str, int]', value: 'FieldSetItemValue'):
         if key == '*':
             self.value = self.validate_value(value)
 

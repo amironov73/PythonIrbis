@@ -498,6 +498,10 @@ class Field(DictLike, Hashable, ValueMixin):
                     self.subfields[key].value = self.validate_value(value)
                 elif isinstance(value, Field):
                     self.subfields[key] = value
+                elif isinstance(value, (list, tuple)) and len(value) == 2:
+                    code, val = value
+                    if isinstance(code, str) and isinstance(val, str):
+                        self.subfields[key] = SubField(code, val)
                 else:
                     raise TypeError
             else:

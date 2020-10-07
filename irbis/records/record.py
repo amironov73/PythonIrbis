@@ -12,11 +12,11 @@ from irbis.records.field import Field
 from irbis.records.subfield import SubField
 if TYPE_CHECKING:
     from typing import Dict, List, Optional, Set, Union, Type
-    from irbis.records.field import FieldList, FieldSetValues
+    from irbis.records.field import FieldList, FieldSetValue, SubFieldDicts
 
-    RecordArg = Union[Field, Dict[int, List[Dict[str, str]]]]
-    RecordValue = Union[Field, FieldList, FieldSetValues, List[str],
-                        List[Dict[str, str]]]
+    RecordArg = Union[Field, Dict[int, SubFieldDicts]]
+    RecordValue = Union[Field, FieldList, FieldSetValue, List[str],
+                        SubFieldDicts]
 
 
 class Record(AbstractRecord, DictLike, Hashable):
@@ -30,7 +30,7 @@ class Record(AbstractRecord, DictLike, Hashable):
         self.field_type: 'Type[Field]' = Field
         super().__init__(*args)
 
-    def set_values(self, *args: 'RecordArg'):
+    def set(self, *args: 'RecordArg'):
         """
         Установка значений записи
 
@@ -325,8 +325,8 @@ class Record(AbstractRecord, DictLike, Hashable):
         """
         Получение значения поля по индексу
 
-        :param tag: числовая метка полей
-        :return: поле, список полей или ничего
+        :param tag: числовая метка полей.
+        :return: список полей или ничего.
         """
         return [f for f in self.fields if f.tag == tag]
 
@@ -335,9 +335,9 @@ class Record(AbstractRecord, DictLike, Hashable):
         """
         Получение значения подполя по индексу
 
-        :param key: числовая метка полей
-        :param default: значение по-умолчанию
-        :return: список полей или default
+        :param key: числовая метка полей.
+        :param default: значение по-умолчанию.
+        :return: список полей или default.
         """
         return super().get(key, default)
 
@@ -357,7 +357,7 @@ class Record(AbstractRecord, DictLike, Hashable):
                     self.fields += value
                 else:
                     self.fields += [
-                        self.field_type(key, cast('FieldSetValues', v))
+                        self.field_type(key, cast('FieldSetValue', v))
                         for v in value]
             elif isinstance(value, Field):
                 self.fields.append(value)

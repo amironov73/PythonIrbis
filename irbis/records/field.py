@@ -15,15 +15,16 @@ if TYPE_CHECKING:
     from typing import Sequence
 
     Code = str
-    SubFieldValues = Union[Value, Sequence[Value]]
-    UserSubField = Union[
-        str,
-        SubField,
-        Dict[Code, SubFieldValues],
-        Tuple[Code, SubFieldValues],
-    ]
-    UserSubFields = Sequence[UserSubField]
-    FieldSetValues = Union[Optional[str], UserSubField, UserSubFields]
+    SubFieldValues = Sequence[Value]
+    FieldSetItemValue = Union[None, SubField, SubFieldValues]
+    FieldSetItemValues = Sequence[FieldSetItemValue]
+    SubFieldDict = Dict[Code, SubFieldValues]
+    SubFieldDicts = List[SubFieldDict]
+    SubFieldTuple = Tuple[Code, SubFieldValues]
+    SubFieldTuples = List[SubFieldTuple]
+    NotDictFieldSetValue = Union[FieldSetItemValue, FieldSetItemValues,
+                                 SubFieldTuple, SubFieldTuples]
+    FieldSetValue = Union[NotDictFieldSetValue, SubFieldDict]
     FieldList = List['Field']
     FieldGetReturn = Union[str, SubField, SubFieldList, None]
 
@@ -39,17 +40,18 @@ class Field(DictLike, Hashable, ValueMixin):
     __slots__ = 'tag', 'value', 'subfields'
 
     def __init__(self, tag: 'Optional[int]' = DEFAULT_TAG,
-                 value: 'FieldSetValues' = None) -> None:
+                 value: 'FieldSetValue' = None) -> None:
         self.tag: int = tag or self.DEFAULT_TAG
         self.value: 'Optional[str]' = None
         self.subfields: 'SubFieldList' = []
-        self.set_values(value)
+        self.set(value)
 
-    def set_values(self, values: 'FieldSetValues' = None):
+    def set(self, values: 'FieldSetValue' = None):
         """
-        Установка значений поля
+        Установка всех подполей и значения до первого разделителя
+        из поддерживаемых структур данных.
 
-        :value: Переменная или структура для создания подполей
+        :param values: Переменная или структура для создания подполей.
         """
         if values:
             if isinstance(values, str):
@@ -59,14 +61,14 @@ class Field(DictLike, Hashable, ValueMixin):
                     values = list(values.items())
 
                 if not isinstance(values, (list, tuple)):
-                    values = cast('UserSubFields', [values])
+                    values = cast('NotDictFieldSetValue', [values])
                 if isinstance(values, (list, tuple)):
                     if (
                         len(values) == 2
                         and isinstance(values[0], str)
                         and isinstance(values[1], (str, list, tuple))
                     ):
-                        values = cast('UserSubFields', [values])
+                        values = cast('SubFieldTuples', [values])
                     for value in values:
                         if isinstance(value, SubField):
                             self.subfields.append(value)
@@ -85,18 +87,20 @@ class Field(DictLike, Hashable, ValueMixin):
         Добавление подполя с указанным кодом (и, возможно, значением)
         к записи.
 
-        :param code: Код подполя (однобуквенный)
-        :param value: Значение подполя (опционально)
+        :param code: Код подполя (однобуквенный).
+        :param value: Значение подполя (опционально).
         :return: Self
         """
         code = SubField.validate_code(code)
         if code == '*':
             if value and isinstance(value, (list, tuple)):
                 value = value[0]
+
             if not self.value:
                 self.value = self.validate_value(value)
             else:
                 raise ValueError('Значение до первого разделителя уже задано')
+
         else:
             if value:
                 if isinstance(value, str):
@@ -201,20 +205,20 @@ class Field(DictLike, Hashable, ValueMixin):
         return result
 
     def first(self, code: str, default: 'Optional[SubField]' = None)\
-            -> 'Optional[SubField]':
+            -> 'Optional[Union[SubField, Value]]':
         """
         Находит первое подполе с указанным кодом.
 
         :param code: Искомый код.
         :param default: Значение по умолчанию.
-        :return: Подполе или значение по умолчанию.
+        :return: Подполе, значение до разделителя или default.
         """
         code = SubField.validate_code(code)
-        # if code == '*':
-        #    return self.get_value_or_first_subfield()
-        for subfield in self.subfields:
-            if subfield.code == code:
-                return subfield
+        result = self.get(code)
+        if result:
+            if isinstance(result, list):
+                return result[0]
+            return result
         return default
 
     def first_value(self, code: str, default: 'Optional[str]' = None)\
@@ -389,15 +393,17 @@ class Field(DictLike, Hashable, ValueMixin):
         :return: Self
         """
         code = SubField.validate_code(code)
-        if not value:
+        if value:
+            found = self.first(code)
+            if found:
+                if isinstance(found, str):
+                    self.value = value
+                elif isinstance(found, SubField):
+                    found.value = value
+            else:
+                self.add(code, value)
+        else:
             return self.remove_subfield(code)
-
-        found = self.first(code)
-        if not found:
-            found = SubField(code)
-            self.subfields.append(found)
-        found.value = value
-
         return self
 
     def text(self) -> str:
@@ -482,13 +488,9 @@ class Field(DictLike, Hashable, ValueMixin):
         :param default: значение по-умолчанию
         :return: список подполей, подполе, строка или default
         """
-        if default == list and key == '*':  # [] != list
-            default = ''
-        elif default == list and isinstance(key, int):
-            default = None
         return super().get(key, default)
 
-    def __setitem__(self, key: 'Union[str, int]', value: 'UserSubField'):
+    def __setitem__(self, key: 'Union[str, int]', value: 'FieldSetItemValue'):
         if key == '*':
             self.value = self.validate_value(value)
 
@@ -498,6 +500,10 @@ class Field(DictLike, Hashable, ValueMixin):
                     self.subfields[key].value = self.validate_value(value)
                 elif isinstance(value, Field):
                     self.subfields[key] = value
+                elif isinstance(value, (list, tuple)) and len(value) == 2:
+                    code, val = value
+                    if isinstance(code, str) and isinstance(val, str):
+                        self.subfields[key] = SubField(code, val)
                 else:
                     raise TypeError
             else:
@@ -508,7 +514,7 @@ class Field(DictLike, Hashable, ValueMixin):
             del self[key]
             if value is not None:
                 values = key, value
-                self.set_values(values)
+                self.set(values)
 
     def __delitem__(self, key: 'Union[str, int]'):
         """

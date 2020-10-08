@@ -22,7 +22,7 @@ class RawRecord(AbstractRecord):
         self.field_type = str
         super().__init__(*args)
 
-    def set_values(self, *args: str):
+    def set(self, *args: str):
         """
         Установка значений записи
 

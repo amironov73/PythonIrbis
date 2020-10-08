@@ -46,7 +46,7 @@ class AbstractRecord:
         self.version = 0
         self.status = 0
         self.fields: 'Any' = []
-        self.set_values(*args)
+        self.set(*args)
 
     def clear(self) -> 'AbstractRecord':
         """
@@ -156,7 +156,7 @@ class AbstractRecord:
         return self
 
     @abstractmethod
-    def set_values(self, *args):
+    def set(self, *args):
         """
         Абстрактный метод, установливающий self.fields. Реализуется
         у дочерних классов.

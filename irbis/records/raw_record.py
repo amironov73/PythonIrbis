@@ -22,9 +22,11 @@ class RawRecord(AbstractRecord):
         self.field_type = str
         super().__init__(*args)
 
-    def set(self, *args: str):
+    def __bulk_set__(self, *args: str):
         """
-        Установка значений записи
+        Приватный метод установки полей записи.
+
+        Внимание. Пользователь не должен явно обращаться к данному методу.
 
         :param args: список строк
         :return: ничего

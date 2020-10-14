@@ -30,9 +30,11 @@ class Record(AbstractRecord, DictLike, Hashable):
         self.field_type: 'Type[Field]' = Field
         super().__init__(*args)
 
-    def set(self, *args: 'RecordArg'):
+    def __bulk_set__(self, *args: 'RecordArg'):
         """
-        Установка значений записи
+        Приватный метод установки полей записи.
+
+        Внимание. Пользователь не должен явно обращаться к данному методу.
 
         :param args: список полей или словарь
         :return: ничего

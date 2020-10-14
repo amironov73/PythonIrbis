@@ -44,12 +44,14 @@ class Field(DictLike, Hashable, ValueMixin):
         self.tag: int = tag or self.DEFAULT_TAG
         self.value: 'Optional[str]' = None
         self.subfields: 'SubFieldList' = []
-        self.set(value)
+        self.__bulk_set__(value)
 
-    def set(self, values: 'FieldSetValue' = None):
+    def __bulk_set__(self, values: 'FieldSetValue' = None):
         """
-        Установка всех подполей и значения до первого разделителя
-        из поддерживаемых структур данных.
+        Приватный метод установки 1) подполей и 2) значения до первого
+        разделителя из поддерживаемых структур данных.
+
+        Внимание. Пользователь не должен явно обращаться к данному методу.
 
         :param values: Переменная или структура для создания подполей.
         """
@@ -514,7 +516,7 @@ class Field(DictLike, Hashable, ValueMixin):
             del self[key]
             if value is not None:
                 values = key, value
-                self.set(values)
+                self.__bulk_set__(values)
 
     def __delitem__(self, key: 'Union[str, int]'):
         """

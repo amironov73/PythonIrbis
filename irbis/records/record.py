@@ -30,9 +30,11 @@ class Record(AbstractRecord, DictLike, Hashable):
         self.field_type: 'Type[Field]' = Field
         super().__init__(*args)
 
-    def set(self, *args: 'RecordArg'):
+    def __bulk_set__(self, *args: 'RecordArg'):
         """
-        Установка значений записи
+        Приватный метод установки полей записи.
+
+        Внимание. Пользователь не должен явно обращаться к данному методу.
 
         :param args: список полей или словарь
         :return: ничего
@@ -141,8 +143,8 @@ class Record(AbstractRecord, DictLike, Hashable):
         for field in self.fields:
             if field.tag == tag:
                 if code:
-                    return field.first_value(code)
-                return field.value
+                    return field.first_value(code, default)
+                return field.value or default
         return default
 
     def fma(self, tag: int, code: str = '*') -> 'List[str]':

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from irbis._common import safe_int, safe_str
 from irbis.ini import IniFile
 if TYPE_CHECKING:
-    from typing import List, Optional
+    from typing import Any, List, Optional
 
 
 class FoundLine:
@@ -58,6 +58,24 @@ class SearchParameters:
         self.sequential: 'Optional[str]' = None
         self.filter: 'Optional[str]' = None
         self.utf = False
+
+    def encode(self, query: 'Any', connection: 'Any') -> None:
+        """
+        Кодирование параметров поиска в клиентский запрос.
+
+        :param query: Клиентский запрос.
+        :param connection: Подключение.
+        :return: None.
+        """
+        database = self.database or connection.database
+        query.ansi(database)
+        query.utf(self.expression)
+        query.add(self.number)
+        query.add(self.first)
+        query.ansi(self.format)
+        query.add(self.min_mfn)
+        query.add(self.max_mfn)
+        query.ansi(self.sequential)
 
     def __str__(self):
         return self.expression
@@ -131,4 +149,72 @@ class SearchScenario:
         return safe_str(self.name) + ' ' + safe_str(self.prefix)
 
 
-__all__ = ['FoundLine', 'SearchParameters', 'SearchScenario']
+class TextParameters:
+    """
+    Параметры полнотекстового поиска для ИРБИС64+.
+    """
+    __slots__ = ('request', 'words', 'morphology', 'prefix',
+                 'max_distance', 'context', 'max_count',
+                 'cell_type', 'cell_count')
+
+    def __init__(self) -> None:
+        self.request: 'Optional[str]' = None
+        self.words: 'List[str]' = []
+        self.morphology: bool = False
+        self.prefix: 'Optional[str]' = "KT="
+        self.max_distance: int = -1
+        self.context: 'Optional[str]' = None
+        self.max_count: int = 100
+        self.cell_type: 'Optional[str]' = None
+        self.cell_count: int = 5
+
+    def encode(self, query: 'Any') -> None:
+        """
+        Кодирование параметров полнотекстового поиска в клиентский запрос.
+
+        :param query: Клиентский запрос.
+        :return: None
+        """
+        delimiter: str = '\x1F'
+        morpho = '0'
+        if self.morphology:
+            morpho = '1'
+        line = (self.request or '') + delimiter + \
+            ','.join(self.words) + delimiter + \
+            morpho + delimiter + \
+            (self.prefix or '') + delimiter + \
+            str(self.max_distance) + delimiter + \
+            (self.context or '') + delimiter + \
+            str(self.max_count) + delimiter + \
+            (self.cell_type or '') + delimiter + \
+            str(self.cell_count)
+        query.utf(line)
+
+
+class TextResult:
+    """
+    Результат полнотекстового поиска
+    """
+    __slots__ = ('mfn', 'pages', 'formatted')
+
+    def __init__(self) -> None:
+        self.mfn: int = 0
+        self.pages: 'List[int]' = []
+        self.formatted: 'Optional[str]' = None
+
+    def decode(self, line: str) -> None:
+        """
+        Декодирование строки с одним результатом полнотекстового поиска.
+        """
+        parts = line.split('#', 2)
+        self.mfn = int(parts[0])
+        if len(parts) == 3:
+            self.formatted = parts[2]
+        parts = parts[1].split('\x1F')
+        for part in parts:
+            page = int(part)
+            self.pages.append(page)
+
+
+__all__ = ['FoundLine', 'SearchParameters', 'SearchScenario', 'TextParameters',
+           'TextResult']

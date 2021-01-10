@@ -31,7 +31,8 @@ from irbis.query import ClientQuery
 from irbis.records import Field, RawRecord, Record, SubField
 from irbis.resource import Resource, ResourceDictionary
 from irbis.response import ServerResponse
-from irbis.search import FoundLine, SearchParameters, SearchScenario
+from irbis.search import FoundLine, SearchParameters, SearchScenario, \
+    TextParameters, TextResult
 from irbis.specification import FileSpecification
 from irbis.stats import ClientInfo, ServerStat
 from irbis.table import TableDefinition
@@ -71,6 +72,6 @@ __all__ = ['ADMINISTRATOR', 'AlphabetTable', 'BRIEF', 'CATALOGER',
            'Resource', 'ResourceDictionary', 'SearchParameters',
            'SearchScenario', 'ServerResponse', 'ServerStat', 'ServerVersion',
            'STOP_MARKER', 'SubField', 'TableDefinition', 'TermInfo',
-           'TermParameters', 'TermPosting', 'TreeFile', 'TreeNode',
-           'UpperCaseTable', 'UserInfo', 'write_iso_record',
-           'write_text_record', 'XrfFile', 'XrfRecord']
+           'TermParameters', 'TextResult', 'TermPosting', 'TextParameters',
+           'TreeFile', 'TreeNode', 'UpperCaseTable', 'UserInfo',
+           'write_iso_record', 'write_text_record', 'XrfFile', 'XrfRecord']

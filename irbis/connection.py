@@ -12,16 +12,16 @@ from typing import TYPE_CHECKING
 
 from irbis._common import ACTUALIZE_RECORD, ALL, CREATE_DATABASE, \
     CREATE_DICTIONARY, DATA, DELETE_DATABASE, EMPTY_DATABASE, FORMAT_RECORD, \
-    GET_MAX_MFN, GET_PROCESS_LIST, GET_SERVER_STAT, GET_USER_LIST, \
-    IRBIS_DELIMITER, irbis_to_dos, irbis_to_lines, irbis_event_loop, \
-    LIST_FILES, LOGICALLY_DELETED, MASTER_FILE, MAX_POSTINGS, NOP, \
-    NOT_CONNECTED, ObjectWithError, OTHER_DELIMITER, PRINT, READ_RECORD, \
-    READ_RECORD_CODES, READ_DOCUMENT, READ_POSTINGS, READ_TERMS, \
-    READ_TERMS_REVERSE, READ_TERMS_CODES, RECORD_LIST, REGISTER_CLIENT, \
-    RELOAD_DICTIONARY, RELOAD_MASTER_FILE, RESTART_SERVER, safe_str, \
-    SEARCH, SERVER_INFO, SET_USER_LIST, short_irbis_to_lines, SYSTEM, \
-    throw_value_error, UNREGISTER_CLIENT, UNLOCK_DATABASE, UNLOCK_RECORDS, \
-    UPDATE_INI_FILE, UPDATE_RECORD
+    FULL_TEXT_SEARCH, GET_MAX_MFN, GET_PROCESS_LIST, GET_SERVER_STAT, \
+    GET_USER_LIST, IRBIS_DELIMITER, irbis_to_dos, irbis_to_lines, \
+    irbis_event_loop, LIST_FILES, LOGICALLY_DELETED, MASTER_FILE, \
+    MAX_POSTINGS, NOP, NOT_CONNECTED, ObjectWithError, OTHER_DELIMITER, \
+    PRINT, READ_RECORD, READ_RECORD_CODES, READ_DOCUMENT, READ_POSTINGS, \
+    READ_TERMS, READ_TERMS_REVERSE, READ_TERMS_CODES, RECORD_LIST, \
+    REGISTER_CLIENT, RELOAD_DICTIONARY, RELOAD_MASTER_FILE, RESTART_SERVER, \
+    safe_str, SEARCH, SERVER_INFO, SET_USER_LIST, short_irbis_to_lines, \
+    SYSTEM, throw_value_error, UNREGISTER_CLIENT, UNLOCK_DATABASE, \
+    UNLOCK_RECORDS, UPDATE_INI_FILE, UPDATE_RECORD
 
 from irbis.alphabet import AlphabetTable, UpperCaseTable
 from irbis.database import DatabaseInfo
@@ -34,7 +34,8 @@ from irbis.process import Process
 from irbis.query import ClientQuery
 from irbis.records import RawRecord, Record
 from irbis.response import ServerResponse
-from irbis.search import FoundLine, SearchParameters, SearchScenario
+from irbis.search import FoundLine, SearchParameters, SearchScenario, \
+    TextParameters, TextResult
 from irbis.specification import FileSpecification
 from irbis.stats import ServerStat
 from irbis.table import TableDefinition
@@ -475,6 +476,36 @@ class Connection(ObjectWithError):
             result = response.utf_remaining_lines()
             result = [line.split('#', 1)[1] for line in result]
             return result
+
+    def fulltext_search(self, search: SearchParameters,
+                        fulltext: TextParameters) -> 'List[TextResult]':
+        """
+        Полнотекстовый поиск.
+
+        :param search: Параметры поиска по словарю.
+        :param fulltext: Параметры полнотекстового поиска.
+        :return: Список найденных MFN.
+        """
+        if not self.check_connection():
+            return []
+
+        query = ClientQuery(self, FULL_TEXT_SEARCH)
+        search.encode(query, self)
+        fulltext.encode(query)
+        response = self.execute(query)
+        if not response.check_return_code():
+            return []
+
+        number = response.number()  # Число найденных записей
+        result: 'List[TextResult]' = []
+        for _ in range(number):
+            line = response.ansi()
+            if not line:
+                break
+            one = TextResult()
+            one.decode(line)
+            result.append(one)
+        return result
 
     def get_database_info(self, database: 'Optional[str]' = None) \
             -> DatabaseInfo:
@@ -1482,17 +1513,8 @@ class Connection(ObjectWithError):
         if not isinstance(parameters, SearchParameters):
             parameters = SearchParameters(str(parameters))
 
-        database = parameters.database or self.database or throw_value_error()
         query = ClientQuery(self, SEARCH)
-        query.ansi(database)
-        query.utf(parameters.expression)
-        query.add(parameters.number)
-        query.add(parameters.first)
-        query.ansi(parameters.format)
-        query.add(parameters.min_mfn)
-        query.add(parameters.max_mfn)
-        query.ansi(parameters.sequential)
-
+        parameters.encode(query, self)
         response = self.execute(query)
         if not response.check_return_code():
             return []
@@ -1511,7 +1533,7 @@ class Connection(ObjectWithError):
         """
         Поиск всех записей (даже если их окажется больше 32 тыс.).
         :param expression: Поисковый запрос.
-        :return: Список найденных MFN
+        :return: Список найденных MFN.
         """
         if not self.check_connection():
             return []
@@ -1571,17 +1593,8 @@ class Connection(ObjectWithError):
         if not isinstance(parameters, SearchParameters):
             parameters = SearchParameters(str(parameters))
 
-        database = parameters.database or self.database or throw_value_error()
         query = ClientQuery(self, SEARCH)
-        query.ansi(database)
-        query.utf(parameters.expression)
-        query.add(parameters.number)
-        query.add(parameters.first)
-        query.ansi(parameters.format)
-        query.add(parameters.min_mfn)
-        query.add(parameters.max_mfn)
-        query.ansi(parameters.sequential)
-
+        parameters.encode(query, self)
         response = await self.execute_async(query)
         if not response.check_return_code():
             return []
@@ -1663,17 +1676,8 @@ class Connection(ObjectWithError):
         if not isinstance(parameters, SearchParameters):
             parameters = SearchParameters(str(parameters))
 
-        database = parameters.database or self.database or throw_value_error()
         query = ClientQuery(self, SEARCH)
-        query.ansi(database)
-        query.utf(parameters.expression)
-        query.add(parameters.number)
-        query.add(parameters.first)
-        query.format(parameters.format)
-        query.add(parameters.min_mfn)
-        query.add(parameters.max_mfn)
-        query.ansi(parameters.sequential)
-
+        parameters.encode(query, self)
         response = self.execute(query)
         if not response.check_return_code():
             return []

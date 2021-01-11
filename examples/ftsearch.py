@@ -26,8 +26,7 @@ with Connection() as connection:
         fulltext = TextParameters()
         search.database = connection.database
         search.expression = sys.argv[2]
-        fulltext.request = 'Запрос из командной строки'
-        fulltext.words = sys.argv[3:]
+        fulltext.request = ' '.join(sys.argv[3:])
 
         found = connection.fulltext_search(search, fulltext)
         print('Найдено: ', len(found))

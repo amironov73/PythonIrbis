@@ -210,10 +210,11 @@ class TextResult:
         self.mfn = int(parts[0])
         if len(parts) == 3:
             self.formatted = parts[2]
-        parts = parts[1].split('\x1F')
-        for part in parts:
-            page = int(part)
-            self.pages.append(page)
+        if len(parts) > 1:
+            parts = parts[1].split('\x1F')
+            for part in parts:
+                page = int(part)
+                self.pages.append(page)
 
 
 __all__ = ['FoundLine', 'SearchParameters', 'SearchScenario', 'TextParameters',

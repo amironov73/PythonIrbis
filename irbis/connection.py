@@ -489,7 +489,7 @@ class Connection(ObjectWithError):
         if not self.check_connection():
             return []
 
-        query = ClientQuery(self, FULL_TEXT_SEARCH)
+        query = ClientQuery(self, '&')
         search.encode(query, self)
         fulltext.encode(query)
         response = self.execute(query)
@@ -499,7 +499,7 @@ class Connection(ObjectWithError):
         number = response.number()  # Число найденных записей
         result: 'List[TextResult]' = []
         for _ in range(number):
-            line = response.ansi()
+            line = response.utf()
             if not line:
                 break
             one = TextResult()

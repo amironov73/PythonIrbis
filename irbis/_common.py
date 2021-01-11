@@ -164,8 +164,8 @@ READ_TERMS_REVERSE = 'P'
 # Разблокирование записей
 UNLOCK_RECORDS = 'Q'
 
-# Полнотекстовый поиск
-FULL_TEXT_SEARCH = 'R'
+# Полнотекстовый поиск (новый!)
+FULL_TEXT_SEARCH = '&'
 
 # Опустошение базы данных
 EMPTY_DATABASE = 'S'

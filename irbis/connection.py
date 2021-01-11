@@ -489,7 +489,7 @@ class Connection(ObjectWithError):
         if not self.check_connection():
             return []
 
-        query = ClientQuery(self, '&')
+        query = ClientQuery(self, FULL_TEXT_SEARCH)
         search.encode(query, self)
         fulltext.encode(query)
         response = self.execute(query)

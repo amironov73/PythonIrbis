@@ -507,6 +507,37 @@ class Connection(ObjectWithError):
             result.append(one)
         return result
 
+    async def fulltext_search_async(self, search: SearchParameters,
+                                    fulltext: TextParameters
+                                    ) -> 'List[TextResult]':
+        """
+        Асинхронный полнотекстовый поиск.
+
+        :param search: Параметры поиска по словарю.
+        :param fulltext: Параметры полнотекстового поиска.
+        :return: Список найденных MFN.
+        """
+        if not self.check_connection():
+            return []
+
+        query = ClientQuery(self, FULL_TEXT_SEARCH)
+        search.encode(query, self)
+        fulltext.encode(query)
+        response = await self.execute_async(query)
+        if not response.check_return_code():
+            return []
+
+        number = response.number()  # Число найденных записей
+        result: 'List[TextResult]' = []
+        for _ in range(number):
+            line = response.utf()
+            if not line:
+                break
+            one = TextResult()
+            one.decode(line)
+            result.append(one)
+        return result
+
     def get_database_info(self, database: 'Optional[str]' = None) \
             -> DatabaseInfo:
         """

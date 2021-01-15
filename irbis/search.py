@@ -195,12 +195,14 @@ class TextResult:
     """
     Результат полнотекстового поиска
     """
-    __slots__ = ('mfn', 'pages', 'formatted')
+    __slots__ = ('authors', 'mfn', 'pages', 'formatted', 'years')
 
     def __init__(self) -> None:
+        self.authors: 'List[str]' = []
+        self.formatted: 'Optional[str]' = None
         self.mfn: int = 0
         self.pages: 'List[int]' = []
-        self.formatted: 'Optional[str]' = None
+        self.years: 'List[int]' = []
 
     def decode(self, line: str) -> None:
         """
@@ -216,6 +218,16 @@ class TextResult:
                 if part.isdecimal():
                     page = int(part)
                     self.pages.append(page)
+                elif len(part) > 2:
+                    prefix = part[0:2]
+                    value = part[2:]
+                    if prefix == 'A=':
+                        self.authors.append(value)
+                    elif prefix == 'G=' and value.isdecimal():
+                        year = int(value)
+                        self.years.append(year)
+                    elif prefix == 'S=':
+                        pass
 
 
 __all__ = ['FoundLine', 'SearchParameters', 'SearchScenario', 'TextParameters',

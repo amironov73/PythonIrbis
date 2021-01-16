@@ -31,8 +31,8 @@ from irbis.query import ClientQuery
 from irbis.records import Field, RawRecord, Record, SubField
 from irbis.resource import Resource, ResourceDictionary
 from irbis.response import ServerResponse
-from irbis.search import FoundLine, SearchParameters, SearchScenario, \
-    TextParameters, TextResult
+from irbis.search import CellResult, FoundLine, SearchParameters, \
+    SearchScenario, TextParameters, TextResult
 from irbis.specification import FileSpecification
 from irbis.stats import ClientInfo, ServerStat
 from irbis.table import TableDefinition
@@ -57,14 +57,15 @@ __license__ = 'MIT License'
 __copyright__ = 'Copyright 2018-2019 Alexey Mironov'
 
 __all__ = ['ADMINISTRATOR', 'AlphabetTable', 'BRIEF', 'CATALOGER',
-           'ClientInfo', 'ClientQuery', 'close_async', 'Connection',
-           'DatabaseInfo', 'DirectAccess', 'irbis_event_loop', 'IrbisError',
-           'IrbisFileNotFoundError', 'Field', 'FileSpecification',
-           'FoundLine', 'IniFile', 'IniLine', 'IniSection', 'init_async',
-           'InvertedFile', 'load_alphabet_table', 'load_menu',
-           'load_opt_file', 'load_par_file', 'load_tree_file',
-           'load_uppercase_table', 'LAST', 'LOCKED', 'LOGICALLY_DELETED',
-           'MenuEntry', 'MenuFile', 'MstControl', 'MstField', 'MstFile',
+           'CellResult', 'ClientInfo', 'ClientQuery', 'close_async',
+           'Connection', 'DatabaseInfo', 'DirectAccess', 'irbis_event_loop',
+           'IrbisError', 'IrbisFileNotFoundError', 'Field',
+           'FileSpecification', 'FoundLine', 'IniFile', 'IniLine',
+           'IniSection', 'init_async', 'InvertedFile',
+           'load_alphabet_table', 'load_menu', 'load_opt_file',
+           'load_par_file', 'load_tree_file', 'load_uppercase_table',
+           'LAST', 'LOCKED', 'LOGICALLY_DELETED', 'MenuEntry',
+           'MenuFile', 'MstControl', 'MstField', 'MstFile',
            'MstEntry', 'MstLeader', 'MstRecord', 'NON_ACTUALIZED',
            'NOT_CONNECTED', 'OptFile', 'ParFile', 'PHYSICALLY_DELETED',
            'PostingParameters', 'prepare_format', 'Process', 'RawRecord',

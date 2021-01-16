@@ -28,8 +28,14 @@ with Connection() as connection:
         search.expression = sys.argv[2]
         fulltext.request = ' '.join(sys.argv[3:])
 
-        found = connection.fulltext_search(search, fulltext)
-        print('Найдено: ', len(found))
+        (records, facets) = connection.fulltext_search(search, fulltext)
+        print('Найдены записи: ')
+        for record in records:
+            print (record)
+
+        print('Найдены фасеты: ')
+        for facet in facets:
+            print(facet)
 
     except Exception as ex:
         print("Exception occurred:", type(ex))

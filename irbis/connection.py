@@ -34,8 +34,8 @@ from irbis.process import Process
 from irbis.query import ClientQuery
 from irbis.records import RawRecord, Record
 from irbis.response import ServerResponse
-from irbis.search import FoundLine, SearchParameters, SearchScenario, \
-    TextParameters, TextResult
+from irbis.search import CellResult, FoundLine, SearchParameters, \
+    SearchScenario, TextParameters, TextResult
 from irbis.specification import FileSpecification
 from irbis.stats import ServerStat
 from irbis.table import TableDefinition
@@ -478,65 +478,87 @@ class Connection(ObjectWithError):
             return result
 
     def fulltext_search(self, search: SearchParameters,
-                        fulltext: TextParameters) -> 'List[TextResult]':
+                        fulltext: TextParameters) -> \
+            'Tuple[List[TextResult], List[CellResult]]':
         """
         Полнотекстовый поиск.
 
         :param search: Параметры поиска по словарю.
         :param fulltext: Параметры полнотекстового поиска.
-        :return: Список найденных MFN.
+        :return: Кортеж: найденные MFN и фасеты.
         """
         if not self.check_connection():
-            return []
+            return ([], [])
 
         query = ClientQuery(self, FULL_TEXT_SEARCH)
         search.encode(query, self)
         fulltext.encode(query)
         response = self.execute(query)
         if not response.check_return_code():
-            return []
+            return ([], [])
 
         number = response.number()  # Число найденных записей
-        result: 'List[TextResult]' = []
+        records: 'List[TextResult]' = []
         for _ in range(number):
             line = response.utf()
             if not line:
                 break
-            one = TextResult()
-            one.decode(line)
-            result.append(one)
-        return result
+            record = TextResult()
+            record.decode(line)
+            records.append(record)
+
+        facets: 'List[CellResult]' = []
+        while True:
+            line = response.utf()
+            if not line:
+                break
+            facet = CellResult()
+            facet.decode(line)
+            facets.append(facet)
+
+        return (records, facets)
 
     async def fulltext_search_async(self, search: SearchParameters,
                                     fulltext: TextParameters
-                                    ) -> 'List[TextResult]':
+                                    ) -> \
+            'Tuple[List[TextResult], List[CellResult]]':
         """
         Асинхронный полнотекстовый поиск.
 
         :param search: Параметры поиска по словарю.
         :param fulltext: Параметры полнотекстового поиска.
-        :return: Список найденных MFN.
+        :return: Кортеж: найденные MFN и фасеты.
         """
         if not self.check_connection():
-            return []
+            return ([], [])
 
         query = ClientQuery(self, FULL_TEXT_SEARCH)
         search.encode(query, self)
         fulltext.encode(query)
         response = await self.execute_async(query)
         if not response.check_return_code():
-            return []
+            return ([], [])
 
         number = response.number()  # Число найденных записей
-        result: 'List[TextResult]' = []
+        records: 'List[TextResult]' = []
         for _ in range(number):
             line = response.utf()
             if not line:
                 break
-            one = TextResult()
-            one.decode(line)
-            result.append(one)
-        return result
+            record = TextResult()
+            record.decode(line)
+            records.append(record)
+
+        facets: 'List[CellResult]' = []
+        while True:
+            line = response.utf()
+            if not line:
+                break
+            facet = CellResult()
+            facet.decode(line)
+            facets.append(facet)
+
+        return (records, facets)
 
     def get_database_info(self, database: 'Optional[str]' = None) \
             -> DatabaseInfo:

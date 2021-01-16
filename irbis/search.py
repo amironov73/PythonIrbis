@@ -195,14 +195,12 @@ class TextResult:
     """
     Результат полнотекстового поиска
     """
-    __slots__ = ('authors', 'mfn', 'pages', 'formatted', 'years')
+    __slots__ = ('mfn', 'pages', 'formatted')
 
     def __init__(self) -> None:
-        self.authors: 'List[str]' = []
         self.formatted: 'Optional[str]' = None
         self.mfn: int = 0
         self.pages: 'List[int]' = []
-        self.years: 'List[int]' = []
 
     def decode(self, line: str) -> None:
         """
@@ -218,17 +216,33 @@ class TextResult:
                 if part.isdecimal():
                     page = int(part)
                     self.pages.append(page)
-                elif len(part) > 2:
-                    prefix = part[0:2]
-                    value = part[2:]
-                    if prefix == 'A=':
-                        self.authors.append(value)
-                    elif prefix == 'G=' and value.isdecimal():
-                        year = int(value)
-                        self.years.append(year)
-                    elif prefix == 'S=':
-                        pass
+
+    def __str__(self):
+        return str(self.mfn)
 
 
-__all__ = ['FoundLine', 'SearchParameters', 'SearchScenario', 'TextParameters',
-           'TextResult']
+class CellResult:
+    """
+    Фасет, т. е. строка поискового словаря, близко соответствующая
+    результатам поиска.
+    """
+    __slots__ = ('count', 'term')
+
+    def __init__(self):
+        self.count: int = 0
+        self.term: 'Optional[str]' = None
+
+    def decode(self, line: str) -> None:
+        """
+        Декодирование строки с одним фасетом.
+        """
+        parts = line.split('#', 1)
+        self.count = int(parts[0])
+        self.term = parts[1]
+
+    def __str__(self):
+        return self.term or '--nothing--'
+
+
+__all__ = ['CellResult', 'FoundLine', 'SearchParameters', 'SearchScenario',
+           'TextParameters', 'TextResult']

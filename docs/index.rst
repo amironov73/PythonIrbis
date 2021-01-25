@@ -3,13 +3,19 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to irbis's documentation!
-=================================
+PythonIrbis
+===========
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   chapter1
+   chapter2
+   chapter3
+   chapter4
+   chapter5
+   chapter6
 
 
 Indices and tables

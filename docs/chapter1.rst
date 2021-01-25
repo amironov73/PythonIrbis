@@ -38,9 +38,9 @@
 
 Здесь `--user` означает установку только для текущего пользователя (без этого ключа установка будет выполняться для всех пользователей и может потребовать администраторских прав), а `--upgrade` - обновление пакета при необходимости. Если уже установлена последняя версия пакета, то `pip` просто сообщит об этом и завершит работу.
 
-Также можно установить пакет, скачав необходимые файлы с репозитория GitHub: [https://github.com/amironov73/PythonIrbis](https://github.com/amironov73/PythonIrbis).
+Также можно установить пакет, скачав необходимые файлы с репозитория GitHub: https://github.com/amironov73/PythonIrbis
 
-Кроме того, доступны ночные dist-сборки на AppVeyor: [https://ci.appveyor.com/project/AlexeyMironov/pythonirbis/build/artifacts](https://ci.appveyor.com/project/AlexeyMironov/pythonirbis/build/artifacts).
+Кроме того, доступны ночные dist-сборки на AppVeyor: https://ci.appveyor.com/project/AlexeyMironov/pythonirbis/build/artifacts
 
 Примеры программ
 ================

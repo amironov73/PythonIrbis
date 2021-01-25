@@ -6,9 +6,12 @@
 PythonIrbis
 ===========
 
+Пакет `irbis` представляет собой фреймворк для создания клиентских приложений для системы автоматизации библиотек
+ИРБИС64 на языке Python.
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Содержание:
 
    chapter1
    chapter2
@@ -18,8 +21,8 @@ PythonIrbis
    chapter6
 
 
-Indices and tables
-==================
+Указатели и таблицы
+===================
 
 * :ref:`genindex`
 * :ref:`modindex`

@@ -50,11 +50,12 @@ __author__ = 'Alexey Mironov'
 __email__ = 'amironov73@gmail.com'
 
 __title__ = 'irbis'
-__summary__ = 'ManagedIrbis ported from C# to Python'
+__summary__ = 'universal client software for IRBIS64 - popular ' + \
+              'russian library automation system'
 __uri__ = 'http://arsmagna.ru'
 
 __license__ = 'MIT License'
-__copyright__ = 'Copyright 2018-2019 Alexey Mironov'
+__copyright__ = 'Copyright 2018-2021 Alexey Mironov'
 
 __all__ = ['ADMINISTRATOR', 'AlphabetTable', 'BRIEF', 'CATALOGER',
            'CellResult', 'ClientInfo', 'ClientQuery', 'close_async',

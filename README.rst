@@ -2,14 +2,14 @@
 PythonIrbis
 ===========
 
-`PythonIrbis` package is universal client software for IRBIS64 library
+``PythonIrbis`` package is universal client software for IRBIS64 library
 automation system (`ManagedIrbis <https://github.com/amironov73/ManagedIrbis>`_
 package ported from C# to Python 3). Available on `PyPi <https://pypi.org/project/irbis>`_.
 
 Supported environments
 ======================
 
-`PythonIrbis` currently supports Python 3.6 and 3.7 on 32-bit and 64-bit Windows, Linux, Mac OS X and IRBIS64 server version 2014 or later.
+``PythonIrbis`` currently supports Python 3.6 and 3.7 on 32-bit and 64-bit Windows, Linux, Mac OS X and IRBIS64 server version 2014 or later.
 
 Sample program
 ==============
@@ -19,7 +19,7 @@ Sample program
   import irbis
 
   # Connect to the server
-  client = irbis.Connection()  # pylint:disable=invalid-name
+  client = irbis.Connection()
   client.parse_connection_string('host=127.0.0.1;database=IBIS;' +
       'user=librarian;password=secret;')
   client.connect()

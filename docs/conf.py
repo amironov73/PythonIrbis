@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'irbis'
-copyright = '2020, Alexey Mironov <amironov73@gmail.com>'
+copyright = '2018-2021, Alexey Mironov <amironov73@gmail.com>'
 author = 'Alexey Mironov <amironov73@gmail.com>'
 
 # The full version, including alpha/beta/rc tags

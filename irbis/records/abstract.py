@@ -168,11 +168,10 @@ class AbstractRecord:
         """
 
     def __bool__(self):
-        return bool(len(self.fields))
+        return bool(self.fields)
 
     def __len__(self):
         return len(self.fields)
 
     def __str__(self):
-        result = [str(field) for field in self.fields]
-        return '\n'.join(result)
+        return '\n'.join(str(field) for field in self.fields)

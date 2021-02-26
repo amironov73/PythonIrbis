@@ -126,7 +126,7 @@ class IniSection:
         return len(self.lines)
 
     def __bool__(self):
-        return bool(len(self.lines))
+        return bool(self.lines)
 
 
 class IniFile:
@@ -244,7 +244,7 @@ class IniFile:
         return len(self.sections)
 
     def __bool__(self):
-        return bool(len(self.sections))
+        return bool(self.sections)
 
 
 __all__ = ['IniFile', 'IniLine', 'IniSection']

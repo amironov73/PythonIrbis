@@ -20,9 +20,9 @@ keywords = [
     "IRBIS64",
 ]
 homepage = "https://github.com/amironov73/PythonIrbis"
-documentation = "https://github.com/amironov73/PythonIrbis"
+documentation = "https://pythonirbis.readthedocs.io"
 repository = "https://github.com/amironov73/PythonIrbis"
-readme = "README.md"
+readme = "README.rst"
 
 [tool.poetry.dependencies]
 python = ">=3.6"

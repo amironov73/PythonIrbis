@@ -2156,6 +2156,13 @@ class Connection(ObjectWithError):
 
         return True
 
+    def __aenter__(self):
+        return self
+
+    def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.disconnect_async()
+        return exc_type is None
+
     def __enter__(self):
         return self
 

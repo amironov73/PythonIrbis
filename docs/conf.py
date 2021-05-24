@@ -22,7 +22,7 @@ copyright = '2018-2021, Alexey Mironov <amironov73@gmail.com>'
 author = 'Alexey Mironov <amironov73@gmail.com>'
 
 # The full version, including alpha/beta/rc tags
-release = '0.2.0'
+release = '0.2a1'
 
 
 # -- General configuration ---------------------------------------------------

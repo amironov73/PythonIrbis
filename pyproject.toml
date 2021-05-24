@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "irbis"
-version = "0.2.0"
+version = "0.2a1"
 description = "Framework for client development for popular Russian library computer system IRBIS64"
 authors = [
     "Alexey Mironov <amironov73@gmail.com>",

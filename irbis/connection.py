@@ -66,7 +66,8 @@ class Connection(ObjectWithError):
                  username: 'Optional[str]' = None,
                  password: 'Optional[str]' = None,
                  database: 'Optional[str]' = None,
-                 workstation: str = 'C') -> None:
+                 workstation: str = 'C',
+                 connection_string: 'Optional[str]' = None) -> None:
         super().__init__()
         self.host: str = host or Connection.DEFAULT_HOST
         self.port: int = port or Connection.DEFAULT_PORT
@@ -81,6 +82,8 @@ class Connection(ObjectWithError):
         self.server_version: 'Optional[str]' = None
         self.ini_file: IniFile = IniFile()
         self.last_error = 0
+        if connection_string:
+            self.parse_connection_string(connection_string)
 
     def actualize_record(self, mfn: int,
                          database: 'Optional[str]' = None) -> bool:

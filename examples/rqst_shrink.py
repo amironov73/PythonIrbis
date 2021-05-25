@@ -16,11 +16,8 @@ if len(sys.argv) != 2:
 
 start = datetime.now()
 
-with irbis.Connection() as connection:
+with irbis.Connection(connection_string=sys.argv[1]) as connection:
     try:
-        connection.parse_connection_string(sys.argv[1])
-        connection.connect()
-
         if not connection.connected:
             print("Can't connect")
             exit(-1)

@@ -1105,7 +1105,10 @@ class Connection(ObjectWithError):
 
     def read_record(self, mfn: int, version: int = 0) -> 'Optional[Record]':
         """
-        Чтение записи с указанным MFN с сервера.
+        Чтение записи с указанным MFN с сервера. Обратите внимание,
+        запрос версии `0` означает выдачу текущей версии записи
+        и отсутствие блокировки. Если не уверены, какая версия нужна,
+        не трогайте этот аргумент.
 
         :param mfn: MFN
         :param version: версия
@@ -1118,9 +1121,8 @@ class Connection(ObjectWithError):
 
         assert isinstance(mfn, int)
 
-        query = ClientQuery(self, READ_RECORD).ansi(self.database).add(mfn)
-        if version:
-            query.add(version)
+        query = ClientQuery(self, READ_RECORD).ansi(self.database)
+        query.add(mfn).add(version)
         with self.execute(query) as response:
             if not response.check_return_code(READ_RECORD_CODES):
                 return None

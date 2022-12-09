@@ -125,7 +125,7 @@ class ServerResponse:
             result.append(line)
         return result
 
-    def check_return_code(self, allowed: 'List[int]' = None) -> bool:
+    def check_return_code(self, allowed: 'Optional[List[int]]' = None) -> bool:
         """
         Проверка кода возврата. Если код меньше нуля,
         генерируется IrbisError.

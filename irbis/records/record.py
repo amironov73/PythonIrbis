@@ -49,7 +49,7 @@ class Record(AbstractRecord, DictLike, Hashable):
             else:
                 raise TypeError('One or more args have unsupported type')
 
-    def add(self, tag: int, value: 'Union[str, SubField]' = None) -> 'Field':
+    def add(self, tag: int, value: 'Optional[Union[str, SubField]]' = None) -> 'Field':
         """
         Добавление поля (возможно, с значением и подполями) к записи.
 

@@ -85,7 +85,7 @@ class FileSpecification:
             if self.content:
                 result = '&' + self.filename
 
-        if self.path == 0 or self.path == 1:
+        if self.path in (0, 1):
             result = str(self.path) + '..' + result
         else:
             result = str(self.path) + '.' + self.database + '.' + result

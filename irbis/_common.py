@@ -266,9 +266,7 @@ def throw_value_error() -> str:
 
     :return: None
     """
-    if 1 > 0:
-        raise ValueError()
-    return ''
+    raise ValueError()
 
 
 def irbis_to_dos(text: str) -> str:

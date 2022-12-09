@@ -254,7 +254,7 @@ class Record(AbstractRecord, DictLike, Hashable):
         :param tag: Метка поля.
         :return: Self.
         """
-        self.__delitem__(tag)
+        del self[tag]
         return self
 
     def set_field(self, tag: int, value: 'Optional[str]') -> 'Record':

@@ -7,6 +7,7 @@
 import re
 from typing import TYPE_CHECKING
 from irbis._common import ANSI, STOP_MARKER
+from irbis.saveable import Saveable
 if TYPE_CHECKING:
     from typing import List, Optional
 
@@ -34,7 +35,7 @@ class OptLine:
         self.worksheet = parts[1]
 
 
-class OptFile:
+class OptFile(Saveable):
     """
     OPT-файл.
     """
@@ -141,17 +142,6 @@ class OptFile:
                 return line.worksheet
 
         return None
-
-    def save(self, filename: str) -> None:
-        """
-        Save the OPT table to the specified file.
-
-        :param filename: Name of the file
-        :return: None
-        """
-        with open(filename, 'wt', encoding=ANSI) as stream:
-            text = str(self)
-            stream.write(text)
 
     def __str__(self):
         result = [str(self.tag), str(self.length)]

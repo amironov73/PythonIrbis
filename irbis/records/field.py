@@ -365,7 +365,7 @@ class Field(DictLike, Hashable, ValueMixin):
         :param code: Код для удаления.
         :return: Self
         """
-        self.__delitem__(code)
+        del self[code]
         return self
 
     def replace_subfield(self, code: str, old_value: 'Optional[str]',

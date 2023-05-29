@@ -425,9 +425,9 @@ for line in found:
 Текстовый файл можно получить с сервера с помощью метода `read_text_file`:
 
 ```python
-import irbis.core as bars
+import irbis
 
-client = bars.Connection()
+client = irbis.Connection()
 client.connect('host', 6666, 'librarian', 'secret')
 # Считываем формат краткого библиографического 
 # описания для базы IBIS
@@ -445,9 +445,9 @@ client.disconnect()
 Для получения с сервера двоичных файлов (например, изображений) используется метод `read_binary_file`:
 
 ```python
-import irbis.core as bars
+import irbis
 
-client = bars.Connection()
+client = irbis.Connection()
 client.connect('host', 6666, 'librarian', 'secret')
 # Считываем GIF-файл с бегущим ирбисом, 
 # хранящийся рядом с сервером ИРБИС64

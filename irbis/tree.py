@@ -6,6 +6,7 @@
 
 from typing import TYPE_CHECKING
 from irbis._common import ANSI, safe_str
+from irbis.saveable import Saveable
 if TYPE_CHECKING:
     from typing import Iterable, List, Optional
 
@@ -50,7 +51,7 @@ class TreeNode:
         return self.value
 
 
-class TreeFile:
+class TreeFile(Saveable):
     """
     TRE-file.
     """
@@ -142,18 +143,6 @@ class TreeFile:
         for node in nodes:
             if node.level == 0:
                 self.roots.append(node)
-
-    def save(self, filename: str) -> None:
-        """
-        Save the tree to the specified file.
-
-        :param filename: Name of the file
-        :return: None
-        """
-
-        with open(filename, 'wt', encoding=ANSI) as stream:
-            text = str(self)
-            stream.write(text)
 
     def __str__(self):
         TreeFile.determine_level(self.roots, 0)

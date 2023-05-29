@@ -442,9 +442,9 @@ workstation   str   Тип АРМа (см. таблицу ниже)   'C'
 
 .. code-block:: python
 
-  import irbis.core as bars
+  import irbis
 
-  client = bars.Connection()
+  client = irbis.Connection()
   client.connect('host', 6666, 'librarian', 'secret')
   # Считываем формат краткого библиографического
   # описания для базы IBIS
@@ -462,9 +462,9 @@ workstation   str   Тип АРМа (см. таблицу ниже)   'C'
 
 .. code-block:: python
 
-  import irbis.core as bars
+  import irbis
 
-  client = bars.Connection()
+  client = irbis.Connection()
   client.connect('host', 6666, 'librarian', 'secret')
   # Считываем GIF-файл с бегущим ирбисом,
   # хранящийся рядом с сервером ИРБИС64

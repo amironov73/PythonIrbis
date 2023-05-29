@@ -90,7 +90,7 @@ class DictLike:
         :return: значение по ключу или аргумент default
         """
         try:
-            return self.__getitem__(key)
+            return self[key]
         except KeyError:
             return default
 
@@ -122,9 +122,9 @@ class DictLike:
         :param key: ключ
         :return: удалённое значение
         """
-        values = self.__getitem__(key)
+        values = self[key]
         if values:
-            self.__delitem__(key)
+            del self[key]
         return values
 
 

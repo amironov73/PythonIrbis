@@ -147,7 +147,7 @@ class UpperCaseTable:
     __slots__ = ('mapping',)
 
     def __init__(self) -> None:
-        self.mapping: 'Dict' = dict()
+        self.mapping: 'Dict' = {}
 
     @staticmethod
     def get_default():

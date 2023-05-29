@@ -17,7 +17,8 @@ class PostingParameters:
 
     __slots__ = 'database', 'first', 'fmt', 'number', 'terms'
 
-    def __init__(self, term: str = None, fmt: str = None) -> None:
+    def __init__(self, term: 'Optional[str]' = None,
+                 fmt: 'Optional[str]' = None) -> None:
         self.database: 'Optional[str]' = None
         self.first: int = 1
         self.fmt: 'Optional[str]' = fmt
@@ -67,7 +68,8 @@ class TermParameters:
 
     __slots__ = 'database', 'number', 'reverse', 'start', 'format'
 
-    def __init__(self, start: str = None, number: int = 10) -> None:
+    def __init__(self, start: 'Optional[str]' = None,
+                 number: int = 10) -> None:
         self.database: str = ''
         self.number: int = number
         self.reverse: bool = False

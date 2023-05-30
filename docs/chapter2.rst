@@ -537,6 +537,6 @@ workstation   str   Тип АРМа (см. таблицу ниже)   'C'
 
   irbis.init_async()
 
-  irbis.irbis_event_loop.run_until_complete(do_async_stuff())
+  irbis.get_event_loop().run_until_complete(do_async_stuff())
 
   irbis.close_async()

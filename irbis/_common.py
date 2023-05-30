@@ -398,9 +398,7 @@ def init_async() -> None:
         try:
             irbis_event_loop = asyncio.get_running_loop()
         except RuntimeError:
-            print("New event loop")
             irbis_event_loop = asyncio.new_event_loop()
-            print(irbis_event_loop)
 
 def get_event_loop() -> None | asyncio.AbstractEventLoop:
     """

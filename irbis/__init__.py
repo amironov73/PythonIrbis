@@ -10,7 +10,7 @@
 # IRBIS64 supported: 2014 and higher
 
 from irbis._common import ADMINISTRATOR, BRIEF, CATALOGER, close_async, \
-    init_async, irbis_event_loop, LAST, LOCKED, LOGICALLY_DELETED, \
+    init_async, get_event_loop, LAST, LOCKED, LOGICALLY_DELETED, \
     NON_ACTUALIZED, NOT_CONNECTED, PHYSICALLY_DELETED, prepare_format, \
     remove_comments
 

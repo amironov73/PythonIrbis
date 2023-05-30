@@ -5,7 +5,7 @@ with open("README.rst", "r") as fh:
 
 setuptools.setup(
     name="irbis",
-    version="0.2",
+    version="0.2.1",
     author="Alexey Mironov",
     author_email="amironov73@gmail.com",
     description="Framework for client development for popular Prussian library computer system IRBIS64",

@@ -395,8 +395,21 @@ def init_async() -> None:
     """
     global irbis_event_loop  # pylint: disable=global-statement
     if not irbis_event_loop:
-        irbis_event_loop = asyncio.get_event_loop()
+        try:
+            irbis_event_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            print("New event loop")
+            irbis_event_loop = asyncio.new_event_loop()
+            print(irbis_event_loop)
 
+def get_event_loop() -> None | asyncio.AbstractEventLoop:
+    """
+    Получение асинхронного цикла сообщений.
+
+    :return None | asyncio.AbstractEventLoop
+    """
+    global irbis_event_loop
+    return irbis_event_loop
 
 def close_async() -> None:
     """
